@@ -11,7 +11,8 @@ variable "common" {
 variable "vpc" {
   description = "The vpc to be created"
   type = object({
-    name = string
+    name       = string
+    cidr_block = string
   })
 
 }
