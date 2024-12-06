@@ -18,5 +18,9 @@ variable "subnets" {
     public_subnet_cidr_block  = list(string)
     vpc_id                    = string
   }))
+}
 
+variable "vpc_id" {
+  description = "The vpc id"
+  type        = string
 }

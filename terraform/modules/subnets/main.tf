@@ -2,7 +2,7 @@
 # Private subnets - Creates privates subnets
 #--------------------------------------------------------------------
 resource "aws_subnet" "private_subnets" {
-  vpc_id            = subnets.vpc_id
+  vpc_id            = var.vpc_id
   for_each          = { for idx, az in var.subnets.az : idx => { az = az, cidr = var.subnets.private_subnet_cidr_block[idx] } }
   availability_zone = each.value.az
   cidr_block        = each.value.cidr
@@ -17,7 +17,7 @@ resource "aws_subnet" "private_subnets" {
 # Public subnets - Creates public subnets  
 #--------------------------------------------------------------------
 resource "aws_subnet" "public_subnets" {
-  vpc_id                  = subnets.vpc_id
+  vpc_id                  = var.vpc_id
   for_each                = { for idx, az in var.subnets.az : idx => { az = az, cidr = var.subnets.public_subnet_cidr_block[idx] } }
   availability_zone       = each.value.az
   cidr_block              = each.value.cidr
