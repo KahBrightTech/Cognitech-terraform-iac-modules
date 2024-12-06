@@ -1,30 +1,30 @@
 #--------------------------------------------------------------------
-# VPC - Creates a VPC  to the target account
+# Private subnets - Creates privates subnets
 #--------------------------------------------------------------------
-resource "aws_vpc" "main" {
-  cidr_block           = var.vpc.cidr_block
-  enable_dns_hostnames = true
-  enable_dns_support   = true
-  instance_tenancy     = "default"
-
+resource "aws_subnet" "Private_subnets" {
+  vpc_id            = subnets.vpc_id
+  for_each          = { for idx, az in var.subnets.az : idx => { az = az, cidr = var.subnets.private_subnet_cidr_block[idx] } }
+  availability_zone = each.value.az
+  cidr_block        = each.value.cidr
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.vpc.name}-vpc"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.subnets.private_subnet_name}-${each.key + 1}"
     }
   )
-
 }
 
 #--------------------------------------------------------------------
-# VPC - Creates and associates internet gateway to vpc 
+# Public subnets - Creates public subnets  
 #--------------------------------------------------------------------
-resource "aws_internet_gateway" "main_igw" {
-  vpc_id = aws_vpc.main.id
-
+resource "aws_subnet" "Public_subnets" {
+  vpc_id                  = subnets.vpc_id
+  for_each                = { for idx, az in var.subnets.az : idx => { az = az, cidr = var.subnets.public_subnet_cidr_block[idx] } }
+  availability_zone       = each.value.az
+  cidr_block              = each.value.cidr
+  map_public_ip_on_launch = true
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.vpc.name}-igw"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.subnets.public_subnet_name}-${each.key + 1}"
     }
   )
-
 }

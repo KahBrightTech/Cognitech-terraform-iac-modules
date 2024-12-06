@@ -8,11 +8,15 @@ variable "common" {
   })
 }
 
-variable "vpc" {
-  description = "The vpc to be created"
-  type = object({
-    name       = string
-    cidr_block = string
-  })
+variable "subnets" {
+  description = "The private subnet variables"
+  type = list(object({
+    private_subnet_name       = string
+    private_subnet_cidr_block = list(string)
+    az                        = list(string)
+    public_subnet_name        = string
+    public_subnet_cidr_block  = list(string)
+    vpc_id                    = string
+  }))
 
 }
