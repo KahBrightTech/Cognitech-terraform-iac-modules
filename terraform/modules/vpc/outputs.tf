@@ -1,9 +1,3 @@
-output "vpc_arn" {
-  description = "The arn of the vpc"
-  value       = aws_vpc.main.arn
-
-}
-
 output "vpc_id" {
   description = "The id of the vpc created"
   value       = aws_vpc.main.id
@@ -12,5 +6,5 @@ output "vpc_id" {
 
 output "igw_id" {
   description = "The internet gateway id"
-  value = aws_internet_gateway.main_igw.id 
+  value       = aws_internet_gateway.main_igw.id
 }
