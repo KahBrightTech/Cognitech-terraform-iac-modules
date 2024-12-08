@@ -8,14 +8,22 @@ variable "common" {
   })
 }
 
-variable "subnets" {
+variable "private_subnets" {
   description = "The private subnet variables"
   type = object({
     private_subnet_name       = string
     private_subnet_cidr_block = list(string)
     az                        = list(string)
-    public_subnet_name        = string
-    public_subnet_cidr_block  = list(string)
+  })
+}
+
+
+variable "public_subnets" {
+  description = "The public subnet variables"
+  type = object({
+    public_subnet_name       = string
+    public_subnet_cidr_block = list(string)
+    az                       = list(string)
   })
 }
 
