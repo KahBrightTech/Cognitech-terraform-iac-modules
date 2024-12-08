@@ -26,5 +26,4 @@ resource "aws_internet_gateway" "main_igw" {
       "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.vpc.name}-igw"
     }
   )
-
 }
