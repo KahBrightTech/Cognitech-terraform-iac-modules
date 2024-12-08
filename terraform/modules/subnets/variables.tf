@@ -8,24 +8,35 @@ variable "common" {
   })
 }
 
-variable "private_subnets" {
+variable "subnets" {
   description = "The private subnet variables"
   type = object({
-    private_subnet_name       = string
-    private_subnet_cidr_block = list(string)
-    az                        = list(string)
+    subnet_name             = string
+    subnet_cidr_block       = list(string)
+    az                      = list(string)
+    map_public_ip_on_launch = bool
   })
 }
 
 
-variable "public_subnets" {
-  description = "The public subnet variables"
-  type = object({
-    public_subnet_name       = string
-    public_subnet_cidr_block = list(string)
-    az                       = list(string)
-  })
-}
+# variable "private_subnets" {
+#   description = "The private subnet variables"
+#   type = object({
+#     private_subnet_name       = string
+#     private_subnet_cidr_block = list(string)
+#     az                        = list(string)
+#   })
+# }
+
+
+# variable "public_subnets" {
+#   description = "The public subnet variables"
+#   type = object({
+#     public_subnet_name       = string
+#     public_subnet_cidr_block = list(string)
+#     az                       = list(string)
+#   })
+# }
 
 variable "vpc_id" {
   description = "The vpc id"
