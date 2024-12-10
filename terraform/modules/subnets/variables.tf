@@ -19,12 +19,12 @@ variable "common" {
 
 variable "subnets" {
   type = object({
-    private_subnet = object({
+    private_subnets = object({
       private_subnet_name       = string
       private_subnet_cidr_block = list(string)
       az                        = list(string)
     })
-    public_subnet = object({
+    public_subnets = object({
       public_subnet_name       = string
       public_subnet_cidr_block = list(string)
       az                       = list(string)
