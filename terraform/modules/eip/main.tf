@@ -7,7 +7,7 @@ resource "aws_eip" "eip" {
   domain   = "vpc"
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eip.name}-${each.key + 1}"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.eip.name}-${each.key + 1}"
     }
   )
 }

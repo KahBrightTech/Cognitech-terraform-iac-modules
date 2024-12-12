@@ -7,7 +7,7 @@ resource "aws_nat_gateway" "ngw" {
   subnet_id     = var.ngw.public_subnet
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ngw.name}-${each.key + 1}"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.ngw.name}-${each.key + 1}"
     }
   )
 }
