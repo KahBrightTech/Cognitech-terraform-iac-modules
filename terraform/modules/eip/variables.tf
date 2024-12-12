@@ -10,7 +10,9 @@ variable "common" {
 
 variable "eip" {
   description = "The public subnet to e associated to the elastic ip"
-  type        = string
+  type = object({
+    name = string
+  })
 }
 
 
