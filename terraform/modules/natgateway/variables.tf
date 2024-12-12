@@ -11,7 +11,7 @@ variable "common" {
 variable "ngw" {
   description = "The nat gateway to be associated to the private subnet"
   type = object({
-    name          = list(string)
+    # name          = list(string)
     subnet_id     = string
     allocation_id = string
   })
