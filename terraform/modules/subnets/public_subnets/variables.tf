@@ -11,9 +11,16 @@ variable "common" {
 variable "public_subnets" {
   description = "The public subnet variables"
   type = object({
-    public_subnet_name       = string
-    public_subnet_cidr_block = list(string)
-    az                       = list(string)
+    name                          = string
+    primary_availabilty_zone      = optional(string)
+    primary_availabilty_zone_id   = optional(string)
+    primary_cidr_block            = string
+    secondary_availabilty_zone    = optional(string)
+    secondary_availabilty_zone_id = optional(string)
+    secondary_cidr_block          = string
+    tertiary_availabilty_zone     = optional(string)
+    tertiary_availabilty_zone_id  = optional(string)
+    tertiary_cidr_block           = string
   })
 }
 
@@ -21,4 +28,3 @@ variable "vpc_id" {
   description = "The vpc id"
   type        = string
 }
-

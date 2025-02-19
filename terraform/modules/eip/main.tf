@@ -12,13 +12,5 @@ resource "aws_eip" "eip" {
   )
 }
 
-# resource "aws_eip" "eip" {
-#   for_each = { for idx, eip in var.eip : idx => eip }
-#   domain   = "vpc"
-#   tags = merge(var.common.tags,
-#     {
-#       "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${each.key + 1}"
-#     }
-#   )
-# }
+
 
