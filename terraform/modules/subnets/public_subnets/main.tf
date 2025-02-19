@@ -33,7 +33,7 @@ resource "aws_subnet" "secondary" {
 #--------------------------------------------------------------------
 # Tertiary public subnet
 #--------------------------------------------------------------------
-resource "aws_subnet" "secondary" {
+resource "aws_subnet" "tertiary" {
   vpc_id                  = var.vpc_id
   availability_zone       = var.public_subnets.tertiary_availabilty_zone
   availability_zone_id    = var.public_subnets.tertiary_availabilty_zone_id
