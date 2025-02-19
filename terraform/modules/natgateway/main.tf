@@ -12,15 +12,15 @@
 #   )
 # }
 
-resource "aws_nat_gateway" "ngw" {
-  for_each = { for idx, ngw in var.ngw : ngw.name => ngw }
+# resource "aws_nat_gateway" "ngw" {
+#   for_each = { for idx, ngw in var.ngw : ngw.name => ngw }
 
-  allocation_id = each.value.allocation_id
-  subnet_id     = each.value.subnet_id
-  tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}-${each.key + 1}"
-  })
-}
+#   allocation_id = each.value.allocation_id
+#   subnet_id     = each.value.subnet_id
+#   tags = merge(var.common.tags, {
+#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}-${each.key + 1}"
+#   })
+# }
 
 # resource "aws_nat_gateway" "ngw" {
 #   for_each      = { for idx, ngw in var.ngw : idx => ngw }
@@ -31,4 +31,12 @@ resource "aws_nat_gateway" "ngw" {
 #   })
 # }
 
+resource "aws_nat_gateway" "nat" {
+  for_each      = var.nat.eip_ids
+  allocation_id = each.value
+  subnet_id     = var.nat.primary_subnets[each.key]
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-nat-${each.key}"
+  })
+}
 
