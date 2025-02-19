@@ -39,9 +39,10 @@ output "secondary_subnet_arn" {
 }
 
 output "secondary_subnet_id" {
-  description = "The id of the secondary subnet"
-  value       = aws_subnet.secondary.id
+  description = "List of public subnet IDs"
+  value       = [for subnet in aws_subnet.secondary : subnet.id]
 }
+
 
 output "secondary_subnet_cidr" {
   description = "The CIDR block of the primary subnet"

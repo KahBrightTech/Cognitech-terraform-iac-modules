@@ -13,9 +13,10 @@ output "primary_subnet_arn" {
   value       = aws_subnet.primary.arn
 }
 
+
 output "primary_subnet_id" {
-  description = "The id of the primary subnet"
-  value       = aws_subnet.primary.id
+  description = "List of public subnet IDs"
+  value       = [for subnet in aws_subnet.primary : subnet.id]
 }
 
 output "primary_subnet_cidr" {
