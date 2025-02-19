@@ -56,6 +56,6 @@ resource "aws_subnet" "primary" {
   map_public_ip_on_launch = true # This is required for public subnets
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.private_subnets.name}-${each.key}"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-${each.key}"
   })
 }
