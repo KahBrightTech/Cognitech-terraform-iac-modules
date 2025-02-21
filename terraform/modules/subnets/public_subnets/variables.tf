@@ -10,7 +10,7 @@ variable "common" {
 
 variable "public_subnets" {
   description = "The public subnet variables"
-  type = map(object({
+  type = object({
     name                          = string
     primary_availabilty_zone      = optional(string)
     primary_availabilty_zone_id   = optional(string)
@@ -21,7 +21,7 @@ variable "public_subnets" {
     tertiary_availabilty_zone     = optional(string)
     tertiary_availabilty_zone_id  = optional(string)
     tertiary_cidr_block           = string
-  }))
+  })
 }
 
 variable "vpc_id" {

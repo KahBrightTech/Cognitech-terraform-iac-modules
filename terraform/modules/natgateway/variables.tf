@@ -5,37 +5,29 @@ variable "common" {
     tags          = map(string)
     account_name  = string
     region_prefix = string
+    region        = string
   })
 }
 
-# variable "ngw" {
-#   description = "The nat gateway to be associated to the private subnet"
-#   type = list(object({
-#     name = list(string)
-#     # subnet_id     = string
-#     # allocation_id = string
-#   }))
-# }
-
-# variable "eip_ids" {
-#   type = map(string)
-# }
-
-# variable "primary_subnets" {
-#   type = map(string)
-# }
-
-# variable "common_tags" {
-#   type = map(string)
-# }
-
-variable "nat" {
+variable "nat_gateway" {
+  description = "The nat gateway variables"
   type = object({
-    eip_ids         = map(string)
-    primary_subnets = map(string)
-    common_tags     = map(string)
+    name                = string
+    type                = string
+    allocation_id       = string
+    subnet_id_primary   = string
+    subnet_id_secondary = optional(string)
+    subnet_id_tertiary  = optional(string)
   })
+  validation {
+    condition     = var.nat_gateway.type == "public" || var.nat_gateway.type == "private" || var.nat_gateway.type == "unknown"
+    error_message = "The nat_gateway type must be either 'public', 'private', or 'unknown"
+  }
 }
 
+variable "bypass" {
+  description = "Bypass the creation of the nat gateway"
+  type        = bool
+  default     = false
 
-
+}

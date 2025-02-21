@@ -6,11 +6,12 @@ variable "common" {
     account_name  = string
     region_prefix = string
   })
+  default = null
 }
 
 variable "private_subnets" {
   description = "The private subnet variables"
-  type = map(object({
+  type = object({
     name                          = string
     primary_availabilty_zone      = optional(string)
     primary_availabilty_zone_id   = optional(string)
@@ -21,7 +22,7 @@ variable "private_subnets" {
     tertiary_availabilty_zone     = optional(string)
     tertiary_availabilty_zone_id  = optional(string)
     tertiary_cidr_block           = string
-  }))
+  })
 }
 
 variable "vpc_id" {

@@ -1,42 +1,70 @@
 #--------------------------------------------------------------------
-# EIP - Creates an Natgateway
+#EIP - Creates an elastic Ip
 #--------------------------------------------------------------------
-# resource "aws_nat_gateway" "ngw" {
-#   for_each      = var.ngw.name
-#   allocation_id = var.ngw.allocation_id
-#   subnet_id     = var.ngw.subnet_id
-#   tags = merge(var.common.tags,
-#     {
-#       "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.ngw.name}-${each.key + 1}"
-#     }
-#   )
-# }
+resource "aws_eip" "primary" {
+  count                = var.nat_gateway.type == "public" ? 1 : 0
+  network_border_group = var.common.region
+  tags = merge(var.common.tags,
+    {
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-primary"
+    }
+  )
+}
 
-# resource "aws_nat_gateway" "ngw" {
-#   for_each = { for idx, ngw in var.ngw : ngw.name => ngw }
+resource "aws_eip" "secondary" {
+  count                = var.nat_gateway.type == "public" ? 1 : 0
+  network_border_group = var.common.region
+  tags = merge(var.common.tags,
+    {
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-primary"
+    }
+  )
+}
 
-#   allocation_id = each.value.allocation_id
-#   subnet_id     = each.value.subnet_id
-#   tags = merge(var.common.tags, {
-#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}-${each.key + 1}"
-#   })
-# }
+resource "aws_eip" "tertiary" {
+  count                = var.nat_gateway.type == "public" ? 1 : 0
+  network_border_group = var.common.region
+  tags = merge(var.common.tags,
+    {
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-primary"
+    }
+  )
+}
 
-# resource "aws_nat_gateway" "ngw" {
-#   for_each      = { for idx, ngw in var.ngw : idx => ngw }
-#   allocation_id = each.value.allocation_id
-#   subnet_id     = each.value.subnet_id
-#   tags = merge(var.common.tags, {
-#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${each.key + 1}"
-#   })
-# }
 
-resource "aws_nat_gateway" "nat" {
-  for_each      = var.nat.eip_ids
-  allocation_id = each.value
-  subnet_id     = var.nat.primary_subnets[each.key]
-  tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-nat-${each.key}"
-  })
+#--------------------------------------------------------------------
+#NAT - Creates an Natgateway
+#--------------------------------------------------------------------
+resource "aws_nat_gateway" "primary" {
+  count         = var.bypass == false ? 1 : 0
+  allocation_id = var.nat_gateway.type == "public" ? aws_eip.primary[0].id : null
+  subnet_id     = var.nat_gateway.subnet_id_primary
+  tags = merge(var.common.tags,
+    {
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-primary"
+    }
+  )
+}
+
+resource "aws_nat_gateway" "secondary" {
+  count         = var.bypass == false ? 1 : 0
+  allocation_id = var.nat_gateway.type == "public" ? aws_eip.secondary[0].id : null
+  subnet_id     = var.nat_gateway.subnet_id_secondary
+  tags = merge(var.common.tags,
+    {
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-seondary"
+    }
+  )
+}
+
+resource "aws_nat_gateway" "tertiary" {
+  count         = var.bypass == false ? 1 : 0
+  allocation_id = var.nat_gateway.type == "public" ? aws_eip.tertiary[0].id : null
+  subnet_id     = var.nat_gateway.subnet_id_secondary
+  tags = merge(var.common.tags,
+    {
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-tertiary"
+    }
+  )
 }
 
