@@ -16,7 +16,7 @@ resource "aws_eip" "secondary" {
   network_border_group = var.common.region
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-primary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-secondary"
     }
   )
 }
@@ -26,7 +26,7 @@ resource "aws_eip" "tertiary" {
   network_border_group = var.common.region
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-primary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-tertiary"
     }
   )
 }
