@@ -9,7 +9,7 @@ resource "aws_vpc" "main" {
 
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.vpc.name}-vpc"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.vpc.name}-vpc"
     }
   )
 
@@ -23,7 +23,7 @@ resource "aws_internet_gateway" "main_igw" {
 
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.vpc.name}-igw"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.vpc.name}-igw"
     }
   )
 }
