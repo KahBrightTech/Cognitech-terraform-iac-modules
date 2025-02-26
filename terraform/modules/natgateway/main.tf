@@ -52,7 +52,7 @@ resource "aws_nat_gateway" "secondary" {
   subnet_id     = var.nat_gateway.subnet_id_secondary
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-seondary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-secondary"
     }
   )
 }
@@ -60,7 +60,7 @@ resource "aws_nat_gateway" "secondary" {
 resource "aws_nat_gateway" "tertiary" {
   count         = var.bypass == false ? 1 : 0
   allocation_id = var.nat_gateway.type == "public" ? aws_eip.tertiary[0].id : null
-  subnet_id     = var.nat_gateway.subnet_id_secondary
+  subnet_id     = var.nat_gateway.subnet_id_tertiary
   tags = merge(var.common.tags,
     {
       "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-tertiary"
