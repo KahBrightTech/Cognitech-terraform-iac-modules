@@ -32,6 +32,7 @@ resource "aws_subnet" "secondary" {
 # Tertiary private subnet
 #--------------------------------------------------------------------
 resource "aws_subnet" "tertiary" {
+  count                = var.private_subnets.tertiary_cidr_block != null ? 1 : 0
   vpc_id               = var.vpc_id
   availability_zone    = var.private_subnets.tertiary_availabilty_zone
   availability_zone_id = var.private_subnets.tertiary_availabilty_zone_id
