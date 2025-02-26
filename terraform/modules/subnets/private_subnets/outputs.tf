@@ -51,27 +51,27 @@ output "secondary_subnet_cidr" {
 
 output "tertiary_az" {
   description = "The tertiary availability zone"
-  value       = aws_subnet.tertiary.availability_zone
+  value       = var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].availability_zone : null
 }
 
 output "tertiary_az_id" {
   description = "The tertiary availability zone id"
-  value       = aws_subnet.tertiary.availability_zone_id
+  value       = var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].availability_zone_id : null
 }
 
 output "tertiary_subnet_arn" {
   description = "The arn of the tertiary subnet"
-  value       = aws_subnet.tertiary.arn
+  value       = var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].arn : null
 }
 
 output "tertiary_subnet_id" {
   description = "The id of the tertiary subnet"
-  value       = aws_subnet.tertiary.id
+  value       = var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].id : null
 }
 
 output "tertiary_subnet_cidr" {
   description = "The CIDR block of the primary subnet"
-  value       = aws_subnet.primary.cidr_block
+  value       = var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].cidr_block : null
 }
 
 
