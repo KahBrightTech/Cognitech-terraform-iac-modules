@@ -40,7 +40,7 @@ output "secondary_subnet_arn" {
 
 output "secondary_subnet_id" {
   description = "List of public subnet IDs"
-  value       = [for subnet in aws_subnet.secondary : subnet.id]
+  value       = aws_subnet.secondary.id
 }
 
 
