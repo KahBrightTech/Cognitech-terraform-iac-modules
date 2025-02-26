@@ -58,7 +58,7 @@ resource "aws_nat_gateway" "secondary" {
 }
 
 resource "aws_nat_gateway" "tertiary" {
-  count         = var.bypass == false ? 1 : 0
+  count         = var.nat_gateway.has_tertiary_subnet == true && var.bypass == false ? 1 : 0
   allocation_id = var.nat_gateway.type == "public" ? aws_eip.tertiary[0].id : null
   subnet_id     = var.nat_gateway.subnet_id_tertiary
   tags = merge(var.common.tags,
