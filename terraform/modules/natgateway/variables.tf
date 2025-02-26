@@ -14,7 +14,6 @@ variable "nat_gateway" {
   type = object({
     name                = string
     type                = string
-    allocation_id       = string
     subnet_id_primary   = string
     subnet_id_secondary = optional(string)
     subnet_id_tertiary  = optional(string)
