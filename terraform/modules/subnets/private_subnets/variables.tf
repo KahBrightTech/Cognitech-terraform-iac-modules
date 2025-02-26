@@ -18,10 +18,10 @@ variable "private_subnets" {
     primary_cidr_block            = string
     secondary_availabilty_zone    = optional(string)
     secondary_availabilty_zone_id = optional(string)
-    secondary_cidr_block          = string
+    secondary_cidr_block          = optional(string)
     tertiary_availabilty_zone     = optional(string)
     tertiary_availabilty_zone_id  = optional(string)
-    tertiary_cidr_block           = string
+    tertiary_cidr_block           = optional(string)
   })
 }
 
