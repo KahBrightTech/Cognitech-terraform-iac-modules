@@ -22,7 +22,7 @@ resource "aws_eip" "secondary" {
 }
 
 resource "aws_eip" "tertiary" {
-  count                = var.nat_gateway.type == "public" ? 1 : 0
+  count                = var.nat_gateway.has_tertiary_subnet == true && var.nat_gateway.type == "public" ? 1 : 0
   network_border_group = var.common.region
   tags = merge(var.common.tags,
     {
