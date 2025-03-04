@@ -20,14 +20,12 @@ resource "aws_route" "public_route" {
   route_table_id         = aws_route_table.public_route_table.id
   destination_cidr_block = var.routes.destination_cidr_block
   gateway_id             = var.routes.public_gateway_id
-  depends_on             = [aws_internet_gateway.example]
 }
 
 resource "aws_route" "private_route" {
   route_table_id         = aws_route_table.private_route_table.id
   destination_cidr_block = var.routes.destination_cidr_block
   nat_gateway_id         = var.routes.nat_gateway_id
-  depends_on             = [aws_nat_gateway.example]
 }
 
 resource "aws_route_table_association" "primary_public_subnet_association" {
