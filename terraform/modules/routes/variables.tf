@@ -8,11 +8,17 @@ variable "common" {
   })
 }
 
-variable "vpc" {
-  description = "The vpc to be created"
+variable "routes" {
+  description = "Thhe routes and route tables to be created"
   type = object({
-    name       = string
-    cidr_block = string
+    public_gateway_id      = string
+    nat_gateway_id         = string
+    destination_cidr_block = string
+    primary_subnet_id      = string
+    secondary_subnet_id    = optional(string)
+    tertiary_subnet_id     = optional(string)
+    has_tertiary_subnet    = optional(bool, false)
+    private_subnets_id     = list(string)
   })
 
 }
