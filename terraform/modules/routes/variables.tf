@@ -18,7 +18,7 @@ variable "routes" {
     secondary_subnet_id    = optional(string)
     tertiary_subnet_id     = optional(string)
     has_tertiary_subnet    = optional(bool, false)
-    private_subnets_id     = optonal(list(string))
+    private_subnets_id     = optional(list(string))
   })
 
 }
