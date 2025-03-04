@@ -45,7 +45,9 @@ resource "aws_route_table_association" "tertiary_public_subnet_association" {
 }
 
 resource "aws_route_table_association" "private_subnet_association" {
-  subnet_id      = var.routes.private_subnet_id
+  for_each       = toset(var.routes.private_subnet_id)
+  subnet_id      = each.value
   route_table_id = aws_route_table.private_route_table.id
 }
+
 
