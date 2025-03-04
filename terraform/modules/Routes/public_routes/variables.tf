@@ -8,7 +8,7 @@ variable "common" {
   })
 }
 
-variable "routes" {
+variable "public_routes" {
   description = "The routes and route tables to be created"
   type = object({
     nat_gateway_id         = optional(string)
