@@ -76,8 +76,13 @@ output "tertiary_subnet_cidr" {
 
 output "subnet_ids" {
   description = "List of private subnet IDs"
-  value       = [aws_subnet.primary.id, aws_subnet.secondary.id, var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].id : null]
+  value = compact([
+    aws_subnet.primary.id,
+    aws_subnet.secondary.id,
+    var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].id : null
+  ])
 }
+
 
 
 
