@@ -11,7 +11,7 @@ variable "common" {
 variable "public_routes" {
   description = "The routes and route tables to be created"
   type = object({
-    nat_gateway_id         = optional(string)
+    public_gateway_id      = optional(string)
     destination_cidr_block = string
     primary_subnet_id      = optional(string)
     secondary_subnet_id    = optional(string)

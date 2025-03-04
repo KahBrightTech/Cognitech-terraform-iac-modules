@@ -9,7 +9,7 @@ resource "aws_route_table" "private_route_table" {
 
 resource "aws_route" "private_route" {
   route_table_id         = aws_route_table.private_route_table.id
-  destination_cidr_block = var.routes.destination_cidr_block
+  destination_cidr_block = var.private_routes.destination_cidr_block
   nat_gateway_id         = var.private_routes.nat_gateway_id
 }
 
