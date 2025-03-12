@@ -17,6 +17,7 @@ variable "nat_gateway" {
     subnet_id_primary     = string
     subnet_id_secondary   = optional(string)
     subnet_id_tertiary    = optional(string)
+    subnet_id_quaternary  = optional(string)
     has_tertiary_subnet   = optional(bool, false)
     has_quaternary_subnet = optional(bool, false)
   })
