@@ -9,25 +9,16 @@ variable "common" {
   })
 }
 
-variable "nat_gateway" {
-  description = "The nat gateway variables"
+variable "tgw_routes" {
+  description = "The transit gateway route variables"
   type = object({
-    name                = string
-    type                = string
-    subnet_id_primary   = string
-    subnet_id_secondary = optional(string)
-    subnet_id_tertiary  = optional(string)
-    has_tertiary_subnet = optional(bool, false)
+    transit_gateway_id = string
+    shared_subnet_ids  = optional(list(string))
+    app_subnet_ids     = optional(list(string))
+
   })
-  validation {
-    condition     = var.nat_gateway.type == "public" || var.nat_gateway.type == "private" || var.nat_gateway.type == "unknown"
-    error_message = "The nat_gateway type must be either 'public', 'private', or 'unknown"
-  }
 }
-
-variable "bypass" {
-  description = "Bypass the creation of the nat gateway"
-  type        = bool
-  default     = false
-
+variable "vpc_id" {
+  description = "The vpc id"
+  type        = string
 }

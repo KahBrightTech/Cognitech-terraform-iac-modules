@@ -31,6 +31,16 @@ resource "aws_eip" "tertiary" {
   )
 }
 
+resource "aws_eip" "quaternary" {
+  count                = var.nat_gateway.has_quaternary_subnet == true && var.nat_gateway.type == "public" ? 1 : 0
+  network_border_group = var.common.region
+  tags = merge(var.common.tags,
+    {
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-quaternary"
+    }
+  )
+}
+
 
 #--------------------------------------------------------------------
 #NAT - Creates an Natgateway
@@ -68,3 +78,13 @@ resource "aws_nat_gateway" "tertiary" {
   )
 }
 
+resource "aws_nat_gateway" "quaternary" {
+  count         = var.nat_gateway.has_quaternary_subnet == true && var.bypass == false ? 1 : 0
+  allocation_id = var.nat_gateway.type == "public" ? aws_eip.quaternary[0].id : null
+  subnet_id     = var.nat_gateway.subnet_id_quaternary
+  tags = merge(var.common.tags,
+    {
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-quaternary"
+    }
+  )
+}

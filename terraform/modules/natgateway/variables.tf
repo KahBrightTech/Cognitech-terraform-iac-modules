@@ -12,12 +12,13 @@ variable "common" {
 variable "nat_gateway" {
   description = "The nat gateway variables"
   type = object({
-    name                = string
-    type                = string
-    subnet_id_primary   = string
-    subnet_id_secondary = optional(string)
-    subnet_id_tertiary  = optional(string)
-    has_tertiary_subnet = optional(bool, false)
+    name                  = string
+    type                  = string
+    subnet_id_primary     = string
+    subnet_id_secondary   = optional(string)
+    subnet_id_tertiary    = optional(string)
+    has_tertiary_subnet   = optional(bool, false)
+    has_quaternary_subnet = optional(bool, false)
   })
   validation {
     condition     = var.nat_gateway.type == "public" || var.nat_gateway.type == "private" || var.nat_gateway.type == "unknown"

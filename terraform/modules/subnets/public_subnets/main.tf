@@ -47,5 +47,21 @@ resource "aws_subnet" "tertiary" {
   )
 }
 
+#--------------------------------------------------------------------
+# Quaternary private subnet
+#--------------------------------------------------------------------
+resource "aws_subnet" "quaternary" {
+  count                = var.public_subnets.quaternary_cidr_block != null ? 1 : 0
+  vpc_id               = var.vpc_id
+  availability_zone    = var.public_subnets.quaternary_availabilty_zone
+  availability_zone_id = var.public_subnets.quaternary_availabilty_zone_id
+  cidr_block           = var.public_subnets.quaternary_cidr_block
+  tags = merge(var.common.tags,
+    {
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-quaternary"
+    }
+  )
+}
+
 
 

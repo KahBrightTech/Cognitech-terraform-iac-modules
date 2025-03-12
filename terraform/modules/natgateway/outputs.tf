@@ -30,3 +30,12 @@ output "ngw_tertiary_public_ip" {
   description = "value of the tertiary nat gateway public ip"
   value       = length(aws_nat_gateway.tertiary) > 0 ? aws_nat_gateway.tertiary[0].public_ip : null
 }
+
+output "ngw_quaternary_id" {
+  description = "value of the quaternary nat gateway id"
+  value       = length(aws_nat_gateway.quaternary) > 0 ? aws_nat_gateway.quaternary[0].id : null
+}
+output "ngw_quaternary_public_ip" {
+  description = "value of the quaternary nat gateway public ip"
+  value       = length(aws_nat_gateway.quaternary) > 0 ? aws_nat_gateway.quaternary[0].public_ip : null
+}

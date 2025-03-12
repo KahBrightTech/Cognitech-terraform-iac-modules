@@ -1,3 +1,6 @@
+#--------------------------------------------------------------------
+# Primary public subnet outputs
+#--------------------------------------------------------------------
 output "primary_az" {
   description = "The primary availability zone"
   value       = aws_subnet.primary.availability_zone
@@ -24,6 +27,9 @@ output "primary_subnet_cidr" {
   value       = aws_subnet.primary.cidr_block
 }
 
+#--------------------------------------------------------------------
+# Secondary public subnet outputs
+#--------------------------------------------------------------------
 output "secondary_az" {
   description = "The secondary availability zone"
   value       = aws_subnet.secondary.availability_zone
@@ -49,6 +55,10 @@ output "secondary_subnet_cidr" {
   value       = aws_subnet.secondary.cidr_block
 }
 
+
+#--------------------------------------------------------------------
+# Tertiary public subnet outputs
+#--------------------------------------------------------------------
 output "tertiary_az" {
   description = "The tertiary availability zone"
   value       = var.public_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].availability_zone : null
@@ -74,6 +84,34 @@ output "tertiary_subnet_cidr" {
   value       = var.public_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].cidr_block : null
 }
 
+
+#--------------------------------------------------------------------
+# Quaternary public subnet outputs
+#--------------------------------------------------------------------
+output "quaternary_az" {
+  description = "The quaternary availability zone"
+  value       = var.public_subnets.quaternary_cidr_block != null ? aws_subnet.quaternary[0].availability_zone : null
+}
+
+output "quaternary_az_id" {
+  description = "The quaternary availability zone id"
+  value       = var.public_subnets.quaternary_cidr_block != null ? aws_subnet.quaternary[0].availability_zone_id : null
+}
+
+output "quaternary_subnet_arn" {
+  description = "The arn of the quaternary subnet"
+  value       = var.public_subnets.quaternary_cidr_block != null ? aws_subnet.quaternary[0].arn : null
+}
+
+output "quaternary_subnet_id" {
+  description = "The id of the quaternary subnet"
+  value       = var.public_subnets.quaternary_cidr_block != null ? aws_subnet.quaternary[0].id : null
+}
+
+output "quaternary_subnet_cidr" {
+  description = "The CIDR block of the quaternary subnet"
+  value       = var.public_subnets.quaternary_cidr_block != null ? aws_subnet.quaternary[0].cidr_block : null
+}
 output "subnet_ids" {
   description = "List of private subnet IDs"
   value = compact([
