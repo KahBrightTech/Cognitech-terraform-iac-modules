@@ -29,4 +29,9 @@ resource "aws_route_table_association" "tertiary_private_subnet_association" {
   route_table_id = aws_route_table.private_route_table.id
 }
 
+resource "aws_route_table_association" "quaternary_private_subnet_association" {
+  count          = var.private_routes.has_quaternary_subnet == true ? 1 : 0
+  subnet_id      = var.private_routes.quaternary_subnet_id
+  route_table_id = aws_route_table.private_route_table.id
+}
 

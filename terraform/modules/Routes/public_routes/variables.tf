@@ -16,7 +16,8 @@ variable "public_routes" {
     primary_subnet_id      = optional(string)
     secondary_subnet_id    = optional(string)
     tertiary_subnet_id     = optional(string)
-    has_tertiary_subnet    = optional(bool, false)
+    quaternary_subnet_id   = optional(string)
+    has_quaternary_subnet  = optional(bool, false)
   })
 
 }
