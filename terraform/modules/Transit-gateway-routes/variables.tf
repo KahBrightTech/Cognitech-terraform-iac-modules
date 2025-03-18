@@ -9,14 +9,14 @@ variable "common" {
   })
 }
 
-variable "tgw_routes" {
+variable "tgw_attachments" {
   description = "The transit gateway route variables"
   type = object({
     transit_gateway_id        = string
     shared_subnet_ids         = optional(list(string))
     app_subnet_ids            = optional(list(string))
-    app_subnet_route_table_id = string
-    shared_vpc_cidr_block     = string
+    app_subnet_route_table_id = optional(string)
+    shared_vpc_cidr_block     = optional(string)
 
   })
 }
