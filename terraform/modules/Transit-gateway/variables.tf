@@ -13,11 +13,11 @@ variable "transit_gateway" {
   description = "The transit gateway variables"
   type = object({
     name                            = string
-    default_route_table_association = string
-    default_route_table_propagation = string
-    auto_accept_shared_attachments  = string
-    dns_support                     = string
-    amazon_side_asn                 = number
+    default_route_table_association = true
+    default_route_table_propagation = true
+    auto_accept_shared_attachments  = false
+    dns_support                     = true
+    amazon_side_asn                 = 64512
   })
 }
 
