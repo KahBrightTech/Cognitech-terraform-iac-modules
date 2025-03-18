@@ -10,7 +10,7 @@ resource "aws_ec2_transit_gateway" "main" {
   dns_support                     = var.transit_gateway.dns_support
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-Transit-Gateway"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.transit_gateway.name}"
     }
   )
 }

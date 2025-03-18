@@ -12,6 +12,7 @@ variable "common" {
 variable "transit_gateway" {
   description = "The transit gateway variables"
   type = object({
+    name                            = string
     default_route_table_association = enable
     default_route_table_propagation = enable
     auto_accept_shared_attachments  = disable
