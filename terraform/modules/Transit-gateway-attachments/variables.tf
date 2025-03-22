@@ -17,7 +17,7 @@ variable "tgw_attachments" {
     secondary_subnet_id  = optional(string)
     transit_gateway_name = optional(string)
     shared_vpc_name      = optional(string)
-    vpc_id               = optional(string)
+    vpc_id               = string
     attachment_name      = optional(string)
   })
 }
