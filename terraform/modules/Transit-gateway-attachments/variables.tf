@@ -12,9 +12,13 @@ variable "common" {
 variable "tgw_attachments" {
   description = "The transit gateway attachment variables"
   type = object({
-    transit_gateway_id = string
-    shared_subnet_ids  = optional(list(string))
-    app_subnet_ids     = optional(list(string))
+    transit_gateway_id                = string
+    shared_public_primary_subnet_id   = optional(string)
+    shared_public_secondary_subnet_id = optional(string)
+    app_private_primary_subnet_id     = optional(string)
+    app_private_secondary_subnet_id   = optional(string)
+    transit_gateway_name              = optional(string)
+    shared_vpc_name                   = optional(string)
   })
 }
 variable "shared_vpc_id" {
