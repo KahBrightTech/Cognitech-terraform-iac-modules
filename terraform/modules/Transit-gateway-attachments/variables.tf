@@ -32,6 +32,6 @@ variable "tgw_attachments" {
     transit_gateway_id   = string
     subnet_ids           = list(string)
     transit_gateway_name = optional(string)
-    attachment_name      = optional(string)
+    name                 = optional(string)
   })
 }

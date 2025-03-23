@@ -7,7 +7,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "vpc_attachment" {
   vpc_id             = var.vpc_id
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.tgw_attachments.attachment_name}"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.tgw_attachments.name}"
     }
   )
 }
