@@ -12,7 +12,11 @@ variable "tgw_routes" {
   description = "The transit gateway route variables"
   type = object({
     transit_gateway_id = string
-    route_table_id     = string
   })
+}
+
+variable "route_table_id" {
+  description = "The id of the route table"
+  type        = string
 }
 
