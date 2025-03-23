@@ -9,18 +9,29 @@ variable "common" {
   })
 }
 
-variable "tgw_attachments" {
-  description = "The transit gateway attachment variables"
-  type = object({
-    transit_gateway_id   = string
-    primary_subnet_id    = string
-    secondary_subnet_id  = string
-    transit_gateway_name = optional(string)
-    attachment_name      = optional(string)
-  })
-}
+# variable "tgw_attachments" {
+#   description = "The transit gateway attachment variables"
+#   type = object({
+#     transit_gateway_id   = string
+#     primary_subnet_id    = string
+#     secondary_subnet_id  = string
+#     transit_gateway_name = optional(string)
+#     attachment_name      = optional(string)
+#   })
+# }
 
 variable "vpc_id" {
   description = "The vpc id"
   type        = string
+}
+
+
+variable "tgw_attachments" {
+  description = "The transit gateway attachment variables"
+  type = object({
+    transit_gateway_id   = string
+    subnet_ids           = list(string)
+    transit_gateway_name = optional(string)
+    attachment_name      = optional(string)
+  })
 }
