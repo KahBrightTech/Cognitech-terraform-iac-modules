@@ -20,7 +20,7 @@ variable "private_routes" {
     has_tertiary_subnet    = optional(bool, false)
     has_quaternary_subnet  = optional(bool, false)
   })
-
+  default = null
 }
 variable "vpc_id" {
   description = "The vpc id"
