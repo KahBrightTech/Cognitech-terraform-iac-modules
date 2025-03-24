@@ -13,8 +13,8 @@ variable "private_routes" {
   type = object({
     nat_gateway_id         = optional(string)
     destination_cidr_block = string
-    primary_subnet_id      = optional(string)
-    secondary_subnet_id    = optional(string)
+    primary_subnet_id      = string
+    secondary_subnet_id    = string
     tertiary_subnet_id     = optional(string)
     quaternary_subnet_id   = optional(string)
     has_tertiary_subnet    = optional(bool, false)
