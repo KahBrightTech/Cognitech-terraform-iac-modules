@@ -8,24 +8,34 @@ variable "common" {
   })
 }
 
-variable "security_group_rules" {
+variable "security_group" {
   description = "The vpc security group rules"
   type = object({
-    name              = string
     security_group_id = string # This will be the ID of the security group created
-    type              = string # e.g., "ingress" or "egress"
-    protocol          = string # e.g., "tcp", "udp", "icmp", or "-1" for all protocols
-    from_port         = number # e.g., 80 for HTTP, 443 for HTTPS, or 0 for all ports
-    to_port           = number # e.g., 80 for HTTP, 443 for HTTPS, or 0 for all ports
-    cidr_blocks       = list(string)
-    description       = string # Description of the rule
+    egress_rules = optional(list(object({
+      key          = string
+      cidr_ipv4    = optional(string)
+      cidr_ipv6    = optional(string)
+      description  = optional(string)
+      from_port    = optional(string)
+      to_port      = optional(string)
+      ip_protocol  = optional(string)
+      target_sg_id = optional(string)
+      cidr_blocks  = list(string)
+      description  = string
+    })))
+    ingress_rules = optional(list(object({
+      key          = string
+      cidr_ipv4    = optional(string)
+      cidr_ipv6    = optional(string)
+      description  = optional(string)
+      from_port    = optional(string)
+      to_port      = optional(string)
+      ip_protocol  = optional(string)
+      source_sg_id = optional(string)
+      description  = string
+    })))
   })
   default = null
 }
 
-variable "bypass" {
-  description = "Bypass the creation of the security group"
-  type        = bool
-  default     = false
-
-}

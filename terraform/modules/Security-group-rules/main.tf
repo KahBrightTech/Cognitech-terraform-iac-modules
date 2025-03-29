@@ -1,15 +1,30 @@
 #--------------------------------------------------------------------
-# Security Group rules - Create a security group rules
+# Security Group EGRESS rule
 #--------------------------------------------------------------------
-resource "aws_security_group_rules" "security_group_rules" {
-  count             = var.bypass == false ? 1 : 0
-  security_group_id = var.security_group.rules.security_group_id
-  type              = var.security_group_rules.type        # e.g., "ingress" or "egress"
-  protocol          = var.security_group_rules.protocol    # e.g., "tcp", "udp", "icmp", or "-1" for all protocols
-  from_port         = var.security_group_rules.from_port   # e.g., 80 for HTTP, 443 for HTTPS, or 0 for all ports
-  to_port           = var.security_group_rules.to_port     # e.g., 80 for HTTP, 443 for HTTPS, or 0 for all ports
-  cidr_blocks       = var.security_group_rules.cidr_blocks # List of CIDR blocks for the rule
-  description       = var.security_group_rules.description # Description of the rule
+resource "aws_vpc_security_group_egress_rule" "egress" {
+  for_each                     = var.security_group.egress_rules != null ? { for rule in var.securoty_group.egress_rules : rule.key => rule } : {}
+  security_group_id            = var.security_group.security_group_id
+  cidr_ipv4                    = each.value.cidr_ipv4
+  cidr_ipv6                    = each.value.cidr_ipv6
+  description                  = each.value.description
+  from_port                    = each.value.from_port
+  ip_protocol                  = each.value.ip_protocol
+  to_port                      = each.value.to_port
+  referenced_security_group_id = each.value.target_sg_id
 }
 
 
+#--------------------------------------------------------------------
+# Security Group INGRESS rule
+#--------------------------------------------------------------------
+resource "aws_vpc_security_group_ingress_rule" "ingress" {
+  for_each                     = var.security_group.ingress_rules != null ? { for rule in var.securoty_group.ingress_rules : rule.key => rule } : {}
+  security_group_id            = var.security_group.security_group_id
+  cidr_ipv4                    = each.value.cidr_ipv4
+  cidr_ipv6                    = each.value.cidr_ipv6
+  description                  = each.value.description
+  from_port                    = each.value.from_port
+  ip_protocol                  = each.value.ip_protocol
+  to_port                      = each.value.to_port
+  referenced_security_group_id = each.value.source_sg_id
+}
