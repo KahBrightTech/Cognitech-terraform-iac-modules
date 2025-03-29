@@ -34,7 +34,7 @@ resource "aws_security_group" "security_group" {
   }
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.vpc.name}-vpc"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.security_group.name}"
     }
   )
 
