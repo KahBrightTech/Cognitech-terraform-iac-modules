@@ -21,7 +21,6 @@ variable "security_group" {
       to_port      = optional(string)
       ip_protocol  = optional(string)
       target_sg_id = optional(string)
-      cidr_blocks  = list(string)
     })))
     ingress_rules = optional(list(object({
       key          = string
