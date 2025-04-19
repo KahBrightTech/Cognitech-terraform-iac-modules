@@ -8,9 +8,10 @@ resource "aws_security_group" "security_group" {
   vpc_id      = var.security_group.vpc_id
 
   dynamic "egress" {
-    for_each = var.security_group.security_group.egress_rules == null ? [] : var.security_group.security_group_egress_rules
+    for_each = var.security_group.security_group_egress_rules == null ? [] : var.security_group.security_group_egress_rules
 
     content {
+      description     = egress.value["description"]
       from_port       = egress.value["from_port"]
       to_port         = egress.value["to_port"]
       protocol        = egress.value["protocol"]
@@ -21,9 +22,10 @@ resource "aws_security_group" "security_group" {
   }
 
   dynamic "ingress" {
-    for_each = var.security_group.security_group.ingress_rules == null ? [] : var.security_group.security_group_ingress_rules
+    for_each = var.security_group.security_group_ingress_rules == null ? [] : var.security_group.security_group_ingress_rules
 
     content {
+      description     = ingress.value["description"]
       from_port       = ingress.value["from_port"]
       to_port         = ingress.value["to_port"]
       protocol        = ingress.value["protocol"]
@@ -37,7 +39,9 @@ resource "aws_security_group" "security_group" {
       Name = "${var.common.account_name}-${var.common.region_prefix}-${var.security_group.name}"
     }
   )
-
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 
