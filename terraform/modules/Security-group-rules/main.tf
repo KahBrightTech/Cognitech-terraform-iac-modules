@@ -11,6 +11,13 @@ resource "aws_vpc_security_group_egress_rule" "egress" {
   ip_protocol                  = each.value.ip_protocol
   to_port                      = each.value.to_port
   referenced_security_group_id = each.value.target_sg_id
+
+  tags = merge(
+    var.commom.tags,
+    {
+      Name = "${each.value.key}"
+    }
+  )
 }
 
 
@@ -27,4 +34,11 @@ resource "aws_vpc_security_group_ingress_rule" "ingress" {
   ip_protocol                  = each.value.ip_protocol
   to_port                      = each.value.to_port
   referenced_security_group_id = each.value.source_sg_id
+
+  tags = merge(
+    var.commom.tags,
+    {
+      Name = "${each.value.key}"
+    }
+  )
 }
