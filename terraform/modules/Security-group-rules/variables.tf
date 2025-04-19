@@ -14,7 +14,7 @@ variable "security_group" {
     security_group_id = string # This will be the ID of the security group created
     egress_rules = optional(list(object({
       key          = string
-      cidr_ipv4    = optional(string)
+      cidr_ipv4    = string
       cidr_ipv6    = optional(string)
       description  = optional(string)
       from_port    = optional(string)
@@ -24,7 +24,7 @@ variable "security_group" {
     })))
     ingress_rules = optional(list(object({
       key          = string
-      cidr_ipv4    = optional(string)
+      cidr_ipv4    = string
       cidr_ipv6    = optional(string)
       description  = optional(string)
       from_port    = optional(string)
