@@ -12,6 +12,7 @@ variable "s3" {
   description = "S3 bucket variables"
   type = object({
     name              = string
+    description       = string
     name_override     = string
     policy            = string
     enable_versioning = optional(bool, true)
