@@ -45,7 +45,7 @@ resource "aws_s3_bucket" "private" {
   bucket = local.bucket_name
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.s3.name}-private"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.s3.name}"
     }
   )
 }
