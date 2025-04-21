@@ -11,11 +11,12 @@ variable "common" {
 variable "s3" {
   description = "S3 bucket variables"
   type = object({
-    name              = string
-    description       = string
-    name_override     = string
-    policy            = string
-    enable_versioning = optional(bool, true)
+    name                 = string
+    description          = string
+    name_override        = string
+    policy               = string
+    enable_versioning    = optional(bool, true)
+    iam_role_arn_pattern = optional(map(string), null)
     lifecycle = optional(object({
       standard_expiration_days          = number
       infrequent_access_expiration_days = number
