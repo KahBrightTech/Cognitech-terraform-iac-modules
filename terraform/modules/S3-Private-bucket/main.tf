@@ -80,9 +80,9 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "bucket" {
 
 resource "aws_s3_bucket_policy" "default" {
   bucket = local.bucket_name
-  policy = data.aws_iam_policy_document.default.json
-}
 
+  policy = var.s3.override_policy_document != null && var.s3.override_policy_document != "" ? var.s3.override_policy_document : data.aws_iam_policy_document.default.json
+}
 resource "aws_s3_bucket_versioning" "bucket" {
   bucket = local.bucket_name
 
