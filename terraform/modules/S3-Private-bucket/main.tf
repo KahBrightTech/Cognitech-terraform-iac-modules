@@ -28,8 +28,8 @@ data "aws_iam_policy_document" "default" {
     ]
 
     resources = [
-      aws_s3_bucket.example.arn,
-      "${aws_s3_bucket.example.arn}/*",
+      aws_s3_bucket.private.arn,
+      "${aws_s3_bucket.private.arn}/*",
     ]
   }
 }
