@@ -14,7 +14,7 @@ variable "s3" {
     name                 = string
     description          = string
     name_override        = optional(string)
-    policy               = string
+    policy               = optional(string)
     enable_versioning    = optional(bool, true)
     iam_role_arn_pattern = optional(map(string), null)
     lifecycle = optional(object({
