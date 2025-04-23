@@ -50,9 +50,9 @@ resource "aws_s3_bucket_ownership_controls" "bucket" {
 resource "aws_s3_bucket_public_access_block" "bucket" {
   bucket = local.bucket_name
 
-  block_public_acls       = true
-  ignore_public_acls      = true
-  block_public_policy     = true
+  block_public_acls  = true
+  ignore_public_acls = true
+  # block_public_policy     = true
   restrict_public_buckets = true
 }
 
