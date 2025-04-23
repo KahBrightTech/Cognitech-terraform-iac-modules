@@ -3,9 +3,14 @@
 #--------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+
+data "aws_iam_roles" "network_role" {
+  name_regex  = "AWSReservedSSO_NetworkAdministrator_.*"
+  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+}
 data "aws_iam_policy_document" "default" {
   override_policy_documents = [
-    replace(replace(replace(replace(replace(file(var.s3.policy), "[[resource_name]]", aws_s3_bucket.private.id), "[[account_number]]", data.aws_caller_identity.current.account_id), "[[region]]", data.aws_region.current.name), "[[account_name]]", var.common.account_name), "[[bucket_arn]]", aws_s3_bucket.private.arn)
+    replace(replace(replace(replace(replace(replace(file(var.s3.policy), "[[resource_name]]", aws_s3_bucket.private.id), "[[account_number]]", data.aws_caller_identity.current.account_id), "[[region]]", data.aws_region.current.name), "[[account_name]]", var.common.account_name), "[[bucket_arn]]", aws_s3_bucket.private.arn), "[[sso_network_role_arn]]", tolist(data.aws_iam_roles.network_role.arns)[0])
   ]
   statement {
     principals {
