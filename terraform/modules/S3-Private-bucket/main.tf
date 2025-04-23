@@ -7,7 +7,22 @@ data "aws_iam_policy_document" "default" {
   override_policy_documents = [
     replace(replace(replace(replace(replace(file(var.s3.policy), "[[resource_name]]", aws_s3_bucket.private.id), "[[account_number]]", data.aws_caller_identity.current.account_id), "[[region]]", data.aws_region.current.name), "[[account_name]]", var.common.account_name), "[[bucket_arn]]", aws_s3_bucket.private.arn)
   ]
+  statement {
+    principals {
+      type = "AWS"
+      identifiers = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_AdministratorAccess_86a86e78734d7c0e"
+      ]
+    }
+
+    actions = ["s3:*"]
+    resources = [
+      aws_s3_bucket.private.arn,
+      "${aws_s3_bucket.private.arn}/*",
+    ]
+  }
 }
+
 locals {
   bucket_name = var.s3.name_override != null ? var.s3.name_override : "${var.common.account_name}-${var.common.region_prefix}-${var.s3.name}"
 }
