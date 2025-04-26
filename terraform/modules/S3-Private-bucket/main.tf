@@ -12,32 +12,32 @@ data "aws_iam_policy_document" "default" {
   override_policy_documents = [
     replace(replace(replace(replace(replace(file(var.s3.policy), "[[resource_name]]", aws_s3_bucket.private.id), "[[account_number]]", data.aws_caller_identity.current.account_id), "[[region]]", data.aws_region.current.name), "[[account_name]]", var.common.account_name), "[[bucket_arn]]", aws_s3_bucket.private.arn)
   ]
-  statement {
-    principals {
-      type = "AWS"
-      identifiers = [
-        tolist(data.aws_iam_roles.admin_role.arns)[0],
-      ]
-    }
+  # statement {
+  #   principals {
+  #     type = "AWS"
+  #     identifiers = [
+  #       tolist(data.aws_iam_roles.admin_role.arns)[0],
+  #     ]
+  #   }
 
-    actions = [
-      "s3:ListBucket",
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:DeleteObject",
-      "s3:PutObjectAcl",
-      "s3:GetObjectAcl",
-      "s3:PutObjectVersionAcl",
-      "s3:GetObjectVersionAcl",
-      "s3:ListBucketMultipartUploads",
-      "s3:AbortMultipartUpload",
-      "s3:ListMultipartUploadParts"
-    ]
-    resources = [
-      aws_s3_bucket.private.arn,
-      "${aws_s3_bucket.private.arn}/*",
-    ]
-  }
+  #   actions = [
+  #     "s3:ListBucket",
+  #     "s3:GetObject",
+  #     "s3:PutObject",
+  #     "s3:DeleteObject",
+  #     "s3:PutObjectAcl",
+  #     "s3:GetObjectAcl",
+  #     "s3:PutObjectVersionAcl",
+  #     "s3:GetObjectVersionAcl",
+  #     "s3:ListBucketMultipartUploads",
+  #     "s3:AbortMultipartUpload",
+  #     "s3:ListMultipartUploadParts"
+  #   ]
+  #   resources = [
+  #     aws_s3_bucket.private.arn,
+  #     "${aws_s3_bucket.private.arn}/*",
+  #   ]
+  # }
 }
 
 locals {
