@@ -4,11 +4,6 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-data "aws_iam_roles" "network_role" {
-  name_regex  = "AWSReservedSSO_NetworkAdministrator_.*"
-  path_prefix = "/aws-reserved/sso.amazonaws.com/"
-}
-
 data "aws_iam_roles" "admin_role" {
   name_regex  = "AWSReservedSSO_AdministratorAccess_.*"
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
@@ -22,11 +17,22 @@ data "aws_iam_policy_document" "default" {
       type = "AWS"
       identifiers = [
         tolist(data.aws_iam_roles.admin_role.arns)[0],
-        tolist(data.aws_iam_roles.network_role.arns)[0]
       ]
     }
 
-    actions = ["s3:*"]
+    actions = [
+      "s3:ListBucket",
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:PutObjectAcl",
+      "s3:GetObjectAcl",
+      "s3:PutObjectVersionAcl",
+      "s3:GetObjectVersionAcl",
+      "s3:ListBucketMultipartUploads",
+      "s3:AbortMultipartUpload",
+      "s3:ListMultipartUploadParts"
+    ]
     resources = [
       aws_s3_bucket.private.arn,
       "${aws_s3_bucket.private.arn}/*",
@@ -36,6 +42,7 @@ data "aws_iam_policy_document" "default" {
 
 locals {
   bucket_name = var.s3.name_override != null ? var.s3.name_override : "${var.common.account_name}-${var.common.region_prefix}-${var.s3.name}"
+  s3_policy   = var.s3.iam_role_arn_pattern == null ? file(var.s3.policy) : join("", [for key, value in var.s3.iam_role_arn_pattern : replace(file(var.s3.policy), key, value)])
 }
 
 #--------------------------------------------------------------------
