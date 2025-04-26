@@ -8,6 +8,11 @@ data "aws_iam_roles" "network_role" {
   name_regex  = "AWSReservedSSO_NetworkAdministrator_.*"
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
 }
+
+data "aws_iam_roles" "admin_role" {
+  name_regex  = "AWSReservedSSO_AdministratorAccess_.*"
+  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+}
 data "aws_iam_policy_document" "default" {
   override_policy_documents = [
     replace(replace(replace(replace(replace(file(var.s3.policy), "[[resource_name]]", aws_s3_bucket.private.id), "[[account_number]]", data.aws_caller_identity.current.account_id), "[[region]]", data.aws_region.current.name), "[[account_name]]", var.common.account_name), "[[bucket_arn]]", aws_s3_bucket.private.arn)
@@ -16,7 +21,7 @@ data "aws_iam_policy_document" "default" {
     principals {
       type = "AWS"
       identifiers = [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_AdministratorAccess_86a86e78734d7c0e",
+        tolist(data.aws_iam_roles.admin_role.arns)[0],
         tolist(data.aws_iam_roles.network_role.arns)[0]
       ]
     }
