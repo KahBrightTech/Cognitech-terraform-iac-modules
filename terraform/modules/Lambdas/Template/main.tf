@@ -55,7 +55,7 @@ resource "aws_iam_role_policy" "lambda_policy" {
 #  Creates Cloudwatch log group for Lambda function
 #--------------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
-  name              = "/aws/lambda${var.common.account_name}-${var.common.region_prefix}-${var.Lambda.function_name}"
+  name              = "/aws/lambda/${var.common.account_name}-${var.common.region_prefix}-${var.Lambda.function_name}"
   retention_in_days = 14
   tags = merge(var.common.tags,
     {
