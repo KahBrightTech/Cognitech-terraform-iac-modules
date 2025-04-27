@@ -1,53 +1,49 @@
 import boto3
 import logging
 import json
-import urllib3
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-http = urllib3.PoolManager()
-
-def send_response(event, context, status, data, physical_resource_id=None):
-    response_body = {
-        'Status': status,
-        'Reason': f'See logs in {context.log_stream_name}',
-        'PhysicalResourceId': physical_resource_id or context.log_stream_name,
-        'StackId': event['StackId'],
-        'RequestId': event['RequestId'],
-        'LogicalResourceId': event['LogicalResourceId'],
-        'Data': data
-    }
-    json_response = json.dumps(response_body)
-    headers = {'Content-Type': ''}
-    try:
-        http.request("PUT", event["ResponseURL"], body=json_response, headers=headers)
-    except Exception as e:
-        logger.error(f"send_response failed: {e}")
 
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
+
     try:
+        # Extracting InstanceIds from the event sent by CloudFormation or Service Catalog
         props = event.get('ResourceProperties', {})
         instance_ids = props.get('InstanceIds', [])
+        
         if not instance_ids:
-            raise ValueError("Missing 'InstanceIds' in ResourceProperties")
+            raise ValueError("Missing 'InstanceIds' in input")
 
         ec2 = boto3.resource('ec2')
         result = []
+
+        # Iterate through the list of EC2 instance IDs
         for instance_id in instance_ids:
             instance = ec2.Instance(instance_id)
             state = instance.state['Name']
             logger.info(f"Instance {instance_id} is currently {state}")
 
             if state != 'running':
+                logger.info(f"Starting instance {instance_id}...")
                 instance.start()
                 instance.wait_until_running()
                 logger.info(f"Started instance {instance_id}")
-                result.append({'InstanceId': instance_id, 'State': 'started'})
+                result.append({'InstanceId': instance_id, 'PreviousState': state, 'NewState': 'running'})
             else:
-                result.append({'InstanceId': instance_id, 'State': 'already running'})
+                logger.info(f"Instance {instance_id} was already running")
+                result.append({'InstanceId': instance_id, 'PreviousState': state, 'NewState': state})
 
-        send_response(event, context, 'SUCCESS', result)
+        # Return result after successful operation
+        return {
+            'statusCode': 200,
+            'body': json.dumps({'Result': result})
+        }
+
     except Exception as e:
-        logger.error(str(e))
-        send_response(event, context, 'FAILED', {'Message': str(e)})
+        logger.error(f"Error occurred: {str(e)}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'Message': str(e)})
+        }
