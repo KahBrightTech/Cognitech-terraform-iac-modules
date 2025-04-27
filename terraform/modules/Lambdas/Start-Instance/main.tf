@@ -68,7 +68,7 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
 # Creates lambda layers 
 #--------------------------------------------------------------------
 resource "aws_lambda_layer_version" "default" {
-  filename            = "path/to/dependencies_layer.zip"
+  filename            = var.Lambda.layer_filename
   layer_name          = "${var.common.account_name}-${var.common.region_prefix}-${var.Lambda.function_name}-layer"
   compatible_runtimes = [var.Lambda.runtime]
   description         = var.Lambda.layer_description
