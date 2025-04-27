@@ -68,10 +68,11 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
 # Creates lambda layers 
 #--------------------------------------------------------------------
 resource "aws_lambda_layer_version" "default" {
-  filename            = var.Lambda.layer_filename
   layer_name          = "${var.common.account_name}-${var.common.region_prefix}-${var.Lambda.function_name}-layer"
   compatible_runtimes = [var.Lambda.runtime]
   description         = var.Lambda.layer_description
+  s3_bucket           = var.Lambda.private_bucklet_name
+  s3_key              = var.Lambda.layer_s3_key
 
 }
 
