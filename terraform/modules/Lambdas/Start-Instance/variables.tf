@@ -23,8 +23,3 @@ variable "Lambda" {
     layer_filename       = optional(string)
   })
 }
-
-variable "vpc_id" {
-  description = "The vpc id"
-  type        = string
-}
