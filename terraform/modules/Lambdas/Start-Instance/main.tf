@@ -102,7 +102,7 @@ resource "aws_lambda_function" "lambda_function" {
 resource "aws_lambda_permission" "allow_cloudformation" {
   statement_id   = "AllowExecutionFromCloudFormation"
   action         = "lambda:InvokeFunction"
-  function_name  = aws_lambda_function.start_instances.function_name
+  function_name  = aws_lambda_function.lambda_function.function_name
   principal      = "cloudformation.amazonaws.com"
   source_account = data.aws_caller_identity.current.account_id
 }
