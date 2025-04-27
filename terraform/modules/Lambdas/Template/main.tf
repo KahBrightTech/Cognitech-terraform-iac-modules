@@ -88,7 +88,7 @@ resource "aws_lambda_function" "lambda_function" {
   timeout       = var.Lambda.timeout
 
   s3_bucket = var.Lambda.private_bucklet_name
-  s3_key    = var.Lambda.s3_key
+  s3_key    = var.Lambda.lamda_s3_key
   layers    = [aws_lambda_layer_version.default.arn]
   tags = merge(var.common.tags,
     {
