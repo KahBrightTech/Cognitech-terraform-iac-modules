@@ -9,8 +9,10 @@ def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
 
     try:
-        # Pull instance IDs from the event
-        instance_ids = event.get('InstanceIds', [])
+         # Try to get InstanceIds from event or ResourceProperties
+        instance_ids = event.get('InstanceIds')
+        if not instance_ids:
+            instance_ids = event.get('ResourceProperties', {}).get('InstanceIds')
 
         if not instance_ids:
             raise ValueError("Missing 'InstanceIds' in input")
@@ -33,7 +35,7 @@ def lambda_handler(event, context):
             else:
                 logger.info(f"Instance {instance_id} was already {state}")
                 result.append({'InstanceId': instance_id, 'PreviousState': state, 'NewState': state})
-
+        # Return result after successful operation
         return {
             'statusCode': 200,
             'body': json.dumps({'Result': result})

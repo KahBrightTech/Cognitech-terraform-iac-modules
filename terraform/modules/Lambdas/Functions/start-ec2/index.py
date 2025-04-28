@@ -9,9 +9,10 @@ def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
 
     try:
-        # Extracting InstanceIds from the event sent by CloudFormation or Service Catalog
-        props = event.get('ResourceProperties', {})
-        instance_ids = props.get('InstanceIds', [])
+         # Try to get InstanceIds from event or ResourceProperties
+        instance_ids = event.get('InstanceIds')
+        if not instance_ids:
+            instance_ids = event.get('ResourceProperties', {}).get('InstanceIds')
         
         if not instance_ids:
             raise ValueError("Missing 'InstanceIds' in input")
