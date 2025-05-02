@@ -17,8 +17,8 @@ variable "iam_user" {
     path                 = optional(string)
     permissions_boundary = optional(string)
     force_destroy        = optional(bool, false)
-    groups               = optional(list(string), [])
-    regions              = optional(list(string), [])
+    groups               = optional(list(string))
+    regions              = optional(list(string))
     notifications_email  = string
     user_type            = optional(string, "standard") # standard or service-linked
     keeper_folder_uid    = optional(string)
