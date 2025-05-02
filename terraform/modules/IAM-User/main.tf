@@ -45,7 +45,16 @@ resource "secretsmanager_login" "iam_user_access_key" {
     privacy_screen = true
     value          = data.external.create_access_key.result["exists"] == "false" ? data.external.create_access_key.result["secret_access_key"] : null
   }
+}
 
+
+
+#--------------------------------------------------------------------
+# IAM Group 
+#--------------------------------------------------------------------
+resource "aws_iam_group" "iam_groups" {
+  for_each = toset(var.iam_user.groups)
+  name     = each.key
 }
 
 #--------------------------------------------------------------------
@@ -55,7 +64,7 @@ resource "aws_iam_group_membership" "iam_group_membership" {
   count = var.iam_user.groups == null ? 0 : length(var.iam_user.groups)
   name  = var.iam_user.groups[count.index]
   users = [aws_iam_user.iam_user.name]
-  group = var.iam_user.groups[count.index]
+  group = aws_iam_group.iam_groups[var.iam_user.groups[count.index]].name
 
 }
 
