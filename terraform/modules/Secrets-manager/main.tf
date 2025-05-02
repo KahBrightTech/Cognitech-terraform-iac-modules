@@ -12,7 +12,10 @@ data "secretsmanager_field" "fsx_secrets_password" {
 }
 
 locals {
-  use_external_secrets = var.secrets_manager.record_folder_uid != null && var.secrets_manager.record_folder_uid != ""
+  use_external_secrets = (
+    var.secrets_manager.record_folder_uid != null &&
+    trim(var.secrets_manager.record_folder_uid) != ""
+  )
 
   secret_value = local.use_external_secrets ? jsonencode({
     username = data.secretsmanager_field.fsx_secrets_login[0].value
@@ -21,8 +24,7 @@ locals {
 }
 
 resource "aws_secretsmanager_secret" "secret" {
-  count = var.secrets_manager.record_folder_uid != null && var.secrets_manager.record_folder_uid != "" ? 1 : 0
-
+  count                          = 1
   name                           = "${var.common.account_name}-${var.common.region_prefix}-${var.secrets_manager.name}"
   description                    = var.secrets_manager.description
   recovery_window_in_days        = var.secrets_manager.recovery_window_in_days
@@ -38,7 +40,8 @@ resource "aws_secretsmanager_secret" "secret" {
 }
 
 resource "aws_secretsmanager_secret_version" "secret" {
-  count         = length(aws_secretsmanager_secret.secret) > 0 ? 1 : 0
+  count = 1
+  # count         = length(aws_secretsmanager_secret.secret) > 0 ? 1 : 0
   secret_id     = aws_secretsmanager_secret.secret[0].id
   secret_string = local.secret_value
 }
