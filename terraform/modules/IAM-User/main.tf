@@ -38,12 +38,12 @@ resource "secretsmanager_login" "iam_user_access_key" {
   login {
     required       = true
     privacy_screen = true
-    value          = data.external.create_access_key.result["AccessKeyId"]
+    value          = data.external.create_access_key.result["access_key_id"]
   }
   password {
     required       = true
     privacy_screen = true
-    value          = data.external.create_access_key.result["Exist"] == "false" ? data.external.create_access_key.result["SecretAccessKey"] : null
+    value          = data.external.create_access_key.result["exists"] == "false" ? data.external.create_access_key.result["secret_access_key"] : null
   }
 
 }
