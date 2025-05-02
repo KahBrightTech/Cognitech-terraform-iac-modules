@@ -62,8 +62,10 @@ resource "aws_iam_group_membership" "iam_group_membership" {
   count = var.iam_user.groups == null ? 0 : length(var.iam_user.groups)
   name  = var.iam_user.groups[count.index]
   users = [aws_iam_user.iam_user.name]
-  group = var.iam_user.groups[count.index]
-
+  group = aws_iam_group.iam_groups[var.iam_user.groups[count.index]].name
+  depends_on = [
+    aws_iam_user.iam_user
+  ]
 }
 
 #--------------------------------------------------------------------
