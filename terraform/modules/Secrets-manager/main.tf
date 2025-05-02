@@ -14,7 +14,7 @@ data "secretsmanager_field" "fsx_secrets_password" {
 locals {
   use_external_secrets = (
     var.secrets_manager.record_folder_uid != null &&
-    trim(var.secrets_manager.record_folder_uid) != ""
+    trim(var.secrets_manager.record_folder_uid, " \t\n\r") != ""
   )
 
   secret_value = local.use_external_secrets ? jsonencode({
