@@ -11,6 +11,11 @@ data "external" "create_access_key" {
   depends_on = [aws_iam_user.iam_user]
 }
 
+data "aws_iam_policy_document" "default" {
+  override_policy_documents = [
+    replace(replace(replace(file(var.iam_user.policy), "[[account_number]]", data.aws_caller_identity.current.account_id), "[[region]]", data.aws_region.current.name), "[[account_name]]", var.common.account_name)
+  ]
+}
 
 #--------------------------------------------------------------------
 # IAM User - Creates an IAM user with specified permissions
@@ -47,8 +52,6 @@ resource "secretsmanager_login" "iam_user_access_key" {
   }
 }
 
-
-
 #--------------------------------------------------------------------
 # IAM Group 
 #--------------------------------------------------------------------
@@ -64,7 +67,7 @@ resource "aws_iam_group_membership" "iam_group_membership" {
   count = var.iam_user.groups == null ? 0 : length(var.iam_user.groups)
   name  = var.iam_user.groups[count.index]
   users = [aws_iam_user.iam_user.name]
-  group = aws_iam_group.iam_groups[var.iam_user.groups[count.index]].name
+  group = var.iam_user.groups[count.index]
 
 }
 
