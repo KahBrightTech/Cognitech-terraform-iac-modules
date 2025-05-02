@@ -1,15 +1,15 @@
 output "arn" {
-  description = "AWS secrets manager ARN"
-  value       = aws_secretsmanager_secret.secret[count.index].arn
+  description = "The ARN of the created secret"
+  value       = length(aws_secretsmanager_secret.secret) > 0 ? aws_secretsmanager_secret.secret[0].arn : null
 }
 
 output "id" {
-  description = "AWS secrets manager ID"
-  value       = aws_secretsmanager_secret.secret[count.index].id
+  description = "The ID of the created secret"
+  value       = length(aws_secretsmanager_secret.secret) > 0 ? aws_secretsmanager_secret.secret[0].id : null
 }
 
 output "name" {
-  description = "AWS secrets manager name"
-  value       = aws_secretsmanager_secret.secret[count.index].name
+  description = "The name of the created secret"
+  value       = length(aws_secretsmanager_secret.secret) > 0 ? aws_secretsmanager_secret.secret[0].name : null
 }
 
