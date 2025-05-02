@@ -16,6 +16,7 @@ variable "secrets_manager" {
     recovery_window_in_days = optional(number)
     policy                  = optional(string)
     value                   = optional(string)
+    keeper_folder_uid       = optional(string)
   })
   default = null
 }
