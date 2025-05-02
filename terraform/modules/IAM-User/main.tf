@@ -1,6 +1,8 @@
 #--------------------------------------------------------------------
 # Data for access keys from external source  
 #--------------------------------------------------------------------
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 data "external" "create_access_key" {
   program = ["python", "${path.module}/python/iam_user_access_key.py"]
 
