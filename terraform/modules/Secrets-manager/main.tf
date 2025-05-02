@@ -1,0 +1,21 @@
+resource "aws_secretsmanager_secret" "secret" {
+  count = var.secrets_manager != null ? 1 : 0
+
+  name                           = "${var.common.account_name}-${var.common.region_prefix}-${var.secrets_manager.name}"
+  description                    = var.secrets_manager.description
+  recovery_window_in_days        = var.secrets_manager.recovery_window_in_days
+  force_overwrite_replica_secret = true
+  policy                         = var.secrets_manager.policy
+
+  tags = merge(var.common.tags,
+    {
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.secrets_manager.name}"
+    }
+  )
+
+}
+
+resource "aws_secretsmanager_secret_version" "secret" {
+  secret_id     = aws_secretsmanager_secret.secret.id
+  secret_string = var.secrets_manager.value
+}
