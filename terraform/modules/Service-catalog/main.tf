@@ -29,9 +29,12 @@ resource "aws_servicecatalog_product" "product" {
 
 
 resource "aws_servicecatalog_portfolio_product_association" "assoc" {
+  for_each     = aws_servicecatalog_product.product
   portfolio_id = aws_servicecatalog_portfolio.portfolio.id
-  product_id   = aws_servicecatalog_product.product.id
+  product_id   = each.value.id
 }
+
+
 
 
 
