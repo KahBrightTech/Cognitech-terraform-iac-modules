@@ -1,15 +1,11 @@
-output "arn" {
-  description = "The ARN of the created secret"
-  value       = length(aws_secretsmanager_secret.secret) > 0 ? aws_secretsmanager_secret.secret[0].arn : null
+output "service_catalog_id" {
+  description = "The ID of the service catalog"
+  value       = aws_servicecatalog_portfolio.service_catalog.id
+
+}
+output "service_catalog_name" {
+  description = "The name of the service catalog"
+  value       = aws_servicecatalog_portfolio.service_catalog.name
 }
 
-output "id" {
-  description = "The ID of the created secret"
-  value       = length(aws_secretsmanager_secret.secret) > 0 ? aws_secretsmanager_secret.secret[0].id : null
-}
-
-output "name" {
-  description = "The name of the created secret"
-  value       = length(aws_secretsmanager_secret.secret) > 0 ? aws_secretsmanager_secret.secret[0].name : null
-}
 
