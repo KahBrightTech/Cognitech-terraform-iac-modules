@@ -1,11 +1,10 @@
-output "service_catalog_id" {
-  description = "The ID of the service catalog"
-  value       = aws_servicecatalog_portfolio.service_catalog.id
-
+output "service_catalog_portfolio_id" {
+  description = "The ID of the service catalog portfolio"
+  value       = aws_servicecatalog_portfolio.portfolio.id
 }
-output "service_catalog_name" {
-  description = "The name of the service catalog"
-  value       = aws_servicecatalog_portfolio.service_catalog.name
+output "service_catalog_portfolio_name" {
+  description = "The name of the service catalog portfolio"
+  value       = aws_servicecatalog_portfolio.portfolio.name
 }
 
 
