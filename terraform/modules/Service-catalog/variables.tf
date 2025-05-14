@@ -20,7 +20,7 @@ variable "service_catalog" {
       type        = string
       owner       = optional(string)
     }))
-    provisioning_artifact_parameters = list(object({
+    provisioning_artifact_parameters = map(object({
       name         = string
       description  = string
       type         = string
@@ -29,4 +29,5 @@ variable "service_catalog" {
   })
   default = null
 }
+
 
