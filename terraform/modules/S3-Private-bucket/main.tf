@@ -13,6 +13,11 @@ data "aws_iam_roles" "network_role" {
   name_regex  = "AWSReservedSSO_NetworkAdministrator_.*"
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
 }
+
+data "aws_iam_role" "github_oidc_role" {
+  name = "prod-OIDCGitHubRole-role"
+}
+
 data "aws_iam_policy_document" "default" {
   override_policy_documents = [
     replace(
@@ -22,20 +27,23 @@ data "aws_iam_policy_document" "default" {
             replace(
               replace(
                 replace(
-                  file(var.s3.policy),
-                  "[[resource_name]]", aws_s3_bucket.private.id
+                  replace(
+                    file(var.s3.policy),
+                    "[[resource_name]]", aws_s3_bucket.private.id
+                  ),
+                  "[[account_number]]", data.aws_caller_identity.current.account_id
                 ),
-                "[[account_number]]", data.aws_caller_identity.current.account_id
+                "[[region]]", data.aws_region.current.name
               ),
-              "[[region]]", data.aws_region.current.name
+              "[[account_name]]", var.common.account_name
             ),
-            "[[account_name]]", var.common.account_name
+            "[[bucket_arn]]", aws_s3_bucket.private.arn
           ),
-          "[[bucket_arn]]", aws_s3_bucket.private.arn
+          "[[admin_role]]", tolist(data.aws_iam_roles.admin_role.arns)[0]
         ),
-        "[[admin_role]]", tolist(data.aws_iam_roles.admin_role.arns)[0]
+        "[[network_role]]", tolist(data.aws_iam_roles.network_role.arns)[0]
       ),
-      "[[network_role]]", tolist(data.aws_iam_roles.network_role.arns)[0]
+      "[[github_oidc_role]]", data.aws_iam_role.github_oidc_role.arn
     )
   ]
   # statement {

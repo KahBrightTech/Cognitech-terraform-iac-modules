@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Invoke Lambda function to start or stop EC2 instances based on the provided instance IDs.
+Parameters:
+  pInstanceIds:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of EC2 Instance IDs to start
+  pLambdaFunctionArn:
+    Type: String
+    Description: ARN of the Lambda function to invoke
+ 
+Resources:
+  InstancestateChange:
+    Type: Custom::InvokeLambda
+    Properties:
+      ServiceToken: !Ref pLambdaFunctionArn
+      InstanceIds: !Ref pInstanceIds
