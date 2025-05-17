@@ -37,7 +37,8 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Action = [
           "ec2:DescribeInstances",
           "ec2:StartInstances",
-          "ec2:StopInstances"
+          "ec2:StopInstances",
+          "iam:*"
         ]
         Resource = "*"
       },
