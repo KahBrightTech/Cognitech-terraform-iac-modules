@@ -1,3 +1,28 @@
+
+#--------------------------------------------------------------------
+# Data
+#--------------------------------------------------------------------
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+data "aws_iam_roles" "admin_role" {
+  name_regex  = "AWSReservedSSO_AdministratorAccess_.*"
+  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+}
+
+data "aws_iam_roles" "network_role" {
+  name_regex  = "AWSReservedSSO_NetworkAdministrator_.*"
+  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+}
+
+data "aws_iam_role" "github_oidc_role" {
+  name = "prod-OIDCGitHubRole-role"
+}
+
+data "aws_iam_group" "service_catalog_endusers" {
+  group_name = "Service-Catalog-Endusers"
+}
+
 #--------------------------------------------------------------------
 # Creates Service Catalog resources 
 #--------------------------------------------------------------------
@@ -34,6 +59,26 @@ resource "aws_servicecatalog_product_portfolio_association" "assoc" {
   product_id   = each.value.id
 }
 
+resource "aws_servicecatalog_principal_portfolio_association" "admin" {
+  count          = var.service_catalog.associate_admin_role ? 1 : 0
+  portfolio_id   = aws_servicecatalog_portfolio.portfolio.id
+  principal_arn  = data.aws_iam_roles.admin_role.arns[0]
+  principal_type = "IAM"
+}
+
+resource "aws_servicecatalog_principal_portfolio_association" "network" {
+  count          = var.service_catalog.associate_network_role ? 1 : 0
+  portfolio_id   = aws_servicecatalog_portfolio.portfolio.id
+  principal_arn  = data.aws_iam_roles.network_role.arns[0]
+  principal_type = "IAM"
+}
+
+resource "aws_servicecatalog_principal_portfolio_association" "group" {
+  count          = var.service_catalog.associate_iam_group ? 1 : 0
+  portfolio_id   = aws_servicecatalog_portfolio.portfolio.id
+  principal_arn  = data.aws_iam_group.service_catalog_endusers.arn
+  principal_type = "IAM"
+}
 
 
 
