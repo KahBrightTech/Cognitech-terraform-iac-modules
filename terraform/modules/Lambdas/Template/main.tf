@@ -33,13 +33,8 @@ resource "aws_iam_role_policy" "lambda_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
-          "ec2:DescribeInstances",
-          "ec2:StartInstances",
-          "ec2:StopInstances",
-          "iam:*"
-        ]
+        Effect   = "Allow"
+        Action   = ["*"]
         Resource = "*"
       },
       {
