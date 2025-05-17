@@ -91,6 +91,12 @@ resource "aws_lambda_function" "lambda_function" {
   s3_bucket = var.Lambda.private_bucklet_name
   s3_key    = var.Lambda.lamda_s3_key
   layers    = [aws_lambda_layer_version.default.arn]
+  dynamic "environment" {
+    for_each = var.Lambda.env_variables != null ? [1] : []
+    content {
+      variables = var.Lambda.env_variables
+    }
+  }
   tags = merge(var.common.tags,
     {
       Name = "${var.common.account_name}-${var.common.region_prefix}-${var.Lambda.function_name}"
