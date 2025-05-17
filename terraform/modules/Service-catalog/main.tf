@@ -62,14 +62,14 @@ resource "aws_servicecatalog_product_portfolio_association" "assoc" {
 resource "aws_servicecatalog_principal_portfolio_association" "admin" {
   count          = var.service_catalog.associate_admin_role ? 1 : 0
   portfolio_id   = aws_servicecatalog_portfolio.portfolio.id
-  principal_arn  = data.aws_iam_roles.admin_role.arns[0]
+  principal_arn  = tolist(data.aws_iam_roles.admin_role.arns)[0]
   principal_type = "IAM"
 }
 
 resource "aws_servicecatalog_principal_portfolio_association" "network" {
   count          = var.service_catalog.associate_network_role ? 1 : 0
   portfolio_id   = aws_servicecatalog_portfolio.portfolio.id
-  principal_arn  = data.aws_iam_roles.network_role.arns[0]
+  principal_arn  = tolist(data.aws_iam_roles.network_role.arns)[0]
   principal_type = "IAM"
 }
 
