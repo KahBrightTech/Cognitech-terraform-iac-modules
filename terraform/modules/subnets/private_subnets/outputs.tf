@@ -115,7 +115,8 @@ output "subnet_ids" {
   value = compact([
     aws_subnet.primary.id,
     aws_subnet.secondary.id,
-    var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].id : null
+    var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].id : null,
+    var.private_subnets.quaternary_cidr_block != null ? aws_subnet.quaternary[0].id : null
   ])
 }
 
