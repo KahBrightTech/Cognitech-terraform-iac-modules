@@ -9,7 +9,7 @@ resource "aws_subnet" "primary" {
   map_public_ip_on_launch = true # This is required for public subnets
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-primary"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-${var.public_subnets.subnet_type}-primary"
     }
   )
 }
@@ -25,7 +25,7 @@ resource "aws_subnet" "secondary" {
   map_public_ip_on_launch = true # This is required for public subnets
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-secondary"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-${var.public_subnets.subnet_type}-secondary"
     }
   )
 }
@@ -42,7 +42,7 @@ resource "aws_subnet" "tertiary" {
   map_public_ip_on_launch = true # This is required for public subnets
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-tertiary"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-${var.public_subnets.subnet_type}-tertiary"
     }
   )
 }
@@ -58,7 +58,7 @@ resource "aws_subnet" "quaternary" {
   cidr_block           = var.public_subnets.quaternary_cidr_block
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-quaternary"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.public_subnets.name}-${var.public_subnets.subnet_type}-quaternary"
     }
   )
 }

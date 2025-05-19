@@ -25,6 +25,7 @@ variable "private_subnets" {
     quaternary_availabilty_zone    = optional(string)
     quaternary_availabilty_zone_id = optional(string)
     quaternary_cidr_block          = optional(string)
+    subnet_type                    = optional(string)
   })
 }
 
