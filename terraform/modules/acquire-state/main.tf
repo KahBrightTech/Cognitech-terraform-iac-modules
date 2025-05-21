@@ -11,6 +11,6 @@ data "terraform_remote_state" "states" {
     key            = each.value.bucket_key
     region         = data.aws_region.current.name
     dynamodb_table = each.value.lock_table_name
-    encrpt         = true
+    encrypt        = true
   }
 }
