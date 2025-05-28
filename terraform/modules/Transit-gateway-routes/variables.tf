@@ -12,7 +12,7 @@ variable "tgw_routes" {
   description = "The transit gateway route variables"
   type = object({
     name               = string
-    route_table_id     = string
+    route_table_id     = list(string)
     vpc_cidr_block     = string
     transit_gateway_id = string
   })
