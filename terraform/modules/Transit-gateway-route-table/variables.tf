@@ -8,13 +8,11 @@ variable "common" {
     region        = string
   })
 }
-variable "tgw_routes" {
-  description = "The transit gateway route variables"
+variable "tgw_route_table" {
+  description = "The transit gateway route table variables"
   type = object({
-    blackhole              = bool
-    destination_cidr_block = string
-    attachment_id          = optional(string)
-    route_table_id         = string
+    name   = string
+    tgw_id = string
   })
 }
 
@@ -24,4 +22,3 @@ variable "bypass" {
   default     = false
 
 }
-
