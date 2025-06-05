@@ -30,7 +30,7 @@ resource "aws_route_table" "public_tertiary" {
 }
 
 resource "aws_route_table" "public_quaternary" {
-  count  = var.public_routes
+  count  = var.public_routes.has_quaternary_subnet == true ? 1 : 0
   vpc_id = var.vpc_id
   tags = merge(var.common.tags,
     {
@@ -56,14 +56,14 @@ resource "aws_route" "public_route_secondary" {
 
 resource "aws_route" "public_route_tertiary" {
   count                  = var.public_routes.has_tertiary_subnet == true ? 1 : 0
-  route_table_id         = aws_route_table.public_tertiary.id
+  route_table_id         = aws_route_table.public_tertiary[0].id
   destination_cidr_block = var.public_routes.destination_cidr_block
   gateway_id             = var.public_routes.public_gateway_id
 }
 
 resource "aws_route" "public_route_quaternary" {
   count                  = var.public_routes.has_quaternary_subnet == true ? 1 : 0
-  route_table_id         = aws_route_table.public_quaternary.id
+  route_table_id         = aws_route_table.public_quaternary[0].id
   destination_cidr_block = var.public_routes.destination_cidr_block
   gateway_id             = var.public_routes.public_gateway_id
 }

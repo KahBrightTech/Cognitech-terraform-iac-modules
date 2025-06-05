@@ -43,13 +43,13 @@ resource "aws_route_table" "private_quaternary" {
 # Route table routes and associations for private subnets
 #--------------------------------------------------------------------
 resource "aws_route" "private_route_primary" {
-  route_table_id         = aws_route_table.private[0].id
+  route_table_id         = aws_route_table.private.id
   destination_cidr_block = var.private_routes.destination_cidr_block
   nat_gateway_id         = var.private_routes.nat_gateway_id
 }
 
 resource "aws_route" "private_route_secondary" {
-  route_table_id         = aws_route_table.private_secondary[0].id
+  route_table_id         = aws_route_table.private_secondary.id
   destination_cidr_block = var.private_routes.destination_cidr_block
   nat_gateway_id         = var.private_routes.nat_gateway_id
 }
