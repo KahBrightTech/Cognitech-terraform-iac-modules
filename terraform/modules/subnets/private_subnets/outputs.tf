@@ -6,11 +6,6 @@ output "primary_az" {
   value       = aws_subnet.primary.availability_zone
 }
 
-output "primary_az_id" {
-  description = "The primary availability zone id"
-  value       = aws_subnet.primary.availability_zone_id
-}
-
 output "primary_subnet_arn" {
   description = "The arn of the primary subnet"
   value       = aws_subnet.primary.arn
@@ -32,11 +27,6 @@ output "primary_subnet_cidr" {
 output "secondary_az" {
   description = "The secondary availability zone"
   value       = aws_subnet.secondary.availability_zone
-}
-
-output "secondary_az_id" {
-  description = "The secondary availability zone id"
-  value       = aws_subnet.secondary.availability_zone_id
 }
 
 output "secondary_subnet_arn" {
@@ -61,11 +51,6 @@ output "secondary_subnet_cidr" {
 output "tertiary_az" {
   description = "The tertiary availability zone"
   value       = var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].availability_zone : null
-}
-
-output "tertiary_az_id" {
-  description = "The tertiary availability zone id"
-  value       = var.private_subnets.tertiary_cidr_block != null ? aws_subnet.tertiary[0].availability_zone_id : null
 }
 
 output "tertiary_subnet_arn" {
@@ -94,11 +79,6 @@ output "quaternary_az" {
 output "quaternary_az_id" {
   description = "The quaternary availability zone id"
   value       = var.private_subnets.quaternary_cidr_block != null ? aws_subnet.quaternary[0].availability_zone_id : null
-}
-
-output "quaternary_subnet_arn" {
-  description = "The arn of the quaternary subnet"
-  value       = var.private_subnets.quaternary_cidr_block != null ? aws_subnet.quaternary[0].arn : null
 }
 
 output "quaternary_subnet_id" {
