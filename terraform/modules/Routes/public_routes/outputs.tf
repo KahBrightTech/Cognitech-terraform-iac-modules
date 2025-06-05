@@ -9,12 +9,13 @@ output "public_secondary_id" {
   value       = aws_route_table.public_secondary.id
 }
 
+
 output "public_tertiary_id" {
   description = "The id of the tertiary public route table"
-  value       = aws_route_table.public_tertiary[0].id
+  value       = length(aws_route_table.public_tertiary) > 0 ? aws_route_table.public_tertiary[0].id : null
 }
 
 output "public_quaternary_id" {
   description = "The id of the quaternary public route table"
-  value       = aws_route_table.public_quaternary[0].id
+  value       = length(aws_route_table.public_quaternary) > 0 ? aws_route_table.public_quaternary[0].id : null
 }
