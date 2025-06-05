@@ -80,12 +80,12 @@ resource "aws_route_table_association" "secondary_public_subnet_association" {
 resource "aws_route_table_association" "tertiary_public_subnet_association" {
   count          = var.public_routes.has_tertiary_subnet == true ? 1 : 0
   subnet_id      = var.public_routes.tertiary_subnet_id
-  route_table_id = aws_route_table.public_tertiary.id
+  route_table_id = aws_route_table.public_tertiary[0].id
 }
 
 resource "aws_route_table_association" "quaternary_public_subnet_association" {
   count          = var.public_routes.has_quaternary_subnet == true ? 1 : 0
   subnet_id      = var.public_routes.quaternary_subnet_id
-  route_table_id = aws_route_table.public_quaternary.id
+  route_table_id = aws_route_table.public_quaternary[0].id
 }
 
