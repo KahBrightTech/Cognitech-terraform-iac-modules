@@ -45,9 +45,28 @@ resource "aws_route_table" "public_quaternary" {
 resource "aws_route" "public_route_primary" {
   route_table_id         = aws_route_table.public.id
   destination_cidr_block = var.public_routes.destination_cidr_block
-  nat_gateway_id         = var.public_routes.nat_gateway_id
+  gateway_id             = var.public_routes.public_gateway_id
 }
 
+resource "aws_route" "public_route_secondary" {
+  route_table_id         = aws_route_table.public_secondary.id
+  destination_cidr_block = var.public_routes.destination_cidr_block
+  gateway_id             = var.public_routes.public_gateway_id
+}
+
+resource "aws_route" "public_route_tertiary" {
+  count                  = var.public_routes.has_tertiary_subnet == true ? 1 : 0
+  route_table_id         = aws_route_table.public_tertiary.id
+  destination_cidr_block = var.public_routes.destination_cidr_block
+  gateway_id             = var.public_routes.public_gateway_id
+}
+
+resource "aws_route" "public_route_quaternary" {
+  count                  = var.public_routes.has_quaternary_subnet == true ? 1 : 0
+  route_table_id         = aws_route_table.public_quaternary.id
+  destination_cidr_block = var.public_routes.destination_cidr_block
+  gateway_id             = var.public_routes.public_gateway_id
+}
 resource "aws_route_table_association" "primary_public_subnet_association" {
   subnet_id      = var.public_routes.primary_subnet_id
   route_table_id = aws_route_table.public.id
