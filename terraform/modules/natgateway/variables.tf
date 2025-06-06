@@ -20,7 +20,7 @@ variable "nat_gateway" {
     subnet_id_quaternary  = optional(string)
     has_tertiary_subnet   = optional(bool, false)
     has_quaternary_subnet = optional(bool, false)
-    vpc_name              = optional(string)
+    vpc_name              = string
   })
   validation {
     condition     = var.nat_gateway.type == "public" || var.nat_gateway.type == "private" || var.nat_gateway.type == "unknown"

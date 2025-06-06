@@ -19,7 +19,7 @@ variable "private_routes" {
     quaternary_subnet_id   = optional(string)
     has_tertiary_subnet    = optional(bool, false)
     has_quaternary_subnet  = optional(bool, false)
-    vpc_name               = optional(string)
+    vpc_name               = string
   })
   default = null
 }
