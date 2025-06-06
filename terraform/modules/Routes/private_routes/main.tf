@@ -5,7 +5,7 @@ resource "aws_route_table" "private" {
   vpc_id = var.vpc_id
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.private_routes.vpc_name}-primary-private-rt"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.private_routes.vpc_name}-${var.private_routes.subnet_name}-primary-private-rt"
     }
   )
 }
