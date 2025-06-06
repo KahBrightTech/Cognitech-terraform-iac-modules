@@ -18,6 +18,7 @@ variable "transit_gateway" {
     auto_accept_shared_attachments  = string
     dns_support                     = string
     amazon_side_asn                 = number
+    vpc_name                        = optional(string)
   })
 }
 

@@ -5,7 +5,7 @@ resource "aws_route_table" "private" {
   vpc_id = var.vpc_id
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-primary-private-rt"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.private_routes.vpc_name}-primary-private-rt"
     }
   )
 }
@@ -14,7 +14,7 @@ resource "aws_route_table" "private_secondary" {
   vpc_id = var.vpc_id
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-secondary-private-rt"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.private_routes.vpc_name}-secondary-private-rt"
     }
   )
 }
@@ -24,7 +24,7 @@ resource "aws_route_table" "private_tertiary" {
   vpc_id = var.vpc_id
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-tertiary-private-rt"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.private_routes.vpc_name}-tertiary-private-rt"
     }
   )
 }
@@ -34,7 +34,7 @@ resource "aws_route_table" "private_quaternary" {
   vpc_id = var.vpc_id
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-quaternary-private-rt"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.private_routes.vpc_name}-quaternary-private-rt"
     }
   )
 }

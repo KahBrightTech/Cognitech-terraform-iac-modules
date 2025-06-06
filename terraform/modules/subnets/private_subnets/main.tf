@@ -7,7 +7,7 @@ resource "aws_subnet" "primary" {
   cidr_block        = var.private_subnets.primary_cidr_block
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.private_subnets.name}-${var.private_subnets.subnet_type}-primary"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.private_subnets.vpc_name}-${var.private_subnets.name}-${var.private_subnets.subnet_type}-primary"
     }
   )
 }
@@ -21,7 +21,7 @@ resource "aws_subnet" "secondary" {
   cidr_block        = var.private_subnets.secondary_cidr_block
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.private_subnets.name}-${var.private_subnets.subnet_type}-secondary"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.private_subnets.vpc_name}-${var.private_subnets.name}-${var.private_subnets.subnet_type}-secondary"
     }
   )
 }
@@ -36,7 +36,7 @@ resource "aws_subnet" "tertiary" {
   cidr_block        = var.private_subnets.tertiary_cidr_block
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.private_subnets.name}-${var.private_subnets.subnet_type}-tertiary"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.private_subnets.vpc_name}-${var.private_subnets.name}-${var.private_subnets.subnet_type}-tertiary"
     }
   )
 }
@@ -51,7 +51,7 @@ resource "aws_subnet" "quaternary" {
   cidr_block        = var.private_subnets.quaternary_cidr_block
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.private_subnets.name}-${var.private_subnets.subnet_type}-quaternary"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.private_subnets.vpc_name}-${var.private_subnets.name}-${var.private_subnets.subnet_type}-quaternary"
     }
   )
 }

@@ -6,7 +6,7 @@ resource "aws_eip" "primary" {
   network_border_group = var.common.region
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-primary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.nat_gateway.vpc_name}-eip-${var.nat_gateway.name}-primary"
     }
   )
 }
@@ -16,7 +16,7 @@ resource "aws_eip" "secondary" {
   network_border_group = var.common.region
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-secondary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.nat_gateway.vpc_name}-eip-${var.nat_gateway.name}-secondary"
     }
   )
 }
@@ -26,7 +26,7 @@ resource "aws_eip" "tertiary" {
   network_border_group = var.common.region
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-tertiary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.nat_gateway.vpc_name}-eip-${var.nat_gateway.name}-tertiary"
     }
   )
 }
@@ -36,7 +36,7 @@ resource "aws_eip" "quaternary" {
   network_border_group = var.common.region
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-eip-${var.nat_gateway.name}-quaternary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.nat_gateway.vpc_name}-eip-${var.nat_gateway.name}-quaternary"
     }
   )
 }
@@ -51,7 +51,7 @@ resource "aws_nat_gateway" "primary" {
   subnet_id     = var.nat_gateway.subnet_id_primary
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-primary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.nat_gateway.vpc_name}-ngw-${var.nat_gateway.name}-primary"
     }
   )
 }
@@ -62,7 +62,7 @@ resource "aws_nat_gateway" "secondary" {
   subnet_id     = var.nat_gateway.subnet_id_secondary
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-secondary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.nat_gateway.vpc_name}-ngw-${var.nat_gateway.name}-secondary"
     }
   )
 }
@@ -73,7 +73,7 @@ resource "aws_nat_gateway" "tertiary" {
   subnet_id     = var.nat_gateway.subnet_id_tertiary
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-tertiary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.nat_gateway.vpc_name}-ngw-${var.nat_gateway.name}-tertiary"
     }
   )
 }
@@ -84,7 +84,7 @@ resource "aws_nat_gateway" "quaternary" {
   subnet_id     = var.nat_gateway.subnet_id_quaternary
   tags = merge(var.common.tags,
     {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-ngw-${var.nat_gateway.name}-quaternary"
+      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.nat_gateway.vpc_name}-ngw-${var.nat_gateway.name}-quaternary"
     }
   )
 }

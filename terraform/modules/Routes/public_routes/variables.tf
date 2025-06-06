@@ -19,6 +19,7 @@ variable "public_routes" {
     has_tertiary_subnet    = optional(bool, false)
     quaternary_subnet_id   = optional(string)
     has_quaternary_subnet  = optional(bool, false)
+    vpc_name               = optional(string)
   })
 }
 variable "vpc_id" {
