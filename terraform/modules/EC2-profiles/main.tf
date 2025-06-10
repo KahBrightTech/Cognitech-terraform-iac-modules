@@ -36,7 +36,7 @@ resource "aws_iam_policy" "policy" {
       "[[admin_role]]", tolist(data.aws_iam_roles.admin_role.arns)[0]
     ),
     "[[network_role]]", tolist(data.aws_iam_roles.network_role.arns)[0]
-  ) : file(var.iam_role.policy.policy)
+  ) : file(var.ec2_profiles.policy.policy)
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.policy.name}-policy"
