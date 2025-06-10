@@ -18,15 +18,15 @@ data "aws_iam_roles" "network_role" {
 #--------------------------------------------------------------------
 
 resource "aws_iam_policy" "policy" {
-  name        = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.policy.name}-policy"
-  description = var.iam_role.policy.description
-  path        = var.iam_role.policy.path
-  policy = var.iam_role.policy.custom_policy ? replace(
+  name        = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.policy.name}-policy"
+  description = var.ec2_profiles.policy.description
+  path        = var.ec2_profiles.policy.path
+  policy = var.ec2_profiles.policy.custom_policy ? replace(
     replace(
       replace(
         replace(
           replace(
-            file(var.iam_role.policy.policy),
+            file(var.ec2_profiles.policy.policy),
             "[[account_number]]", data.aws_caller_identity.current.account_id,
           ),
           "[[account_name_abr]]", var.common.account_name_abr
@@ -39,7 +39,7 @@ resource "aws_iam_policy" "policy" {
   ) : file(var.iam_role.policy.policy)
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.policy.name}-policy"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.policy.name}-policy"
   })
 }
 
@@ -87,7 +87,7 @@ resource "aws_iam_instance_profile" "ec2_profiles" {
 #Attach IAM Policy to Role
 #--------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
-  role       = aws_iam_role.role.name
+  role       = aws_iam_role.ec2_profiles.name
   policy_arn = aws_iam_policy.policy.arn
 }
 
