@@ -75,6 +75,7 @@ resource "aws_iam_role" "role" {
 
 #--------------------------------------------------------------------
 #Attach IAM Policy to Role
+#--------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   role       = aws_iam_role.role.name
   policy_arn = aws_iam_policy.policy.arn
