@@ -27,16 +27,16 @@ output "aws_iam_policy_name" {
 #--------------------------------------------------------------------
 output "iam_role_id" {
   description = "The ID of the IAM role created"
-  value       = aws_iam_role.role.id
+  value       = aws_iam_role.ec2_profiles.id
 }
 
 output "iam_role_arn" {
   description = "The ARN of the IAM role created"
-  value       = aws_iam_role.role.arn
+  value       = aws_iam_role.ec2_profiles.arn
 }
 
 output "aws_iam_role_name" {
   description = "The name of the IAM role created"
-  value       = aws_iam_role.role.name
+  value       = aws_iam_role.ec2_profiles.name
 }
 
