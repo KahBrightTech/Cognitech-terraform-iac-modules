@@ -27,7 +27,7 @@ resource "aws_iam_policy" "policy" {
         replace(
           replace(
             file(var.iam_role.policy.policy),
-            "[[account_number]]", data.aws_caller_identity.account_id,
+            "[[account_number]]", data.aws_caller_identity.current.account_id,
           ),
           "[[account_name_abr]]", var.common.account_name_abr
         ),
