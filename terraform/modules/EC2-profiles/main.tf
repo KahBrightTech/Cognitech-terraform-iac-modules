@@ -17,7 +17,7 @@ data "aws_iam_roles" "network_role" {
 # IAM Role - Creates IAM role with the specified policy
 #--------------------------------------------------------------------
 resource "aws_iam_role" "ec2_profiles" {
-  name        = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.name}-profile"
+  name        = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.name}-profile"
   description = var.ec2_profiles.description
   path        = var.ec2_profiles.path
   assume_role_policy = var.ec2_profiles.custom_assume_role_policy ? replace(
@@ -44,9 +44,9 @@ resource "aws_iam_role" "ec2_profiles" {
 
 #--------------------------------------------------------------------
 # IAM Profile - Creates IAM profile for the specified IAM role
-resource "aws_iam_instance_profile" "ec_profiles" {
+resource "aws_iam_instance_profile" "ec2_profiles" {
   name = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.name}-ec2-profile"
-  role = aws_ec2_profiles.ec2_profiles.name
+  role = aws_iam_role.ec2_profiles.name
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.name}-ec2-profile"
