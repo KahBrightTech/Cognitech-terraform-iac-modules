@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "default" {
         ),
         "[[network_role]]", tolist(data.aws_iam_roles.network_role.arns)[0]
       ),
-      "[[github_oidc_role]]", data.aws_iam_roles.github_oidc_roles.arn
+      "[[github_oidc_role]]", tolist(data.aws_iam_roles.github_oidc_roles.arn)[0]
     )
   ]
 }
