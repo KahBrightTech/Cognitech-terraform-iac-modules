@@ -14,9 +14,14 @@ data "aws_iam_roles" "network_role" {
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
 }
 
-data "aws_iam_role" "github_oidc_role" {
-  name = "prod-OIDCGitHubRole-role"
+# data "aws_iam_role" "github_oidc_role" {
+#   name = "prod-OIDCGitHubRole-role"
+# }
+data "aws_iam_roles" "github_oidc_roles" {
+  name_regex  = ".*-OIDCGitHubRole-role"
+  path_prefix = "/"
 }
+
 
 data "aws_iam_policy_document" "default" {
   override_policy_documents = [
