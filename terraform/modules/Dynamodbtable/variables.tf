@@ -14,10 +14,10 @@ variable "state_lock" {
   type = object({
     table_name = string
     hash_key   = string
-    attributes = optional(list(object({
+    attributes = list(object({
       name = string
       type = string
-    })), [])
+    }))
     billing_mode = optional(string, "PAY_PER_REQUEST")
   })
   default = null
