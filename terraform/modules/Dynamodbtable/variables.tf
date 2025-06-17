@@ -12,9 +12,8 @@ variable "common" {
 variable "state_lock" {
   description = "DynamoDB Table for Terraform State Locking"
   type = object({
-    name     = string
-    hash_key = string
-
+    table_name = string
+    hash_key   = string
   })
   default = null
 }
