@@ -11,10 +11,8 @@ variable "common" {
 variable "route53_zones" {
   description = "The Route 53 hosted zones to be created"
   type = object({
-    name = string
-    vpc = optional(object({
-      id = string
-    }))
+    name          = string
+    vpc_id        = optional(string)
     comment       = optional(string, null)
     private_zone  = optional(bool, true)
     force_destroy = optional(bool, true)

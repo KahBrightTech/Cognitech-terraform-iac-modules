@@ -9,7 +9,7 @@ data "aws_region" "current" {}
 resource "aws_route53_zone" "zones" {
   name = var.route53_zones.name
   vpc {
-    vpc_id = var.route53_zones.vpc.id
+    vpc_id = var.route53_zones.vpc_id
   }
   comment       = var.route53_zones.comment
   force_destroy = var.route53_zones.force_destroy
