@@ -22,18 +22,3 @@ variable "dns_record" {
   default = null
 }
 
-
-variable "dns_alias" {
-  description = "The Route 53  alias records to create"
-  type = object({
-    name    = string
-    zone_id = optional(string)
-    alias = object({
-      name                   = string
-      zone_id                = optional(string)
-      evaluate_target_health = optional(bool, false)
-    })
-  })
-  default = null
-}
-
