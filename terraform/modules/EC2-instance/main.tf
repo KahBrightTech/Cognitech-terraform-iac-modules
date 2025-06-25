@@ -91,6 +91,9 @@ resource "aws_instance" "ec2_instance" {
     var.ec2.custom_tags,
     {
       Schedule = var.ec2.Schedule_name != null ? var.ec2.Schedule_name : "default"
+      Backup   = var.ec2.backup_plan_name != null ? var.ec2.backup_plan_name : "default"
+      Name     = var.ec2.name_override != null ? var.ec2.name_override : "${var.common.account_name}-${var.common.region_prefix}-ec2-${var.ec2.name}"
+
     }
   )
   user_data              = local.user_data

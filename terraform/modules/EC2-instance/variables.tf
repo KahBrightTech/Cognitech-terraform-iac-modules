@@ -13,8 +13,9 @@ variable "ec2" {
   description = "EC2 Instance configuration"
   type = object({
     name                        = string
-    custom_ami                  = optional(string, null)
-    os_release_date             = optional(string, null)
+    name_override               = optional(string)
+    custom_ami                  = optional(string)
+    os_release_date             = optional(string)
     os_base_packages            = optional(string)
     associate_public_ip_address = optional(bool, false)
     instance_type               = string
@@ -38,6 +39,7 @@ variable "ec2" {
     }), null)
     subnet_id          = string
     Schedule_name      = optional(string)
+    backup_plan_name   = optional(string)
     security_group_ids = list(string)
   })
   default = null
