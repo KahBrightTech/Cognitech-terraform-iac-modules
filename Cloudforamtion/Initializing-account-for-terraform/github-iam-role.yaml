@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation template to set up GitHub OIDC and an IAM role"
+
+Parameters:
+  pAccountName:
+    Description: The name of the account in which the policy is being created
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /standard/AWSAccount  
+  pAccountNameLC:
+    Description: The name of the account in which the policy is being created
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /standard/AWSAccountLC
+  pGitHubOrg:
+    Type: String
+    Description: "The GitHub organization or user (e.g., my-org or my-user)"
+    Default: KahBrightTech
+  pAppName:
+    Description: The application for which the role will be created for 
+    Type: String
+    Default: OIDCGitHubRole
+
+Resources:
+  # GitHub OIDC Provider
+  rGitHubOIDCProvider:
+    Type: "AWS::IAM::OIDCProvider"
+    Properties:
+      Url: "https://token.actions.githubusercontent.com"
+      ClientIdList:
+        - "sts.amazonaws.com"
+      ThumbprintList:
+        - "d89e3bd43d5d909b47a18977aa9d5ce36cee184c"  # Current GitHub thumbprint
+
+  # IAM Role for GitHub Actions
+  rGitHubActionsRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub ${pAccountNameLC}-${pAppName}-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Federated: !Ref rGitHubOIDCProvider
+            Action: "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals: 
+                    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+              StringLike:
+                    "token.actions.githubusercontent.com:sub": !Sub "repo:${pGitHubOrg}/*"
+
+  rGitHubActionsPolicy:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: !Sub ${pAccountNameLC}-${pAppName}-policy
+      Roles:
+        - !Ref rGitHubActionsRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "*"  # Allow all actions
+            Resource: "*"
+Outputs:
+  GitHubOIDCProviderArn:
+    Description: "ARN of the GitHub OIDC Provider"
+    Value: !GetAtt rGitHubOIDCProvider.Arn
+
+  GitHubActionsRoleArn:
+    Description: "ARN of the IAM Role for GitHub Actions"
+    Value: !GetAtt rGitHubActionsRole.Arn

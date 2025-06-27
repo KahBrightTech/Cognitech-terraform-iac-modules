@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Terraform backend - S3 bucket with versioning and DynamoDB state lock table
+
+Parameters:
+  pAccountName:
+    Description: The name of the account in which the policy is being created
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /standard/AWSAccount  
+  pAccountNameLC:
+    Description: The name of the account in which the policy is being created
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /standard/AWSAccountLC
+  TableName:
+    Type: String
+    Description: Name of the DynamoDB table for Terraform state locking
+
+Resources:
+  TerraformStateBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${pAccountNameLC}-${AWS::Region}-network-config-state"
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  TerraformStateBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TerraformStateBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "EnforcedTLS"
+            Effect: "Deny"
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+              - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: "RootAccess"
+            Effect: "Allow"
+            Principal:
+              AWS: "arn:aws:iam::485147667400:root"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+              - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
+
+  TerraformStateLockTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${pAccountNameLC}-${AWS::Region}-state-lock"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+
+Outputs:
+  S3BucketName:
+    Description: S3 Bucket for Terraform state files
+    Value: !Ref TerraformStateBucket
+
+  DynamoDBTableName:
+    Description: DynamoDB Table for Terraform state locking
+    Value: !Ref TerraformStateLockTable
