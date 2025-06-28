@@ -20,7 +20,7 @@ locals {
   secret_value = local.use_external_secrets ? jsonencode({
     username = data.secretsmanager_field.fsx_secrets_login[0].value
     password = data.secretsmanager_field.fsx_secrets_password[0].value
-  }) : var.secrets_manager.value
+  }) : jsonencode(var.secrets_manager.value)
 }
 
 resource "aws_secretsmanager_secret" "secret" {
