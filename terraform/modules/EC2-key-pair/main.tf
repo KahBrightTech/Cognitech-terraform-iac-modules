@@ -33,7 +33,7 @@ resource "aws_key_pair" "generated_key" {
 
 resource "aws_secretsmanager_secret" "private_key_secret" {
   count                          = var.create_secret ? 1 : 0
-  name                           = "${var.common.account_name}-${var.common.region_prefix}-${var.key_pair.name}"
+  name                           = "${var.common.account_name}-${var.common.region_prefix}-${var.key_pair.secret_name}"
   description                    = var.key_pair.secret_description
   recovery_window_in_days        = 7
   force_overwrite_replica_secret = true
@@ -41,7 +41,7 @@ resource "aws_secretsmanager_secret" "private_key_secret" {
 
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.key_pair.name}"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.key_pair.secret_name}"
     }
   )
 }
