@@ -31,6 +31,13 @@ resource "aws_secretsmanager_secret" "private_key_secret" {
   description                    = var.key_pair.secret_description
   recovery_window_in_days        = 7
   force_overwrite_replica_secret = true
+  policy                         = var.key_pair.policy
+
+  tags = merge(var.common.tags,
+    {
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.secrets_manager.name}"
+    }
+  )
 }
 
 resource "aws_secretsmanager_secret_version" "private_key_secret_version" {

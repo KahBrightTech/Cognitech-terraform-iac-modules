@@ -15,6 +15,7 @@ variable "key_pair" {
     name               = string
     secret_name        = string
     secret_description = optional(string)
+    policy             = optional(string)
   })
   default = null
 }
