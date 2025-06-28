@@ -12,7 +12,9 @@ variable "common" {
 variable "key_pair" {
   description = "Key pair configuration for EC2 instances"
   type = object({
-    name = string
+    name               = string
+    secret_name        = string
+    secret_description = optional(string)
   })
   default = null
 }

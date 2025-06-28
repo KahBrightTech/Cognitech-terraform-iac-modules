@@ -26,3 +26,15 @@ resource "aws_key_pair" "generated_key" {
   public_key = tls_private_key.key.public_key_openssh
 }
 
+resource "aws_secretsmanager_secret" "private_key_secret" {
+  name                           = var.key_pair.secret_name
+  description                    = var.key_pair.secret_description
+  recovery_window_in_days        = 7
+  force_overwrite_replica_secret = true
+}
+
+resource "aws_secretsmanager_secret_version" "private_key_secret_version" {
+  secret_id     = aws_secretsmanager_secret.private_key_secret.id
+  secret_string = tls_private_key.key.private_key_pem
+}
+
