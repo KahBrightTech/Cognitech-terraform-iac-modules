@@ -13,9 +13,15 @@ variable "key_pair" {
   description = "Key pair configuration for EC2 instances"
   type = object({
     name               = string
-    secret_name        = string
+    secret_name        = optional(string)
     secret_description = optional(string)
     policy             = optional(string)
   })
   default = null
+}
+
+variable "create_secret" {
+  description = "Whether to create a Secrets Manager secret for the key pair."
+  type        = bool
+  default     = true
 }
