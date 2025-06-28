@@ -1,7 +1,7 @@
 #--------------------------------------------------------------------
 # Outputs for EC2 Profiles Module
 #--------------------------------------------------------------------
-output "ec2_iam_instance_profile_id" {
+output "iam_profiles" {
   description = "The EC2 IAM instance profiles map"
   value       = var.ec2_profiles != null ? aws_iam_instance_profile.ec2_profiles : null
 }
