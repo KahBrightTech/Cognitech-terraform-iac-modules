@@ -21,8 +21,3 @@ variable "key_pair" {
   default = null
 }
 
-# variable "create_secret" {
-#   description = "Whether to create a Secrets Manager secret for the key pair."
-#   type        = bool
-#   default     = true
-# }
