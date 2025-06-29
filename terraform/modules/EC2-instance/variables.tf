@@ -12,11 +12,13 @@ variable "common" {
 variable "ec2" {
   description = "EC2 Instance configuration"
   type = object({
-    name                        = string
-    name_override               = optional(string)
-    custom_ami                  = optional(string)
-    os_release_date             = optional(string)
-    os_base_packages            = optional(string)
+    name          = string
+    name_override = optional(string)
+    custom_ami    = optional(string)
+    ami_config = object({
+      os_release_date  = optional(string)
+      os_base_packages = optional(string)
+    })
     associate_public_ip_address = optional(bool, false)
     instance_type               = string
     iam_instance_profile        = string
