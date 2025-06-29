@@ -16,12 +16,13 @@ variable "key_pair" {
     secret_name        = optional(string)
     secret_description = optional(string)
     policy             = optional(string)
+    create_secret      = bool
   })
   default = null
 }
 
-variable "create_secret" {
-  description = "Whether to create a Secrets Manager secret for the key pair."
-  type        = bool
-  default     = true
-}
+# variable "create_secret" {
+#   description = "Whether to create a Secrets Manager secret for the key pair."
+#   type        = bool
+#   default     = true
+# }

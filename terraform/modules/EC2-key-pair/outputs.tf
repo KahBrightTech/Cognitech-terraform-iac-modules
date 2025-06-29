@@ -8,5 +8,5 @@ output "name" {
 
 output "secret_arn" {
   description = "The ARN of the created Secrets Manager secret (if created)"
-  value       = var.create_secret ? aws_secretsmanager_secret.private_key_secret[0].arn : null
+  value       = var.key_pair.create_secret ? aws_secretsmanager_secret.private_key_secret[0].arn : null
 }

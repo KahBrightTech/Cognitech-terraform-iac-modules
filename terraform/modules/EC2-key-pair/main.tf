@@ -32,7 +32,7 @@ resource "aws_key_pair" "generated_key" {
 }
 
 resource "aws_secretsmanager_secret" "private_key_secret" {
-  count                          = var.create_secret ? 1 : 0
+  count                          = var.key_pair.create_secret ? 1 : 0
   name                           = "${var.common.account_name}-${var.common.region_prefix}-${var.key_pair.secret_name}"
   description                    = var.key_pair.secret_description
   recovery_window_in_days        = 7
@@ -47,7 +47,7 @@ resource "aws_secretsmanager_secret" "private_key_secret" {
 }
 
 resource "aws_secretsmanager_secret_version" "private_key_secret_version" {
-  count         = var.create_secret ? 1 : 0
+  count         = var.key_pair.create_secret ? 1 : 0
   secret_id     = aws_secretsmanager_secret.private_key_secret[0].id
   secret_string = tls_private_key.key.private_key_pem
 }
