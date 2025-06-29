@@ -21,7 +21,7 @@ resource "aws_iam_policy" "policy" {
   name        = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.policy.name}-policy"
   description = var.iam_role.policy.description
   path        = var.iam_role.policy.path
-  policy = var.iam_role.policy.custom_policy ? replace(
+  policy = var.iam_role.policy.custom_policy ? jsonencode(jsondecode(replace(
     replace(
       replace(
         replace(
@@ -36,7 +36,7 @@ resource "aws_iam_policy" "policy" {
       "[[admin_role]]", tolist(data.aws_iam_roles.admin_role.arns)[0]
     ),
     "[[network_role]]", tolist(data.aws_iam_roles.network_role.arns)[0]
-  ) : file(var.iam_role.policy.policy)
+  ))) : jsonencode(jsondecode(file(var.iam_role.policy.policy)))
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.policy.name}-policy"
@@ -50,7 +50,7 @@ resource "aws_iam_role" "role" {
   name        = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.name}-role"
   description = var.iam_role.description
   path        = var.iam_role.path
-  assume_role_policy = var.iam_role.custom_assume_role_policy ? replace(
+  assume_role_policy = var.iam_role.custom_assume_role_policy ? jsonencode(jsondecode(replace(
     replace(
       replace(
         replace(
@@ -62,7 +62,7 @@ resource "aws_iam_role" "role" {
       "[[region]]", data.aws_region.current.name
     ),
     "[[admin_role]]", tolist(data.aws_iam_roles.admin_role.arns)[0]
-  ) : file(var.iam_role.assume_role_policy)
+  ))) : jsonencode(jsondecode(file(var.iam_role.assume_role_policy)))
   force_detach_policies = var.iam_role.force_detach_policies
   managed_policy_arns   = var.iam_role.managed_policy_arns
   max_session_duration  = var.iam_role.max_session_duration
