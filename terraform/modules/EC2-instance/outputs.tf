@@ -33,6 +33,6 @@ output "tags" {
 
 output "ebs_volume_id" {
   description = "The ID of the EBS volume attached to the EC2 instance"
-  value       = aws_ebs_volume.ebs_volume.id
+  value       = var.ec2.ebs_device_volume != null ? aws_ebs_volume.ebs_volume[0].id : null
 }
 

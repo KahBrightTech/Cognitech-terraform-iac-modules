@@ -75,15 +75,18 @@ resource "aws_instance" "ec2_instance" {
   instance_type               = var.ec2.instance_type
   iam_instance_profile        = var.ec2.iam_instance_profile
   key_name                    = var.ec2.key_name
-  root_block_device {
-    volume_type           = var.ec2.ebs_root_volume.volume_type
-    volume_size           = var.ec2.ebs_root_volume.volume_size
-    delete_on_termination = var.ec2.ebs_root_volume.delete_on_termination
-    encrypted             = var.ec2.ebs_root_volume.encrypted
-    kms_key_id            = var.ec2.ebs_root_volume.kms_key_id
-    tags = merge(var.common.tags, {
-      "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2.name}-ebs-root"
-    })
+  dynamic "root_block_device" {
+    for_each = var.ec2.ebs_root_volume != null ? [var.ec2.ebs_root_volume] : []
+    content {
+      volume_type           = root_block_device.value.volume_type
+      volume_size           = root_block_device.value.volume_size
+      delete_on_termination = root_block_device.value.delete_on_termination
+      encrypted             = root_block_device.value.encrypted
+      kms_key_id            = root_block_device.value.kms_key_id
+      tags = merge(var.common.tags, {
+        "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2.name}-ebs-root"
+      })
+    }
   }
   subnet_id = var.ec2.subnet_id
   tags = merge(
@@ -119,6 +122,7 @@ resource "aws_instance" "ec2_instance" {
 # EBS Volume - Creates an EBS volume with the specified configuration
 #-------------------------------------------------------------------------
 resource "aws_ebs_volume" "ebs_volume" {
+  count             = var.ec2.ebs_device_volume != null ? 1 : 0
   availability_zone = aws_instance.ec2_instance.availability_zone # Creates the EBS volume in the same AZ as the EC2 instance
   size              = var.ec2.ebs_device_volume.volume_size
   type              = var.ec2.ebs_device_volume.volume_type
@@ -135,9 +139,9 @@ resource "aws_ebs_volume" "ebs_volume" {
 # EBS Volume Attachment - Attaches the EBS volume to the EC2 instance
 #-------------------------------------------------------------------------
 resource "aws_volume_attachment" "ebs_volume_attachment" {
-  for_each                       = { for ebs in var.ec2.ebs_device_volume : ebs.name => ebs }
-  device_name                    = each.value.name # Specify the device name for the EBS volume attachment
-  volume_id                      = aws_ebs_volume.ebs_volume[each.value.name].id
+  count                          = var.ec2.ebs_device_volume != null ? 1 : 0
+  device_name                    = var.ec2.ebs_device_volume.name # Specify the device name for the EBS volume attachment
+  volume_id                      = aws_ebs_volume.ebs_volume[0].id
   instance_id                    = aws_instance.ec2_instance.id
   skip_destroy                   = false # Set to true if you want to skip the destroy operation for this resource 
   stop_instance_before_detaching = true  # Set to true if you want to stop the instance before detaching the volume
