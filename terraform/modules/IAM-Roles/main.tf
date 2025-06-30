@@ -70,7 +70,6 @@ resource "aws_iam_role" "role" {
     "[[admin_role]]", local.admin_role_arn
   ))) : jsonencode(jsondecode(file(var.iam_role.assume_role_policy)))
   force_detach_policies = var.iam_role.force_detach_policies
-  managed_policy_arns   = var.iam_role.managed_policy_arns
   max_session_duration  = var.iam_role.max_session_duration
   permissions_boundary  = var.iam_role.permissions_boundary
   tags = merge(var.common.tags, {
@@ -85,4 +84,13 @@ resource "aws_iam_role" "role" {
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   role       = aws_iam_role.role.name
   policy_arn = aws_iam_policy.policy.arn
+}
+
+#--------------------------------------------------------------------
+# Attach managed policies to Role (if provided)
+#--------------------------------------------------------------------
+resource "aws_iam_role_policy_attachment" "managed_policy_attachment" {
+  for_each   = var.iam_role.managed_policy_arns != null ? toset(var.iam_role.managed_policy_arns) : []
+  role       = aws_iam_role.role.name
+  policy_arn = each.value
 }
