@@ -13,6 +13,12 @@ data "aws_iam_roles" "network_role" {
   name_regex  = "AWSReservedSSO_NetworkAdministrator_.*"
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
 }
+# Get stable role ARNs using sort() to ensure consistent ordering
+locals {
+  admin_role_arn   = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
+  network_role_arn = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
+}
+
 #--------------------------------------------------------------------
 # IAM Policy - Creates IAM policy for the specified IAM role
 #--------------------------------------------------------------------
@@ -33,9 +39,9 @@ resource "aws_iam_policy" "policy" {
         ),
         "[[region]]", data.aws_region.current.name
       ),
-      "[[admin_role]]", tolist(data.aws_iam_roles.admin_role.arns)[0]
+      "[[admin_role]]", local.admin_role_arn
     ),
-    "[[network_role]]", tolist(data.aws_iam_roles.network_role.arns)[0]
+    "[[network_role]]", local.network_role_arn
   ))) : jsonencode(jsondecode(file(var.iam_role.policy.policy)))
 
   tags = merge(var.common.tags, {
@@ -61,7 +67,7 @@ resource "aws_iam_role" "role" {
       ),
       "[[region]]", data.aws_region.current.name
     ),
-    "[[admin_role]]", tolist(data.aws_iam_roles.admin_role.arns)[0]
+    "[[admin_role]]", local.admin_role_arn
   ))) : jsonencode(jsondecode(file(var.iam_role.assume_role_policy)))
   force_detach_policies = var.iam_role.force_detach_policies
   managed_policy_arns   = var.iam_role.managed_policy_arns
