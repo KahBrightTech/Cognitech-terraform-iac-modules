@@ -61,7 +61,7 @@ locals {
     AL2    = file("${path.module}/user_data/al2.sh")
     AL2023 = file("${path.module}/user_data/al2023.sh")
     RHEL9  = file("${path.module}/user_data/rhel.sh")
-    W19    = file("${path.module}/user_data/w19.sh")
+    W19    = file("${path.module}/user_data/w19.ps1")
   }
   user_data = lookup(local.user_data_map, var.ec2.ami_config.os_release_date, null)
 }
