@@ -5,11 +5,13 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 data "aws_iam_roles" "admin_role" {
+  count       = var.s3.enable_bucket_policy && var.s3.policy != null ? 1 : 0
   name_regex  = "AWSReservedSSO_AdministratorAccess_.*"
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
 }
 
 data "aws_iam_roles" "network_role" {
+  count       = var.s3.enable_bucket_policy && var.s3.policy != null ? 1 : 0
   name_regex  = "AWSReservedSSO_NetworkAdministrator_.*"
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
 }
@@ -18,12 +20,15 @@ data "aws_iam_roles" "network_role" {
 #   name = "prod-OIDCGitHubRole-role"
 # }
 data "aws_iam_roles" "github_oidc_roles" {
+  count       = var.s3.enable_bucket_policy && var.s3.policy != null ? 1 : 0
   name_regex  = ".*-OIDCGitHubRole-role"
   path_prefix = "/"
 }
 
 
 data "aws_iam_policy_document" "default" {
+  count = var.s3.enable_bucket_policy && var.s3.policy != null ? 1 : 0
+
   override_policy_documents = [
     replace(
       replace(
@@ -44,11 +49,11 @@ data "aws_iam_policy_document" "default" {
             ),
             "[[bucket_arn]]", aws_s3_bucket.private.arn
           ),
-          "[[admin_role]]", tolist(data.aws_iam_roles.admin_role.arns)[0]
+          "[[admin_role]]", tolist(data.aws_iam_roles.admin_role[0].arns)[0]
         ),
-        "[[network_role]]", tolist(data.aws_iam_roles.network_role.arns)[0]
+        "[[network_role]]", tolist(data.aws_iam_roles.network_role[0].arns)[0]
       ),
-      "[[github_oidc_role]]", tolist(data.aws_iam_roles.github_oidc_roles.arns)[0]
+      "[[github_oidc_role]]", tolist(data.aws_iam_roles.github_oidc_roles[0].arns)[0]
     )
   ]
 }
@@ -99,8 +104,9 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "bucket" {
 }
 
 resource "aws_s3_bucket_policy" "default" {
+  count  = var.s3.enable_bucket_policy && var.s3.policy != null ? 1 : 0
   bucket = local.bucket_name
-  policy = data.aws_iam_policy_document.default.json
+  policy = data.aws_iam_policy_document.default[0].json
 
   # policy = var.s3.override_policy_document != null && var.s3.override_policy_document != "" ? var.s3.override_policy_document : data.aws_iam_policy_document.default.json
 }

@@ -13,6 +13,11 @@ Parameters:
   TableName:
     Type: String
     Description: Name of the DynamoDB table for Terraform state locking
+    Default: terragrunt-lock-table
+  pSecondaryRegion:
+    Type: String
+    Description: Secondary region for backup S3 bucket
+    Default: us-west-2
 
 Resources:
   TerraformStateBucket:
@@ -53,6 +58,44 @@ Resources:
               - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
               - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
 
+  TerraformStateBucketSecondary:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  TerraformStateBucketPolicySecondary:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TerraformStateBucketSecondary
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "EnforcedTLS"
+            Effect: "Deny"
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
+              - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: "RootAccess"
+            Effect: "Allow"
+            Principal:
+              AWS: "arn:aws:iam::485147667400:root"
+            Action: "s3:*"
+            Resource:
+              - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
+              - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
+
   TerraformStateLockTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -73,3 +116,7 @@ Outputs:
   DynamoDBTableName:
     Description: DynamoDB Table for Terraform state locking
     Value: !Ref TerraformStateLockTable
+
+  S3BucketNameSecondary:
+    Description: S3 Bucket for Terraform state files in secondary region
+    Value: !Ref TerraformStateBucketSecondary
