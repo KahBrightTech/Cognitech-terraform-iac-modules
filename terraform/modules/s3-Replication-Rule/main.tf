@@ -26,8 +26,6 @@ resource "aws_s3_bucket" "source" {
 }
 
 resource "aws_s3_bucket_acl" "source_bucket_acl" {
-  provider = aws.central
-
   bucket = aws_s3_bucket.source.id
   acl    = "private"
 }
@@ -54,7 +52,7 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     status = "Enabled"
     destination {
       bucket        = aws_s3_bucket.destination.arn
-      storage_class = var.s3_replication.storage_class
+      storage_class = var.s3_replication_rule.destination.storage_class
     }
   }
 }
