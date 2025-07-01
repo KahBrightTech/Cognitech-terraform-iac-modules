@@ -60,7 +60,7 @@ data "aws_iam_policy_document" "default" {
 
 locals {
   bucket_name = var.s3.name_override != null ? var.s3.name_override : "${var.common.account_name}-${var.common.region_prefix}-${var.s3.name}"
-  s3_policy   = var.s3.iam_role_arn_pattern == null ? file(var.s3.policy) : join("", [for key, value in var.s3.iam_role_arn_pattern : replace(file(var.s3.policy), key, value)])
+  s3_policy   = var.s3.enable_bucket_policy && var.s3.policy != null ? (var.s3.iam_role_arn_pattern == null ? file(var.s3.policy) : join("", [for key, value in var.s3.iam_role_arn_pattern : replace(file(var.s3.policy), key, value)])) : null
 }
 
 #--------------------------------------------------------------------
