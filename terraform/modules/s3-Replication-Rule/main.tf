@@ -33,31 +33,25 @@ resource "aws_s3_bucket_acl" "source_bucket_acl" {
 }
 
 resource "aws_s3_bucket_versioning" "source" {
-  provider = aws.central
-
   bucket = aws_s3_bucket.source.id
   versioning_configuration {
     status = "Enabled"
   }
 }
 
+#--------------------------------------------------------------------
+# Creates S3 Replication Rule
+#--------------------------------------------------------------------
 resource "aws_s3_bucket_replication_configuration" "replication" {
-  provider = aws.central
   # Must have bucket versioning enabled first
   depends_on = [aws_s3_bucket_versioning.source]
 
-  role   = aws_iam_role.replication.arn
+  role   = var.s3_replication_rule.role_arn
   bucket = aws_s3_bucket.source.id
 
   rule {
-    id = "examplerule"
-
-    filter {
-      prefix = "example"
-    }
-
+    id     = var.s3_replication_rule.rule_name != null ? var.s3_replication_rule.rule_name : "default-replication-rule"
     status = "Enabled"
-
     destination {
       bucket        = aws_s3_bucket.destination.arn
       storage_class = "STANDARD"
