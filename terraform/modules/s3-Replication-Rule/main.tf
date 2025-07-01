@@ -54,7 +54,7 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     status = "Enabled"
     destination {
       bucket        = aws_s3_bucket.destination.arn
-      storage_class = "STANDARD"
+      storage_class = var.s3_replication.storage_class
     }
   }
 }

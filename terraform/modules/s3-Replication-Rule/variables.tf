@@ -21,7 +21,8 @@ variable "s3_replication_rule" {
       bucket_name   = string
       storage_class = string
     })
-    rule_name = optional(string)
+    rule_name     = optional(string)
+    storage_class = optional(string, "STANDARD")
   })
   default = null
 }
