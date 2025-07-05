@@ -14,8 +14,7 @@ variable "load_balancer" {
   type = object({
     name            = string
     internal        = optional(bool, false)
-    type            = string           # "application" or "network"
-    lb_type_abr     = optional(string) # "alb" for Application Load Balancer, "nlb" for Network Load Balancer
+    type            = string # "application" or "network"
     security_groups = optional(list(string))
     subnets         = optional(list(string))
     subnet_mappings = optional(list(object({
