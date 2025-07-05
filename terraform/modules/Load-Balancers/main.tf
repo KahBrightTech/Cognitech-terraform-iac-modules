@@ -16,7 +16,7 @@ locals {
 # Load Balancer Configuration. Allows creation of Application Load Balancers (ALB) and Network Load Balancers (NLB).
 #-------------------------------------------------------------------------------------------------------------------
 resource "aws_lb" "main" {
-  name                       = var.load_balancer.name
+  name                       = local.lb_name
   internal                   = var.load_balancer.internal
   load_balancer_type         = var.load_balancer.type
   security_groups            = var.load_balancer.security_groups
