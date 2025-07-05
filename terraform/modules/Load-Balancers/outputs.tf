@@ -36,7 +36,7 @@ output "subnets" {
 }
 output "subnet_mappings" {
   description = "value of the Load Balancer subnet mappings"
-  value       = aws_lb.main.subnet_mappings
+  value       = aws_lb.main.subnet_mapping
 }
 output "enable_deletion_protection" {
   description = "value of the Load Balancer deletion protection flag"
