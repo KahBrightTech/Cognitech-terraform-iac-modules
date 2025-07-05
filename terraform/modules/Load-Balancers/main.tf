@@ -20,11 +20,11 @@ resource "aws_lb" "main" {
   internal                   = var.load_balancer.internal
   load_balancer_type         = var.load_balancer.type
   security_groups            = var.load_balancer.security_groups
-  subnets                    = var.load_balancer.type == "network" && var.load_balancer.subnet_mappings != null && length(var.load_balancer.subnet_mappings) > 0 ? null : var.load_balancer.subnets
+  subnets                    = var.load_balancer.type == "network" && var.load_balancer.subnet_mappings != null ? null : var.load_balancer.subnets
   enable_deletion_protection = var.load_balancer.enable_deletion_protection
   # If private IPs specified (only for NLB)
   dynamic "subnet_mapping" {
-    for_each = var.load_balancer.type == "network" && var.load_balancer.subnet_mappings != null && length(var.load_balancer.subnet_mappings) > 0 ? var.load_balancer.subnet_mappings : []
+    for_each = var.load_balancer.type == "network" && var.load_balancer.subnet_mappings != null ? var.load_balancer.subnet_mappings : []
     content {
       subnet_id            = subnet_mapping.value.subnet_id
       private_ipv4_address = subnet_mapping.value.private_ipv4_address
