@@ -5,7 +5,7 @@ variable "common" {
     tags             = map(string)
     account_name     = string
     region_prefix    = string
-    account_name_abr = optional(string, "")
+    account_name_abr = optional(string)
   })
 }
 
