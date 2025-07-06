@@ -82,15 +82,15 @@ output "default_listener_fixed_response" {
 
 output "default_listener_fixed_response_content_type" {
   description = "Content type of the fixed response for the default listener"
-  value       = aws_lb_listener.default.default_action[0].fixed_response.content_type
+  value       = aws_lb_listener.default.default_action[0].fixed_response[0].content_type
 }
 
 output "default_listener_fixed_response_message_body" {
   description = "Message body of the fixed response for the default listener"
-  value       = aws_lb_listener.default.default_action[0].fixed_response.message_body
+  value       = aws_lb_listener.default.default_action[0].fixed_response[0].message_body
 }
 
 output "default_listener_fixed_response_status_code" {
   description = "Status code of the fixed response for the default listener"
-  value       = aws_lb_listener.default.default_action[0].fixed_response.status_code
+  value       = aws_lb_listener.default.default_action[0].fixed_response[0].status_code
 }
