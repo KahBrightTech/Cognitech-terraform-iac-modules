@@ -25,6 +25,16 @@ variable "load_balancer" {
     enable_access_logs         = optional(bool, false)
     access_logs_bucket         = optional(string)
     access_logs_prefix         = optional(string)
+    create_default_listener    = optional(bool, false)
+    default_listener = optional(object({
+      port     = optional(string)
+      protocol = optional(string)
+      fixed_response = optional(object({
+        content_type = optional(string, "text/plain")
+        message_body = optional(string, "Oops! The page you are looking for does not exist.")
+        status_code  = optional(string, "200")
+      }))
+    }))
   })
   default = null
 }
