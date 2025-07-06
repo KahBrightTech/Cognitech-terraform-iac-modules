@@ -57,9 +57,9 @@ variable "load_balancer" {
     access_logs_prefix         = optional(string)
     create_default_listener    = optional(bool, false)
     default_listener = optional(object({
-      port        = number
-      protocol    = string
-      action_type = string
+      port        = optional(number)
+      protocol    = optional(string)
+      action_type = optional(string)
       fixed_response = object({
         content_type = optional(string, "text/plain")
         message_body = optional(string, "Oops! The page you are looking for does not exist.")
