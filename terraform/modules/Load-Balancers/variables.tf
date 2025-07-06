@@ -9,35 +9,35 @@ variable "common" {
   })
 }
 
-variable "load_balancer" {
-  description = "Load Balancer configuration"
-  type = object({
-    name            = string
-    internal        = optional(bool, false)
-    type            = string # "application" or "network"
-    security_groups = optional(list(string))
-    subnets         = optional(list(string))
-    subnet_mappings = optional(list(object({
-      subnet_id            = string
-      private_ipv4_address = optional(string)
-    })))
-    enable_deletion_protection = optional(bool, false)
-    enable_access_logs         = optional(bool, false)
-    access_logs_bucket         = optional(string)
-    access_logs_prefix         = optional(string)
-    create_default_listener    = optional(bool, false)
-    default_listener = optional(object({
-      port     = optional(string)
-      protocol = optional(string)
-      fixed_response = optional(object({
-        content_type = optional(string, "text/plain")
-        message_body = optional(string, "Oops! The page you are looking for does not exist.")
-        status_code  = optional(string, "200")
-      }))
-    }))
-  })
-  default = null
-}
+# variable "load_balancer" {
+#   description = "Load Balancer configuration"
+#   type = object({
+#     name            = string
+#     internal        = optional(bool, false)
+#     type            = string # "application" or "network"
+#     security_groups = optional(list(string))
+#     subnets         = optional(list(string))
+#     subnet_mappings = optional(list(object({
+#       subnet_id            = string
+#       private_ipv4_address = optional(string)
+#     })))
+#     enable_deletion_protection = optional(bool, false)
+#     enable_access_logs         = optional(bool, false)
+#     access_logs_bucket         = optional(string)
+#     access_logs_prefix         = optional(string)
+#     create_default_listener    = optional(bool, false)
+#     default_listener = optional(object({
+#       port     = optional(string)
+#       protocol = optional(string)
+#       fixed_response = optional(object({
+#         content_type = optional(string, "text/plain")
+#         message_body = optional(string, "Oops! The page you are looking for does not exist.")
+#         status_code  = optional(string, "200")
+#       }))
+#     }))
+#   })
+#   default = null
+# }
 
 variable "load_balancer" {
   description = "Load Balancer configuration"
@@ -61,9 +61,9 @@ variable "load_balancer" {
       protocol    = string
       action_type = string
       fixed_response = object({
-        content_type = string
-        message_body = string
-        status_code  = string
+        content_type = optional(string, "text/plain")
+        message_body = optional(string, "Oops! The page you are looking for does not exist.")
+        status_code  = optional(string, "200")
       })
     }))
   })
