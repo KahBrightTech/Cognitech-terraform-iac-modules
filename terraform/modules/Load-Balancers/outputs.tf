@@ -54,43 +54,42 @@ output "access_logs_prefix" {
   description = "value of the Load Balancer access logs prefix"
   value       = aws_lb.main.access_logs[0].prefix
 }
-
 output "default_listener" {
   description = "value of the Load Balancer default listener configuration"
-  value       = aws_lb_listener.default
+  value       = length(aws_lb_listener.default) > 0 ? aws_lb_listener.default[0] : null
 }
 
 output "default_listener_arn" {
   description = "ARN of the default listener for the Load Balancer"
-  value       = aws_lb_listener.default.arn
+  value       = length(aws_lb_listener.default) > 0 ? aws_lb_listener.default[0].arn : null
 }
 
 output "default_listener_port" {
   description = "Port of the default listener for the Load Balancer"
-  value       = aws_lb_listener.default.port
+  value       = length(aws_lb_listener.default) > 0 ? aws_lb_listener.default[0].port : null
 }
 
 output "default_listener_protocol" {
   description = "Protocol of the default listener for the Load Balancer"
-  value       = aws_lb_listener.default.protocol
+  value       = length(aws_lb_listener.default) > 0 ? aws_lb_listener.default[0].protocol : null
 }
 
 output "default_listener_fixed_response" {
   description = "Fixed response configuration of the default listener for the Load Balancer"
-  value       = aws_lb_listener.default.default_action[0].fixed_response
+  value       = length(aws_lb_listener.default) > 0 ? aws_lb_listener.default[0].default_action[0].fixed_response : null
 }
 
 output "default_listener_fixed_response_content_type" {
   description = "Content type of the fixed response for the default listener"
-  value       = aws_lb_listener.default.default_action[0].fixed_response[0].content_type
+  value       = length(aws_lb_listener.default) > 0 ? aws_lb_listener.default[0].default_action[0].fixed_response[0].content_type : null
 }
 
 output "default_listener_fixed_response_message_body" {
   description = "Message body of the fixed response for the default listener"
-  value       = aws_lb_listener.default.default_action[0].fixed_response[0].message_body
+  value       = length(aws_lb_listener.default) > 0 ? aws_lb_listener.default[0].default_action[0].fixed_response[0].message_body : null
 }
 
 output "default_listener_fixed_response_status_code" {
   description = "Status code of the fixed response for the default listener"
-  value       = aws_lb_listener.default.default_action[0].fixed_response[0].status_code
+  value       = length(aws_lb_listener.default) > 0 ? aws_lb_listener.default[0].default_action[0].fixed_response[0].status_code : null
 }
