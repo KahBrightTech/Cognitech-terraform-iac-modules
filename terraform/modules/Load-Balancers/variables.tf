@@ -27,16 +27,16 @@ variable "load_balancer" {
     access_logs_prefix         = optional(string)
     create_default_listener    = optional(bool, false)
     default_listener = optional(object({
-      port            = optional(number, "443")
+      port            = optional(number, 443)
       protocol        = optional(string, "TLS")
       action_type     = optional(string, "fixed-response")
       ssl_policy      = optional(string, "ELBSecurityPolicy-2016-08")
       certificate_arn = optional(string)
-      fixed_response = optional(object({
+      fixed_response = object({
         content_type = optional(string, "text/plain")
         message_body = optional(string, "Oops! The page you are looking for does not exist.")
         status_code  = optional(string, "200")
-      }))
+      })
     }))
   })
 }
