@@ -21,7 +21,7 @@ resource "aws_acm_certificate" "main" {
   }
 }
 
-resource "aws_route53_record" "example" {
+resource "aws_route53_record" "record" {
   for_each = {
     for dvo in aws_acm_certificate.main.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
@@ -38,7 +38,7 @@ resource "aws_route53_record" "example" {
   zone_id         = data.aws_route53_zone.example.zone_id
 }
 
-resource "aws_acm_certificate_validation" "example" {
-  certificate_arn         = aws_acm_certificate.example.arn
-  validation_record_fqdns = [for record in aws_route53_record.example : record.fqdn]
+resource "aws_acm_certificate_validation" "validation" {
+  certificate_arn         = aws_acm_certificate.main.arn
+  validation_record_fqdns = [for record in aws_route53_record.record : record.fqdn]
 }

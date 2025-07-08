@@ -48,12 +48,12 @@ resource "aws_lb" "main" {
 # Load Balancer Configuration. Creates default listener for the Load Balancer.
 #-------------------------------------------------------------------------------------------------------------------
 resource "aws_lb_listener" "default" {
-  count             = var.load_balancer.create_default_listener && var.load_balancer.default_listener != null ? 1 : 0
+  count             = var.load_balancer.create_default_listener && var.load_balancer.default_listener != null && var.load_balancer.type == "application" ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
   port              = var.load_balancer.default_listener.port
   protocol          = var.load_balancer.default_listener.protocol
-  ssl_policy        = var.load_balancer.default_listener.protocol == "HTTPS" || var.load_balancer.default_listener.protocol == "TLS" ? var.load_balancer.default_listener.ssl_policy : null
-  certificate_arn   = var.load_balancer.default_listener.protocol == "HTTPS" || var.load_balancer.default_listener.protocol == "TLS" ? var.load_balancer.default_listener.certificate_arn : null
+  ssl_policy        = var.load_balancer.default_listener.protocol == "HTTPS" ? var.load_balancer.default_listener.ssl_policy : null
+  certificate_arn   = var.load_balancer.default_listener.protocol == "HTTPS" ? var.load_balancer.default_listener.certificate_arn : null
 
   default_action {
     type = "fixed-response"

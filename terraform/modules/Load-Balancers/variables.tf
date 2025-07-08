@@ -28,7 +28,7 @@ variable "load_balancer" {
     create_default_listener    = optional(bool, false)
     default_listener = optional(object({
       port            = optional(number, 443)
-      protocol        = optional(string, "TLS")
+      protocol        = optional(string, "HTTPS")
       action_type     = optional(string, "fixed-response")
       ssl_policy      = optional(string, "ELBSecurityPolicy-2016-08")
       certificate_arn = optional(string)
