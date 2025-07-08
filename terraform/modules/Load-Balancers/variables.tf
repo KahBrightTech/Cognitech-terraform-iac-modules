@@ -46,6 +46,7 @@ variable "load_balancer" {
     internal        = optional(bool, false)
     type            = string # "application" or "network"
     security_groups = optional(list(string))
+    vpc_name        = string
     subnets         = optional(list(string))
     subnet_mappings = optional(list(object({
       subnet_id            = string
@@ -57,9 +58,10 @@ variable "load_balancer" {
     access_logs_prefix         = optional(string)
     create_default_listener    = optional(bool, false)
     default_listener = optional(object({
-      port        = optional(number)
-      protocol    = optional(string)
-      action_type = optional(string)
+      port            = optional(number)
+      protocol        = optional(string)
+      action_type     = optional(string)
+      certificate_arn = optional(string)
       fixed_response = object({
         content_type = optional(string, "text/plain")
         message_body = optional(string, "Oops! The page you are looking for does not exist.")
@@ -68,15 +70,15 @@ variable "load_balancer" {
     }))
   })
   default = null
-  validation {
-    condition = (
-      var.load_balancer == null ||
-      (
-        try(var.load_balancer.create_default_listener, false) == false ||
-        var.load_balancer.default_listener != null
-      )
-    )
-    error_message = "If 'create_default_listener' is true, 'default_listener' must not be null."
-  }
+  # validation {
+  #   condition = (
+  #     var.load_balancer == null ||
+  #     (
+  #       try(var.load_balancer.create_default_listener, false) == false ||
+  #       var.load_balancer.default_listener != null
+  #     )
+  #   )
+  #   error_message = "If 'create_default_listener' is true, 'default_listener' must not be null."
+  # }
 }
 
