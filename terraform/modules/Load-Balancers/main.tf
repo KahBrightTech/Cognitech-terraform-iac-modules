@@ -48,7 +48,7 @@ resource "aws_lb" "main" {
 # Load Balancer Configuration. Creates default listener for the Load Balancer.
 #-------------------------------------------------------------------------------------------------------------------
 resource "aws_lb_listener" "default" {
-  count             = var.load_balancer.default_listener != null && var.load_balancer.create_default_listener == true && var.load_balancer.default_listener.fixed_response != null ? 1 : 0
+  count             = var.load_balancer.create_default_listener ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
   port              = var.load_balancer.default_listener.port
   protocol          = var.load_balancer.default_listener.protocol
