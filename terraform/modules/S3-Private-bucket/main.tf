@@ -119,3 +119,37 @@ resource "aws_s3_bucket_versioning" "bucket" {
 
 }
 
+#--------------------------------------------------------------------
+# S3 Bucket - Replication Configuration
+#--------------------------------------------------------------------
+resource "aws_s3_bucket_replication_configuration" "replication" {
+  count = var.s3.replication != null ? 1 : 0
+
+  bucket = aws_s3_bucket.private.id
+  role   = var.s3.replication.role_arn
+
+  dynamic "rule" {
+    for_each = var.s3.replication.rules
+    content {
+      id       = "replication-rule-${count.index}"
+      priority = index(var.s3.replication.rules, rule.value)
+      status   = rule.value.status
+
+      filter {
+        prefix = rule.value.prefix != null ? rule.value.prefix : ""
+      }
+
+      destination {
+        bucket        = rule.value.destination.bucket_arn
+        storage_class = rule.value.destination.storage_class
+      }
+
+      dynamic "delete_marker_replication" {
+        for_each = rule.value.delete_marker_replication != null ? [rule.value.delete_marker_replication] : []
+        content {
+          status = delete_marker_replication.value ? "Enabled" : "Disabled"
+        }
+      }
+    }
+  }
+}
