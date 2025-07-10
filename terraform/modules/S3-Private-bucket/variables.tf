@@ -34,7 +34,7 @@ variable "s3" {
     objects = optional(list(object({
       key = string
     })))
-    replication = optional(list(object({
+    replication = optional(object({
       role_arn = string
       rules = list(object({
         id                        = string
@@ -55,7 +55,7 @@ variable "s3" {
           }))
         })
       }))
-    })))
+    }))
   })
   default = null
   validation {
