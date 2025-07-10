@@ -142,12 +142,31 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
       destination {
         bucket        = rule.value.destination.bucket_arn
         storage_class = rule.value.destination.storage_class
+        encryption_configuration {
+          replica_kms_key_id = rule.value.destination.encryption_configuration.replica_kms_key_id
+        }
       }
 
       dynamic "delete_marker_replication" {
         for_each = rule.value.delete_marker_replication != null ? [rule.value.delete_marker_replication] : []
         content {
           status = delete_marker_replication.value ? "Enabled" : "Disabled"
+        }
+      }
+      dynamic "replication_time" {
+        for_each = rule.value.replication_time != null ? [rule.value.replication_time] : []
+        content {
+          status = "Enabled"
+          time {
+            minutes = replication_time.value.minutes != null ? replication_time.value.minutes : 15
+          }
+        }
+      }
+
+      dynamic "replica_modification" {
+        for_each = rule.value.replica_modification != null ? [rule.value.replica_modification] : []
+        content {
+          status = "Enabled"
         }
       }
     }
