@@ -56,7 +56,7 @@ variable "s3" {
             minutes = optional(number, 15)
           }))
           replica_modification = optional(object({
-            enabled                         = optional(bool, true)
+            enabled                         = optional(bool, false)
             metrics_event_threshold_minutes = optional(number, 15)
           }))
         })

@@ -163,7 +163,7 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
         dynamic "metrics" {
           for_each = rule.value.destination.replica_modification != null && rule.value.destination.replica_modification.enabled ? [rule.value.destination.replica_modification] : []
           content {
-            status = "Enabled"
+            status = metrics.value.enabled ? "Enabled" : "Disabled"
             event_threshold {
               minutes = metrics.value.metrics_event_threshold_minutes
             }
