@@ -164,6 +164,9 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
           for_each = rule.value.destination.replica_modification != null ? [rule.value.destination.replica_modification] : []
           content {
             status = "Enabled"
+            event_threshold {
+              minutes = metrics.value.minutes != null ? metrics.value.minutes : 15
+            }
           }
         }
       }
