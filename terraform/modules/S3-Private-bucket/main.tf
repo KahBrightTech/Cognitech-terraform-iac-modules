@@ -175,16 +175,10 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
         }
       }
       dynamic "source_selection_criteria" {
-        for_each = rule.value.filter != null ? [rule.value.filter] : []
+        for_each = rule.value.destination.encryption_configuration != null ? [1] : []
         content {
           sse_kms_encrypted_objects {
             status = "Enabled"
-          }
-          dynamic "and" {
-            for_each = rule.value.filter.prefix != null ? [rule.value.filter.prefix] : []
-            content {
-              prefix = and.value
-            }
           }
         }
       }
