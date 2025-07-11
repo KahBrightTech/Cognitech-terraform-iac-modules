@@ -161,11 +161,11 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
         }
 
         dynamic "metrics" {
-          for_each = rule.value.destination.replica_modification != null ? [rule.value.destination.replica_modification] : []
+          for_each = rule.value.destination.replica_modification != null && rule.value.destination.replica_modification.enabled ? [rule.value.destination.replica_modification] : []
           content {
             status = "Enabled"
             event_threshold {
-              minutes = metrics.value.minutes != null ? metrics.value.minutes : 15
+              minutes = metrics.value.metrics_event_threshold_minutes
             }
           }
         }

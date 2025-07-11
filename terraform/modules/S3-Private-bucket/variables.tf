@@ -53,9 +53,12 @@ variable "s3" {
             replica_kms_key_id = string
           }))
           replication_time = optional(object({
-            minutes = number
+            minutes = optional(number, 15)
           }))
-          replica_modification = optional(bool, true)
+          replica_modification = optional(object({
+            enabled                         = optional(bool, true)
+            metrics_event_threshold_minutes = optional(number, 15)
+          }))
         })
       }))
     }))
