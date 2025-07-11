@@ -174,6 +174,20 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
           status = delete_marker_replication.value ? "Enabled" : "Disabled"
         }
       }
+      dynamic "source_selection_criteria" {
+        for_each = rule.value.filter != null ? [rule.value.filter] : []
+        content {
+          sse_kms_encrypted_objects {
+            status = "Enabled"
+          }
+          dynamic "and" {
+            for_each = rule.value.filter.prefix != null ? [rule.value.filter.prefix] : []
+            content {
+              prefix = and.value
+            }
+          }
+        }
+      }
     }
   }
 }
