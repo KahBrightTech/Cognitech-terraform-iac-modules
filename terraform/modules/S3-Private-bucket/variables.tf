@@ -37,7 +37,6 @@ variable "s3" {
     replication = optional(object({
       role_arn = string
       rules = list(object({
-        id                        = string
         status                    = string
         delete_marker_replication = optional(bool, false)
         prefix                    = optional(string, "")
