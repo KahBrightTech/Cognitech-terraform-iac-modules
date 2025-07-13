@@ -19,6 +19,17 @@ variable "s3" {
     enable_bucket_policy     = optional(bool, true)
     iam_role_arn_pattern     = optional(map(string), null)
     override_policy_document = optional(string)
+    encryption = optional(object({
+      enabled            = optional(bool, true)
+      sse_algorithm      = optional(string, "AES256")
+      kms_master_key_id  = optional(string, null)
+      bucket_key_enabled = optional(bool, false)
+      }), {
+      enabled            = true
+      sse_algorithm      = "AES256"
+      kms_master_key_id  = null
+      bucket_key_enabled = false
+    })
     lifecycle = optional(object({
       standard_expiration_days          = number
       infrequent_access_expiration_days = number
@@ -71,6 +82,20 @@ variable "s3" {
   validation {
     condition     = var.s3.lifecycle_noncurrent != null ? (var.s3.lifecycle_noncurrent.standard_expiration_days != 0 && var.s3.lifecycle_noncurrent.infrequent_access_expiration_days != 0 && var.s3.lifecycle_noncurrent.glacier_expiration_days != 0 && var.s3.lifecycle_noncurrent.delete_expiration_days != 0) : true
     error_message = "At least one of the lifecycle rules must be set to a non-zero value."
+  }
+  validation {
+    condition = var.s3.encryption != null ? (
+      var.s3.encryption.sse_algorithm == null ||
+      contains(["AES256", "aws:kms"], var.s3.encryption.sse_algorithm)
+    ) : true
+    error_message = "Encryption algorithm must be either 'AES256' or 'aws:kms'."
+  }
+  validation {
+    condition = var.s3.encryption != null ? (
+      var.s3.encryption.sse_algorithm != "aws:kms" ||
+      var.s3.encryption.kms_master_key_id != null
+    ) : true
+    error_message = "When using 'aws:kms' encryption, kms_master_key_id must be provided."
   }
 }
 

@@ -337,10 +337,14 @@ s3 = {
 - Use separate KMS keys for different regions
 - Plan key rotation strategy
 - Test cross-region key access
+- **Disable bucket key encryption for replication to work properly**
 
 ❌ **Don't**:
 - Use the same KMS key across regions
 - Forget to grant replication role access to KMS keys
+- Enable bucket key encryption when replication is configured
+
+**⚠️ Important**: When configuring S3 bucket replication with KMS encryption, ensure that the bucket key is set to `disabled`. Bucket key encryption can interfere with the replication process, preventing objects from being properly replicated to the destination bucket. The module automatically handles this configuration to ensure replication compatibility.
 
 ### 3. Monitoring and Alerting
 

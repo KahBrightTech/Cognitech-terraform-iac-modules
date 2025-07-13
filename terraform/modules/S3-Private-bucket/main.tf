@@ -93,12 +93,14 @@ resource "aws_s3_bucket_public_access_block" "bucket" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "bucket" {
+  count  = var.s3.encryption != null && var.s3.encryption.enabled ? 1 : 0
   bucket = local.bucket_name
 
   rule {
-    bucket_key_enabled = false
+    bucket_key_enabled = var.s3.encryption.bucket_key_enabled
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = var.s3.encryption.sse_algorithm
+      kms_master_key_id = var.s3.encryption.sse_algorithm == "aws:kms" ? var.s3.encryption.kms_master_key_id : null
     }
   }
 }
