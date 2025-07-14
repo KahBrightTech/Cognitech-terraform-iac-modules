@@ -144,6 +144,7 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
       destination {
         bucket        = rule.value.destination.bucket_arn
         storage_class = rule.value.destination.storage_class
+        account       = rule.value.destination.access_control_translation != null ? rule.value.destination.account_id : null
 
         dynamic "access_control_translation" {
           for_each = rule.value.destination.access_control_translation != null ? [rule.value.destination.access_control_translation] : []
