@@ -60,7 +60,7 @@ variable "s3" {
           access_control_translation = optional(object({
             owner = string
           }))
-          account_id = optiional(number)
+          account_id = optional(number)
           encryption_configuration = optional(object({
             replica_kms_key_id = string
           }))
