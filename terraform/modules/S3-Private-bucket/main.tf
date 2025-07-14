@@ -145,6 +145,13 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
         bucket        = rule.value.destination.bucket_arn
         storage_class = rule.value.destination.storage_class
 
+        dynamic "access_control_translation" {
+          for_each = rule.value.destination.access_control_translation != null ? [rule.value.destination.access_control_translation] : []
+          content {
+            owner = access_control_translation.value.owner
+          }
+        }
+
         dynamic "encryption_configuration" {
           for_each = rule.value.destination.encryption_configuration != null ? [rule.value.destination.encryption_configuration] : []
           content {
