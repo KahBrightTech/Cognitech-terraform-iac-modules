@@ -160,6 +160,44 @@ source_selection_criteria = {
 }
 ```
 
+### KMS Key Policies for Replication
+
+When using KMS encryption with S3 replication, both the source and destination KMS keys must grant the replication role appropriate permissions. The replication role must be able to decrypt objects from the source bucket and encrypt objects in the destination bucket.
+
+**Required KMS Key Policy Statement for Source and Destination Keys**:
+
+```json
+{
+  "Sid": "AllowReplicationRoleEncrypt",
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::730335294148:role/int-preproduction-use1-shared-services-source-replication-role"
+  },
+  "Action": [
+    "kms:Encrypt",
+    "kms:ReEncryptTo",
+    "kms:GenerateDataKey*",
+    "kms:DescribeKey",
+    "kms:Decrypt",
+    "kms:ReEncryptFrom"
+  ],
+  "Resource": "*"
+}
+```
+
+**Key Permissions Explained**:
+
+- `kms:Decrypt` and `kms:ReEncryptFrom` - Required to decrypt objects from the source bucket
+- `kms:Encrypt`, `kms:ReEncryptTo`, and `kms:GenerateDataKey*` - Required to encrypt objects in the destination bucket
+- `kms:DescribeKey` - Required to validate key properties and access
+
+**⚠️ Important Notes**:
+
+- This policy statement must be added to both source and destination region KMS keys
+- Replace the Principal ARN with your actual replication role ARN
+- The replication role must have access to KMS keys in both source and destination regions
+- Test key access before enabling replication to avoid permission errors
+
 #### Replication Time Control (RTC)
 
 **Purpose**: Replicate objects within specified time frame
