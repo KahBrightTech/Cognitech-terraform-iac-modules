@@ -4,8 +4,8 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-data "aws_route53_zone" "record" {
-  name         = var.certificate.domain_name
+data "aws_route53_zone" "zone" {
+  name         = var.certificate.zone_name
   private_zone = false
 }
 
@@ -41,7 +41,7 @@ resource "aws_route53_record" "record" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = data.aws_route53_zone.record.zone_id
+  zone_id         = data.aws_route53_zone.zone.zone_id
 }
 
 resource "aws_acm_certificate_validation" "validation" {

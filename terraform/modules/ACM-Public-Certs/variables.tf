@@ -14,6 +14,7 @@ variable "certificate" {
     name              = string
     domain_name       = string
     validation_method = string # "DNS" or "EMAIL"
+    zone_name         = string # Route53 zone name for DNS validation
   })
 }
 
