@@ -3,6 +3,12 @@
 #--------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+
+data "aws_route53_zone" "record" {
+  name         = var.certificate.domain_name
+  private_zone = false
+}
+
 #--------------------------------------------------------------------
 # Locals
 #--------------------------------------------------------------------
