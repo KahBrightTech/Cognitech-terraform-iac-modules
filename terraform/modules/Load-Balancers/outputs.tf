@@ -48,11 +48,11 @@ output "access_logs" {
 }
 output "access_logs_bucket" {
   description = "value of the Load Balancer access logs bucket"
-  value       = aws_lb.main.access_logs[0].bucket
+  value       = length(aws_lb.main.access_logs) > 0 ? aws_lb.main.access_logs[0].bucket : null
 }
 output "access_logs_prefix" {
   description = "value of the Load Balancer access logs prefix"
-  value       = aws_lb.main.access_logs[0].prefix
+  value       = length(aws_lb.main.access_logs) > 0 ? aws_lb.main.access_logs[0].prefix : null
 }
 output "default_listener" {
   description = "value of the Load Balancer default listener configuration"
