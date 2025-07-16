@@ -1,19 +1,20 @@
-# KMS Key Alias
-resource "aws_kms_alias" "backup_key_alias" {
-  name          = "alias/cmk/dailybackup"
-  target_key_id = aws_kms_key.backup_key.key_id
-}
 
-# Backup Vault
+#--------------------------------------------------------------------
+# AWS Backup vault
+#--------------------------------------------------------------------
 resource "aws_backup_vault" "backup_vault" {
-  name        = "${data.aws_ssm_parameter.account.value}-${var.app_name}-backup-vault"
-  kms_key_arn = aws_kms_key.backup_key.arn
+  name        = var.backup.name
+  kms_key_arn = var.backup.kms_key_arn
+  tags = merge(var.common.tags, {
+    Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.backup.name}-vault"
+  })
 }
 
-# IAM Role for Backup
+#--------------------------------------------------------------------
+# AWS Backup Role
+#--------------------------------------------------------------------
 resource "aws_iam_role" "backup_role" {
-  name = "${var.app_name}-backup-role"
-
+  name = var.backup.role_name != null ? var.backup.role_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -25,9 +26,17 @@ resource "aws_iam_role" "backup_role" {
     }]
   })
 
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup"
-  ]
+  tags = merge(var.common.tags, {
+    Name = var.backup.role_name != null ? var.backup.role_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-role"
+  })
+}
+
+#--------------------------------------------------------------------
+# AWS Backup Role Policy Attachment
+#--------------------------------------------------------------------
+resource "aws_iam_role_policy_attachment" "backup_policy" {
+  role       = aws_iam_role.backup_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup"
 }
 
 # Backup Plan

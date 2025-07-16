@@ -8,3 +8,11 @@ variable "common" {
     account_name_abr = optional(string)
   })
 }
+variable "backup" {
+  description = "Backup configuration"
+  type = object({
+    name        = string
+    kms_key_arn = optional(string) # Optional KMS key ARN for encryption
+    role_name   = optional(string) # IAM role name for AWS Backup
+  })
+}

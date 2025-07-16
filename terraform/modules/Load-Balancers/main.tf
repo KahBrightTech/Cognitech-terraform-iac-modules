@@ -30,9 +30,9 @@ resource "aws_lb" "main" {
       private_ipv4_address = subnet_mapping.value.private_ipv4_address
     }
   }
-  # Optional access logs for ALB
+  # Optional access logs for ALB and NLB
   dynamic "access_logs" {
-    for_each = var.load_balancer.type == "application" && var.load_balancer.enable_access_logs ? [1] : []
+    for_each = var.load_balancer.enable_access_logs ? [1] : []
     content {
       bucket  = var.load_balancer.access_logs_bucket
       prefix  = "${data.aws_caller_identity.current.account_id}/elb-logs/${var.load_balancer.type}/${var.load_balancer.name}"
