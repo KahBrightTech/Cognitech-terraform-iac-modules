@@ -16,5 +16,3 @@ output "domain_name" {
   description = "Domain name of the ACM Certificate"
   value       = aws_acm_certificate.main.domain_name
 }
-
-

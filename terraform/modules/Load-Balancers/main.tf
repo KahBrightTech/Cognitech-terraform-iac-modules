@@ -35,7 +35,7 @@ resource "aws_lb" "main" {
     for_each = var.load_balancer.type == "application" && var.load_balancer.enable_access_logs ? [1] : []
     content {
       bucket  = var.load_balancer.access_logs_bucket
-      prefix  = "${data.aws_caller_identity.current.account_id}/elb-logs/${var.load_balancer.vpc_name}"
+      prefix  = "${data.aws_caller_identity.current.account_id}/elb-logs/${var.load_balancer.type}/${var.load_balancer.name}"
       enabled = true
     }
   }
