@@ -60,7 +60,8 @@ resource "aws_backup_plan" "plan" {
     dynamic "lifecycle" {
       for_each = var.backup.plan.lifecycle != null && var.backup.plan.lifecycle.delete_after != null ? [var.backup.plan.lifecycle] : []
       content {
-        delete_after = lifecycle.value.delete_after
+        delete_after       = lifecycle.value.delete_after_days
+        cold_storage_after = lifecycle.value.cold_storage_after_days
       }
     }
   }

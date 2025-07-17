@@ -11,27 +11,31 @@ variable "common" {
 variable "backup" {
   description = "Backup configuration"
   type = object({
-    name        = string
-    kms_key_arn = optional(string) # Optional KMS key ARN for encryption
-    role_name   = optional(string) # IAM role name for AWS Backup
+    name       = string
+    kms_key_id = optional(string)
+    role_name  = optional(string)
     plan = object({
-      name              = optional(string) # Name of the backup plan
-      rule_name         = optional(string) # Name of the backup rule
-      schedule          = optional(string) # Default schedule for backups
-      start_window      = optional(number) # Start window for backups
-      completion_window = optional(number) # Completion window for backups
-      lifecycle = optional(object({
-        delete_after = optional(number) # Days after which backups are deleted
+      name = string
+      rules = list(object({
+        rule_name         = string
+        schedule          = string
+        start_window      = optional(number)
+        completion_window = optional(number)
+        lifecycle = optional(object({
+          cold_storage_after_days = optional(number)
+          delete_after_days       = optional(number)
+        }))
       }))
       selection = optional(object({
-        selection_name = optional(string) # Name of the backup selection
+        selection_name = string
         selection_tags = optional(list(object({
-          type  = string # STRINGEQUALS or STRINGNOTEQUALS
-          key   = string # Tag key
-          value = string # Tag value
+          type  = string
+          key   = string
+          value = string
         })), [])
-        resources = optional(list(string)) # Optional list of resource ARNs
+        resources = optional(list(string))
       }))
     })
   })
+  default = null
 }
