@@ -137,26 +137,26 @@ selection_tags = [
 
 ### backup.plan.selection
 
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| selection_name | string | `"${account_name_abr}-${region_prefix}-backup-selection"` | Name of the backup selection |
-| selection_tags | list(object) | `[{type="STRINGEQUALS", key="backup", value="${region}-daily"}]` | List of tag conditions for resource selection |
-| resources | list(string) | `[]` | Optional list of specific resource ARNs to include |
+| Name           | Type         | Default                                                            | Description                                        |
+| -------------- | ------------ | ------------------------------------------------------------------ | -------------------------------------------------- |
+| selection_name | string       | `"${account_name_abr}-${region_prefix}-backup-selection"`        | Name of the backup selection                       |
+| selection_tags | list(object) | `[{type="STRINGEQUALS", key="backup", value="${region}-daily"}]` | List of tag conditions for resource selection      |
+| resources      | list(string) | `[]`                                                             | Optional list of specific resource ARNs to include |
 
 ### selection_tags object
 
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| type | string | yes | Either "STRINGEQUALS" or "STRINGNOTEQUALS" |
-| key | string | yes | The tag key to match |
-| value | string | yes | The tag value to match |
+| Name  | Type   | Required | Description                                |
+| ----- | ------ | -------- | ------------------------------------------ |
+| type  | string | yes      | Either "STRINGEQUALS" or "STRINGNOTEQUALS" |
+| key   | string | yes      | The tag key to match                       |
+| value | string | yes      | The tag value to match                     |
 
 ## Outputs
 
-| Name | Description |
-|------|-------------|
-| backup_vault_arn | ARN of the backup vault |
-| backup_plan_arn | ARN of the backup plan |
+| Name                | Description                |
+| ------------------- | -------------------------- |
+| backup_vault_arn    | ARN of the backup vault    |
+| backup_plan_arn     | ARN of the backup plan     |
 | backup_selection_id | ID of the backup selection |
 
 ## Examples

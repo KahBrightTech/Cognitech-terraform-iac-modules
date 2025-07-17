@@ -48,17 +48,17 @@ resource "aws_backup_vault" "backup_vault" {
 # AWS Backup Plan
 #--------------------------------------------------------------------
 resource "aws_backup_plan" "plan" {
-  name     = var.backup.plan.name != null ? var.backup.plan.name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-plan"
-  for_each = var.backup.plan != null ? [var.backup.plan] : []
+  name = var.backup.plan.name != null ? var.backup.plan.name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-plan"
+
   rule {
-    rule_name         = each.value.rule_name != null ? each.value.rule_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-rule"
+    rule_name         = var.backup.plan.rule_name != null ? var.backup.plan.rule_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-rule"
     target_vault_name = aws_backup_vault.backup_vault.name
-    schedule          = each.value.schedule
-    start_window      = each.value.start_window
-    completion_window = each.value.completion_window
+    schedule          = var.backup.plan.schedule
+    start_window      = var.backup.plan.start_window
+    completion_window = var.backup.plan.completion_window
 
     lifecycle {
-      delete_after = each.value.lifecycle != null ? each.value.lifecycle.delete_after : null
+      delete_after = var.backup.plan.lifecycle != null ? var.backup.plan.lifecycle.delete_after : null
     }
   }
 }
@@ -67,15 +67,15 @@ resource "aws_backup_plan" "plan" {
 # AWS Backup Selection
 #--------------------------------------------------------------------
 resource "aws_backup_selection" "selection" {
-  for_each = var.backup.plan != null && var.backup.plan.selection != null ? { "main" = var.backup.plan.selection } : {}
+  count = var.backup.plan.selection != null ? 1 : 0
 
-  name         = each.value.selection_name != null ? each.value.selection_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-selection"
+  name         = var.backup.plan.selection.selection_name != null ? var.backup.plan.selection.selection_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-selection"
   iam_role_arn = aws_iam_role.backup_role.arn
-  plan_id      = aws_backup_plan.plan[keys(aws_backup_plan.plan)[0]].id
+  plan_id      = aws_backup_plan.plan.id
 
   # Use variablized selection tags if provided, otherwise use default
   dynamic "selection_tag" {
-    for_each = length(each.value.selection_tags) > 0 ? each.value.selection_tags : [
+    for_each = length(var.backup.plan.selection.selection_tags) > 0 ? var.backup.plan.selection.selection_tags : [
     ]
     content {
       type  = selection_tag.value.type
@@ -85,10 +85,5 @@ resource "aws_backup_selection" "selection" {
   }
 
   # Optional: Include specific resources if provided
-  dynamic "resources" {
-    for_each = each.value.resources != null ? [each.value.resources] : []
-    content {
-      resources = resources.value
-    }
-  }
+  resources = var.backup.plan.selection.resources != null ? var.backup.plan.selection.resources : []
 }
