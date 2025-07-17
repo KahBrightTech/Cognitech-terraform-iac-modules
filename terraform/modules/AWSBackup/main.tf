@@ -38,7 +38,7 @@ resource "aws_iam_role_policy_attachment" "backup_policy" {
 #--------------------------------------------------------------------
 resource "aws_backup_vault" "backup_vault" {
   name        = var.backup.name
-  kms_key_arn = var.backup.kms_key_arn
+  kms_key_arn = var.backup.kms_key_id
   tags = merge(var.common.tags, {
     Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.backup.name}-vault"
   })
