@@ -51,14 +51,14 @@ resource "aws_backup_plan" "plan" {
   name = var.backup.plan.name != null ? var.backup.plan.name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-plan"
 
   rule {
-    rule_name         = var.backup.plan.rule_name != null ? var.backup.plan.rule_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-rule"
+    rule_name         = var.backup.plan.rules.rule_name != null ? var.backup.plan.rules.rule_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-rule"
     target_vault_name = aws_backup_vault.backup_vault.name
-    schedule          = var.backup.plan.schedule
-    start_window      = var.backup.plan.start_window
-    completion_window = var.backup.plan.completion_window
+    schedule          = var.backup.plan.rules.schedule
+    start_window      = var.backup.plan.rules.start_window
+    completion_window = var.backup.plan.rules.completion_window
 
     dynamic "lifecycle" {
-      for_each = var.backup.plan.lifecycle != null && var.backup.plan.lifecycle.delete_after != null ? [var.backup.plan.lifecycle] : []
+      for_each = var.backup.plan.rules.lifecycle != null && var.backup.plan.rules.lifecycle.delete_after != null ? [var.backup.plan.rules.lifecycle] : []
       content {
         delete_after       = lifecycle.value.delete_after_days
         cold_storage_after = lifecycle.value.cold_storage_after_days
