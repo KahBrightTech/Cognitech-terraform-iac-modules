@@ -13,17 +13,17 @@ output "backup_vault_name" {
 
 output "backup_plan_arn" {
   description = "ARN of the backup plan"
-  value       = length(aws_backup_plan.plan) > 0 ? values(aws_backup_plan.plan)[0].arn : null
+  value       = aws_backup_plan.plan.arn
 }
 
 output "backup_plan_id" {
   description = "ID of the backup plan"
-  value       = length(aws_backup_plan.plan) > 0 ? values(aws_backup_plan.plan)[0].id : null
+  value       = aws_backup_plan.plan.id
 }
 
 output "backup_selection_id" {
   description = "ID of the backup selection"
-  value       = length(aws_backup_selection.selection) > 0 ? values(aws_backup_selection.selection)[0].id : null
+  value       = length(aws_backup_selection.selection) > 0 ? aws_backup_selection.selection[0].id : null
 }
 
 output "backup_role_arn" {
