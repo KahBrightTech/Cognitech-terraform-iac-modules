@@ -50,18 +50,21 @@ resource "aws_backup_vault" "backup_vault" {
 resource "aws_backup_plan" "plan" {
   name = var.backup.plan.name != null ? var.backup.plan.name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-plan"
 
-  rule {
-    rule_name         = var.backup.plan.rules.rule_name != null ? var.backup.plan.rules.rule_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-rule"
-    target_vault_name = aws_backup_vault.backup_vault.name
-    schedule          = var.backup.plan.rules.schedule
-    start_window      = var.backup.plan.rules.start_window
-    completion_window = var.backup.plan.rules.completion_window
+  dynamic "rule" {
+    for_each = var.backup.plan.rules
+    content {
+      rule_name         = rule.value.rule_name != null ? rule.value.rule_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-rule"
+      target_vault_name = aws_backup_vault.backup_vault.name
+      schedule          = rule.value.schedule
+      start_window      = rule.value.start_window
+      completion_window = rule.value.completion_window
 
-    dynamic "lifecycle" {
-      for_each = var.backup.plan.rules.lifecycle != null && var.backup.plan.rules.lifecycle.delete_after != null ? [var.backup.plan.rules.lifecycle] : []
-      content {
-        delete_after       = lifecycle.value.delete_after_days
-        cold_storage_after = lifecycle.value.cold_storage_after_days
+      dynamic "lifecycle" {
+        for_each = rule.value.lifecycle != null && (rule.value.lifecycle.delete_after_days != null || rule.value.lifecycle.cold_storage_after_days != null) ? [rule.value.lifecycle] : []
+        content {
+          delete_after       = lifecycle.value.delete_after_days
+          cold_storage_after = lifecycle.value.cold_storage_after_days
+        }
       }
     }
   }
