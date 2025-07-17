@@ -1,14 +1,8 @@
 
 #--------------------------------------------------------------------
-# AWS Backup vault
+# Data Sources
 #--------------------------------------------------------------------
-resource "aws_backup_vault" "backup_vault" {
-  name        = var.backup.name
-  kms_key_arn = var.backup.kms_key_arn
-  tags = merge(var.common.tags, {
-    Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.backup.name}-vault"
-  })
-}
+data "aws_region" "current" {}
 
 #--------------------------------------------------------------------
 # AWS Backup Role
@@ -39,32 +33,62 @@ resource "aws_iam_role_policy_attachment" "backup_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup"
 }
 
-# Backup Plan
-resource "aws_backup_plan" "daily_backup_plan" {
-  name = "${data.aws_ssm_parameter.account.value}-${var.app_name}-backup-plan"
+#--------------------------------------------------------------------
+# AWS Backup vault
+#--------------------------------------------------------------------
+resource "aws_backup_vault" "backup_vault" {
+  name        = var.backup.name
+  kms_key_arn = var.backup.kms_key_arn
+  tags = merge(var.common.tags, {
+    Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.backup.name}-vault"
+  })
+}
 
+#--------------------------------------------------------------------
+# AWS Backup Plan
+#--------------------------------------------------------------------
+resource "aws_backup_plan" "plan" {
+  name     = var.backup.plan.name != null ? var.backup.plan.name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-plan"
+  for_each = var.backup.plan != null ? [var.backup.plan] : []
   rule {
-    rule_name         = "daily-backups"
+    rule_name         = each.value.rule_name != null ? each.value.rule_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-rule"
     target_vault_name = aws_backup_vault.backup_vault.name
-    schedule          = "cron(0 * * * ? *)"
-    start_window      = 60
-    completion_window = 120
+    schedule          = each.value.schedule
+    start_window      = each.value.start_window
+    completion_window = each.value.completion_window
 
     lifecycle {
-      delete_after = 7
+      delete_after = each.value.lifecycle != null ? each.value.lifecycle.delete_after : null
     }
   }
 }
 
-# Backup Selection
-resource "aws_backup_selection" "daily_backup_selection" {
-  name         = "${data.aws_ssm_parameter.account.value}-${var.app_name}-backup-tags"
-  iam_role_arn = aws_iam_role.backup_role.arn
-  plan_id      = aws_backup_plan.daily_backup_plan.id
+#--------------------------------------------------------------------
+# AWS Backup Selection
+#--------------------------------------------------------------------
+resource "aws_backup_selection" "selection" {
+  for_each = var.backup.plan != null && var.backup.plan.selection != null ? { "main" = var.backup.plan.selection } : {}
 
-  selection_tag {
-    type  = "STRINGEQUALS"
-    key   = "backup"
-    value = "${data.aws_region.current.name}-daily"
+  name         = each.value.selection_name != null ? each.value.selection_name : "${var.common.account_name_abr}-${var.common.region_prefix}-backup-selection"
+  iam_role_arn = aws_iam_role.backup_role.arn
+  plan_id      = aws_backup_plan.plan[keys(aws_backup_plan.plan)[0]].id
+
+  # Use variablized selection tags if provided, otherwise use default
+  dynamic "selection_tag" {
+    for_each = length(each.value.selection_tags) > 0 ? each.value.selection_tags : [
+    ]
+    content {
+      type  = selection_tag.value.type
+      key   = selection_tag.value.key
+      value = selection_tag.value.value
+    }
+  }
+
+  # Optional: Include specific resources if provided
+  dynamic "resources" {
+    for_each = each.value.resources != null ? [each.value.resources] : []
+    content {
+      resources = resources.value
+    }
   }
 }
