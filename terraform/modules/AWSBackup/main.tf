@@ -57,8 +57,11 @@ resource "aws_backup_plan" "plan" {
     start_window      = var.backup.plan.start_window
     completion_window = var.backup.plan.completion_window
 
-    lifecycle {
-      delete_after = var.backup.plan.lifecycle != null ? var.backup.plan.lifecycle.delete_after : null
+    dynamic "lifecycle" {
+      for_each = var.backup.plan.lifecycle != null && var.backup.plan.lifecycle.delete_after != null ? [var.backup.plan.lifecycle] : []
+      content {
+        delete_after = lifecycle.value.delete_after
+      }
     }
   }
 }
