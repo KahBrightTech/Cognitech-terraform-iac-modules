@@ -20,11 +20,14 @@ variable "target_group" {
       port      = number
     })
     health_check = object({
-      path                = string
-      interval            = number
-      timeout             = number
-      healthy_threshold   = number
-      unhealthy_threshold = number
+      enabled             = optional(bool, true)
+      protocol            = optional(string)
+      port                = optional(number)
+      path                = optional(string)
+      interval            = optional(number)
+      timeout             = optional(number)
+      healthy_threshold   = optional(number)
+      unhealthy_threshold = optional(number)
     })
   })
 }

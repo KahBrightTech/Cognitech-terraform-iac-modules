@@ -44,11 +44,14 @@ resource "aws_lb_target_group" "default" {
   vpc_id   = var.listener.vpc_id
 
   health_check {
-    path                = var.listener.health_check.path
-    interval            = var.listener.health_check.interval
-    timeout             = var.listener.health_check.timeout
-    healthy_threshold   = var.listener.health_check.healthy_threshold
-    unhealthy_threshold = var.listener.health_check.unhealthy_threshold
+    enabled             = var.target_group.health_check.enabled
+    protocol            = var.target_group.health_check.protocol
+    port                = var.target_group.health_check.port
+    path                = var.target_group.health_check.path
+    interval            = var.target_group.health_check.interval
+    timeout             = var.target_group.health_check.timeout
+    healthy_threshold   = var.target_group.health_check.healthy_threshold
+    unhealthy_threshold = var.target_group.health_check.unhealthy_threshold
   }
 
   tags = merge(var.common.tags, {

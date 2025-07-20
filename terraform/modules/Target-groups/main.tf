@@ -15,6 +15,9 @@ resource "aws_lb_target_group" "target_group" {
   vpc_id   = var.target_group.vpc_id
 
   health_check {
+    enabled             = var.target_group.health_check.enabled
+    protocol            = var.target_group.health_check.protocol
+    port                = var.target_group.health_check.port
     path                = var.target_group.health_check.path
     interval            = var.target_group.health_check.interval
     timeout             = var.target_group.health_check.timeout
