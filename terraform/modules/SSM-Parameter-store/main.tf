@@ -12,7 +12,7 @@ resource "aws_ssm_parameter" "parameter" {
 
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.ssm_parameter.name}"
+      Name = "${var.ssm_parameter.name}"
     }
   )
 
