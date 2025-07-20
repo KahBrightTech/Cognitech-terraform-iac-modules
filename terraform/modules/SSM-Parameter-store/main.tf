@@ -3,7 +3,7 @@
 #--------------------------------------------------------------------
 
 resource "aws_ssm_parameter" "parameter" {
-  name        = "${var.common.account_name}-${var.common.region_prefix}-${var.ssm_parameter.name}"
+  name        = var.ssm_parameter.name
   description = var.ssm_parameter.description
   type        = var.ssm_parameter.type
   value       = var.ssm_parameter.value
