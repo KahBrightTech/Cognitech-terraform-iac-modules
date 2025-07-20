@@ -29,10 +29,10 @@ variable "nlb_listener" {
       port     = number
       protocol = string
       vpc_id   = string
-      attachment = object({
+      attachment = optional(object({
         target_id = string
         port      = number
-      })
+      }))
       health_check = object({
         enabled             = optional(bool, true)
         protocol            = optional(string)
