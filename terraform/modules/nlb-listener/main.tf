@@ -31,11 +31,16 @@ resource "aws_lb_target_group" "default" {
   name     = var.nlb_listener.target_group.name
   port     = var.nlb_listener.target_group.port
   protocol = var.nlb_listener.target_group.protocol
-  stickiness {
-    enabled         = var.nlb_listener.target_group.stickiness.enabled
-    type            = var.nlb_listener.target_group.stickiness.type
-    cookie_duration = var.nlb_listener.target_group.stickiness.duration
+
+  dynamic "stickiness" {
+    for_each = var.nlb_listener.target_group.stickiness != null ? [var.nlb_listener.target_group.stickiness] : []
+    content {
+      enabled         = stickiness.value.enabled
+      type            = stickiness.value.type
+      cookie_duration = stickiness.value.duration
+    }
   }
+
   vpc_id = var.nlb_listener.target_group.vpc_id
 
   health_check {
