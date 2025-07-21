@@ -36,7 +36,7 @@ resource "aws_lb_target_group" "default" {
     type            = var.nlb_listener.target_group.stickiness.type
     cookie_duration = var.nlb_listener.target_group.stickiness.duration
   }
-  vpc_id = var.nlb_listener.vpc_id
+  vpc_id = var.nlb_listener.target_group.vpc_id
 
   health_check {
     enabled             = var.nlb_listener.target_group.health_check.enabled
@@ -46,7 +46,7 @@ resource "aws_lb_target_group" "default" {
     interval            = var.nlb_listener.target_group.health_check.interval
     timeout             = var.nlb_listener.target_group.health_check.timeout
     healthy_threshold   = var.nlb_listener.target_group.health_check.healthy_threshold
-    unhealthy_threshold = var.nlb_listener.health_check.unhealthy_threshold
+    unhealthy_threshold = var.nlb_listener.target_group.health_check.unhealthy_threshold
   }
 
   tags = merge(var.common.tags, {
