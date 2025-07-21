@@ -39,13 +39,13 @@ resource "aws_lb_target_group" "default" {
   vpc_id = var.nlb_listener.vpc_id
 
   health_check {
-    enabled             = var.nlb_listener.health_check.enabled
-    protocol            = var.nlb_listener.health_check.protocol
-    port                = var.nlb_listener.health_check.port
-    path                = var.nlb_listener.health_check.path
-    interval            = var.nlb_listener.health_check.interval
-    timeout             = var.nlb_listener.health_check.timeout
-    healthy_threshold   = var.nlb_listener.health_check.healthy_threshold
+    enabled             = var.nlb_listener.target_group.health_check.enabled
+    protocol            = var.nlb_listener.target_group.health_check.protocol
+    port                = var.nlb_listener.target_group.health_check.port
+    path                = var.nlb_listener.target_group.health_check.path
+    interval            = var.nlb_listener.target_group.health_check.interval
+    timeout             = var.nlb_listener.target_group.health_check.timeout
+    healthy_threshold   = var.nlb_listener.target_group.health_check.healthy_threshold
     unhealthy_threshold = var.nlb_listener.health_check.unhealthy_threshold
   }
 
