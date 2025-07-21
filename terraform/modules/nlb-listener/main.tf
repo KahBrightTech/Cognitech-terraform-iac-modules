@@ -50,7 +50,7 @@ resource "aws_lb_target_group" "default" {
   }
 
   tags = merge(var.common.tags, {
-    Name = "${var.common.account_name}-${var.common.region_prefix}-tg-${var.nlb_listener.name}"
+    Name = "${var.common.account_name}-${var.common.region_prefix}-tg-${var.nlb_listener.target_group.name}"
   })
 }
 
