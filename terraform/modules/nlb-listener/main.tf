@@ -16,10 +16,10 @@ resource "aws_lb_listener" "listener" {
 
   # Dynamic block for forward default action using external target group
   dynamic "default_action" {
-    for_each = var.nlb_listener.forward != null ? [var.nlb_listener.forward] : []
+    for_each = var.nlb_listener.forward != null ? [1] : []
     content {
       type             = "forward"
-      target_group_arn = default_action.value.target_group_arn
+      target_group_arn = var.nlb_listener.forward.target_group_arn
     }
   }
 
@@ -31,6 +31,8 @@ resource "aws_lb_listener" "listener" {
       target_group_arn = aws_lb_target_group.default[0].arn
     }
   }
+
+  depends_on = [aws_lb_target_group.default]
 }
 
 #-------------------------------------------------------------------------------------------------------------------
@@ -53,15 +55,18 @@ resource "aws_lb_target_group" "default" {
 
   vpc_id = var.nlb_listener.target_group.vpc_id
 
-  health_check {
-    enabled             = var.nlb_listener.target_group.health_check.enabled
-    protocol            = var.nlb_listener.target_group.health_check.protocol
-    port                = var.nlb_listener.target_group.health_check.port
-    path                = var.nlb_listener.target_group.health_check.path
-    interval            = var.nlb_listener.target_group.health_check.interval
-    timeout             = var.nlb_listener.target_group.health_check.timeout
-    healthy_threshold   = var.nlb_listener.target_group.health_check.healthy_threshold
-    unhealthy_threshold = var.nlb_listener.target_group.health_check.unhealthy_threshold
+  dynamic "health_check" {
+    for_each = var.nlb_listener.target_group.health_check != null ? [var.nlb_listener.target_group.health_check] : []
+    content {
+      enabled             = health_check.value.enabled
+      protocol            = health_check.value.protocol
+      port                = health_check.value.port
+      path                = health_check.value.path
+      interval            = health_check.value.interval
+      timeout             = health_check.value.timeout
+      healthy_threshold   = health_check.value.healthy_threshold
+      unhealthy_threshold = health_check.value.unhealthy_threshold
+    }
   }
 
   tags = merge(var.common.tags, {
@@ -76,6 +81,6 @@ resource "aws_lb_target_group" "default" {
 resource "aws_lb_target_group_attachment" "default" {
   count            = var.nlb_listener.target_group != null && try(var.nlb_listener.target_group.attachment != null, false) ? 1 : 0
   target_group_arn = aws_lb_target_group.default[0].arn
-  target_id        = var.nlb_listener.target_group.attachment.target_id
-  port             = var.nlb_listener.target_group.attachment.port
+  target_id        = try(var.nlb_listener.target_group.attachment.target_id, null)
+  port             = try(var.nlb_listener.target_group.attachment.port, null)
 }
