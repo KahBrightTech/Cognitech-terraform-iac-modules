@@ -36,9 +36,9 @@ resource "aws_lb_target_group" "target_group" {
 #-------------------------------------------------------------------------------------------------------------------
 
 resource "aws_lb_target_group_attachment" "attachment" {
-  count            = var.target_group.target_group && var.target_group.target_group.attachment != null ? 1 : 0
+  count            = var.target_group.attachment != null ? 1 : 0
   target_group_arn = aws_lb_target_group.target_group.arn
-  target_id        = var.target_group.target_group.attachment.target_id
-  port             = var.target_group.target_group.attachment.port
+  target_id        = var.target_group.attachment.target_id
+  port             = var.target_group.attachment.port
 }
 
