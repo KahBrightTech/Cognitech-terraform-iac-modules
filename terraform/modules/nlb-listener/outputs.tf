@@ -42,25 +42,25 @@ output "listener_default_action" {
 
 output "target_group_arn" {
   description = "The ARN of the Target Group"
-  value       = aws_lb_target_group.default.arn
+  value       = var.nlb_listener.target_group != null ? aws_lb_target_group.default[0].arn : null
 }
 
 output "target_group_id" {
   description = "The ID of the Target Group"
-  value       = aws_lb_target_group.default.id
+  value       = var.nlb_listener.target_group != null ? aws_lb_target_group.default[0].id : null
 }
 
 output "target_group_port" {
   description = "The port of the Target Group"
-  value       = aws_lb_target_group.default.port
+  value       = var.nlb_listener.target_group != null ? aws_lb_target_group.default[0].port : null
 }
 
 output "target_group_protocol" {
   description = "The protocol of the Target Group"
-  value       = aws_lb_target_group.default.protocol
+  value       = var.nlb_listener.target_group != null ? aws_lb_target_group.default[0].protocol : null
 }
 
 output "target_group_health_check" {
   description = "The health check configuration of the Target Group"
-  value       = aws_lb_target_group.default.health_check
+  value       = var.nlb_listener.target_group != null ? aws_lb_target_group.default[0].health_check : null
 }

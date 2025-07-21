@@ -59,8 +59,8 @@ resource "aws_lb_target_group" "default" {
 #-------------------------------------------------------------------------------------------------------------------
 
 resource "aws_lb_target_group_attachment" "default" {
-  count            = var.nlb_listener.target_group && var.nlb_listener.target_group.attachment != null ? 1 : 0
-  target_group_arn = aws_lb_target_group.default.arn
+  count            = var.nlb_listener.target_group != null && var.nlb_listener.target_group.attachment != null ? 1 : 0
+  target_group_arn = aws_lb_target_group.default[0].arn
   target_id        = var.nlb_listener.target_group.attachment.target_id
   port             = var.nlb_listener.target_group.attachment.port
 }
