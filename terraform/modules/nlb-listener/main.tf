@@ -13,12 +13,22 @@ resource "aws_lb_listener" "listener" {
   protocol          = var.nlb_listener.protocol
   ssl_policy        = var.nlb_listener.ssl_policy
   certificate_arn   = var.nlb_listener.certificate_arn
-  # Dynamic block for forward default action
+
+  # Dynamic block for forward default action using external target group
   dynamic "default_action" {
     for_each = var.nlb_listener.forward != null ? [var.nlb_listener.forward] : []
     content {
       type             = "forward"
       target_group_arn = default_action.value.target_group_arn
+    }
+  }
+
+  # Dynamic block for forward default action using module-created target group
+  dynamic "default_action" {
+    for_each = var.nlb_listener.forward == null && var.nlb_listener.target_group != null ? [1] : []
+    content {
+      type             = "forward"
+      target_group_arn = aws_lb_target_group.default[0].arn
     }
   }
 }
@@ -64,7 +74,7 @@ resource "aws_lb_target_group" "default" {
 #-------------------------------------------------------------------------------------------------------------------
 
 resource "aws_lb_target_group_attachment" "default" {
-  count            = var.nlb_listener.target_group != null && var.nlb_listener.target_group.attachment != null ? 1 : 0
+  count            = var.nlb_listener.target_group != null && try(var.nlb_listener.target_group.attachment != null, false) ? 1 : 0
   target_group_arn = aws_lb_target_group.default[0].arn
   target_id        = var.nlb_listener.target_group.attachment.target_id
   port             = var.nlb_listener.target_group.attachment.port
