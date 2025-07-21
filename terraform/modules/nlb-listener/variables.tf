@@ -18,11 +18,6 @@ variable "nlb_listener" {
     certificate_arn   = optional(string)
     forward = optional(object({
       target_group_arn = string
-      stickiness = optional(object({
-        enabled  = bool
-        type     = string           # e.g., "lb_cookie"
-        duration = optional(number) # Duration in seconds for lb_cookie type
-      }))
     }))
     target_group = optional(object({
       name     = string
@@ -32,6 +27,11 @@ variable "nlb_listener" {
       attachment = optional(object({
         target_id = string
         port      = number
+      }))
+      stickiness = optional(object({
+        enabled  = bool
+        type     = string           # e.g., "lb_cookie"
+        duration = optional(number) # Duration in seconds for lb_cookie type
       }))
       health_check = object({
         enabled             = optional(bool, true)

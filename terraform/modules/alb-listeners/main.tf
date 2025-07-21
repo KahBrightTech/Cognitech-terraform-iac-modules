@@ -33,16 +33,6 @@ resource "aws_lb_listener" "listener" {
     content {
       type             = "forward"
       target_group_arn = default_action.value.target_group_arn
-
-      # Dynamic stickiness block (optional)
-      dynamic "stickiness" {
-        for_each = default_action.value.stickiness != null ? [default_action.value.stickiness] : []
-        content {
-          enabled         = stickiness.value.enabled
-          type            = stickiness.value.type
-          cookie_duration = stickiness.value.duration
-        }
-      }
     }
   }
 }

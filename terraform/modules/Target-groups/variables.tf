@@ -19,6 +19,11 @@ variable "target_group" {
       target_id = string
       port      = number
     }))
+    stickiness = optional(object({
+      enabled  = bool
+      type     = string           # e.g., "lb_cookie"
+      duration = optional(number) # Duration in seconds for lb_cookie type
+    }))
     health_check = object({
       enabled             = optional(bool, true)
       protocol            = optional(string)

@@ -12,7 +12,12 @@ resource "aws_lb_target_group" "target_group" {
   name     = var.target_group.name
   port     = var.target_group.port
   protocol = var.target_group.protocol
-  vpc_id   = var.target_group.vpc_id
+  stickiness {
+    enabled         = var.target_group.stickiness.enabled
+    type            = var.target_group.stickiness.type
+    cookie_duration = var.target_group.stickiness.duration
+  }
+  vpc_id = var.target_group.vpc_id
 
   health_check {
     enabled             = var.target_group.health_check.enabled

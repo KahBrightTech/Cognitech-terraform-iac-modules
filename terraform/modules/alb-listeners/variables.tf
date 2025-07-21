@@ -26,11 +26,6 @@ variable "listener" {
 
     forward = optional(object({
       target_group_arn = string
-      stickiness = optional(object({
-        enabled  = bool
-        type     = string           # e.g., "lb_cookie"
-        duration = optional(number) # Duration in seconds for lb_cookie type
-      }))
     }))
   })
 }

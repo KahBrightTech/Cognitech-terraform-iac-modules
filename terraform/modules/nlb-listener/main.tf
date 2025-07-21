@@ -19,16 +19,6 @@ resource "aws_lb_listener" "listener" {
     content {
       type             = "forward"
       target_group_arn = default_action.value.target_group_arn
-
-      # Dynamic stickiness block (optional)
-      dynamic "stickiness" {
-        for_each = default_action.value.stickiness != null ? [default_action.value.stickiness] : []
-        content {
-          enabled         = stickiness.value.enabled
-          type            = stickiness.value.type
-          cookie_duration = stickiness.value.duration
-        }
-      }
     }
   }
 }
@@ -41,17 +31,22 @@ resource "aws_lb_target_group" "default" {
   name     = var.nlb_listener.name
   port     = var.nlb_listener.port
   protocol = var.nlb_listener.protocol
-  vpc_id   = var.nlb_listener.vpc_id
+  stickiness {
+    enabled         = var.nlb_listener.target_group.stickiness.enabled
+    type            = var.nlb_listener.target_group.stickiness.type
+    cookie_duration = var.nlb_listener.target_group.stickiness.duration
+  }
+  vpc_id = var.nlb_listener.vpc_id
 
   health_check {
-    enabled             = var.target_group.health_check.enabled
-    protocol            = var.target_group.health_check.protocol
-    port                = var.target_group.health_check.port
-    path                = var.target_group.health_check.path
-    interval            = var.target_group.health_check.interval
-    timeout             = var.target_group.health_check.timeout
-    healthy_threshold   = var.target_group.health_check.healthy_threshold
-    unhealthy_threshold = var.target_group.health_check.unhealthy_threshold
+    enabled             = var.nlb_listener.health_check.enabled
+    protocol            = var.nlb_listener.health_check.protocol
+    port                = var.nlb_listener.health_check.port
+    path                = var.nlb_listener.health_check.path
+    interval            = var.nlb_listener.health_check.interval
+    timeout             = var.nlb_listener.health_check.timeout
+    healthy_threshold   = var.nlb_listener.health_check.healthy_threshold
+    unhealthy_threshold = var.nlb_listener.health_check.unhealthy_threshold
   }
 
   tags = merge(var.common.tags, {
