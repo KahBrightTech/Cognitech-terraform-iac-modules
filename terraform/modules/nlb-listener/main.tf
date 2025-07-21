@@ -28,9 +28,9 @@ resource "aws_lb_listener" "listener" {
 #-------------------------------------------------------------------------------------------------------------------
 resource "aws_lb_target_group" "default" {
   count    = var.nlb_listener.target_group != null ? 1 : 0
-  name     = var.nlb_listener.name
-  port     = var.nlb_listener.port
-  protocol = var.nlb_listener.protocol
+  name     = var.nlb_listener.target_group.name
+  port     = var.nlb_listener.target_group.port
+  protocol = var.nlb_listener.target_group.protocol
   stickiness {
     enabled         = var.nlb_listener.target_group.stickiness.enabled
     type            = var.nlb_listener.target_group.stickiness.type
