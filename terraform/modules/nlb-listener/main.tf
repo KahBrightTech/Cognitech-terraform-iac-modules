@@ -30,7 +30,7 @@ resource "aws_lb_listener" "nlb_listener" {
   certificate_arn   = var.nlb_listener.protocol == "TLS" ? var.nlb_listener.certificate_arn : null
   default_action {
     type             = var.nlb_listener.action
-    target_group_arn = var.nlb_listener.forward.target_group_arn
+    target_group_arn = module.nlb_target_group.target_group_arn
   }
   tags = merge(
     var.common.tags,
