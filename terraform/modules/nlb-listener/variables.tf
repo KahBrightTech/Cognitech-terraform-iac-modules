@@ -11,6 +11,7 @@ variable "common" {
 variable "nlb_listener" {
   description = "Network Load Balancer listener configuration"
   type = object({
+    name            = string
     nlb_arn         = string
     action          = optional(string, "forward")
     port            = number
