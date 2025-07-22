@@ -27,10 +27,10 @@ variable "nlb_listener" {
       name     = string
       port     = number
       protocol = string
-      attachments = optional(object({
+      attachments = optional(list(object({
         target_id = string
         port      = number
-      }))
+      })))
       stickiness = optional(object({
         enabled         = bool
         type            = string
