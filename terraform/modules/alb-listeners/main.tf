@@ -56,7 +56,7 @@ resource "aws_lb_listener" "alb_listener" {
 # SNI Certificates for ALB
 #-------------------------------------------------------------------------------------------------------------------
 
-resource "aws_lb_listener_sni_certificate" "sni_certificates" {
+resource "aws_lb_listener_certificate" "sni_certificates" {
   for_each        = var.alb_listener.protocol == "HTTPS" && var.alb_listener.sni_certificates != null ? { for cert in var.alb_listener.sni_certificates : cert.domain_name => cert } : {}
   certificate_arn = each.value.certificate_arn
   listener_arn    = aws_lb_listener.alb_listener.arn
