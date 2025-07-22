@@ -32,7 +32,7 @@ resource "aws_lb_listener" "alb_listener" {
 
   default_action {
     type             = var.alb_listener.action
-    target_group_arn = var.alb_listener.action == "forward" ? module.alb_target_group[0].target_group_arn : null
+    target_group_arn = var.alb_listener.action == "forward" && var.alb_listener.target_group != null && length(module.alb_target_group) > 0 ? module.alb_target_group[0].target_group_arn : null
 
     # Dynamic block for fixed-response default action
     dynamic "fixed_response" {
