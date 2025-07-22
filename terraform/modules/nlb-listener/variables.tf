@@ -20,20 +20,20 @@ variable "nlb_listener" {
     certificate_arn = optional(string)
     vpc_id          = string
     sni_certificates = optional(list(object({
-      domain_name     = string
-      certificate_arn = string
+      domain_name     = optional(string)
+      certificate_arn = optional(string)
     })))
     target_group = optional(object({
-      name     = string
-      port     = number
-      protocol = string
+      name     = optional(string)
+      port     = optional(number)
+      protocol = optional(string)
       attachments = optional(list(object({
-        target_id = string
-        port      = number
+        target_id = optional(string)
+        port      = optional(number)
       })))
       stickiness = optional(object({
-        enabled         = bool
-        type            = string
+        enabled         = optional(bool)
+        type            = optional(string)
         cookie_duration = optional(number)
         cookie_name     = optional(string)
       }))
