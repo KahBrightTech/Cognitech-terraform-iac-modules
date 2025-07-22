@@ -27,7 +27,7 @@ variable "nlb_listener" {
       name     = string
       port     = number
       protocol = string
-      attachment = optional(object({
+      attachments = optional(object({
         target_id = string
         port      = number
       }))
