@@ -23,7 +23,7 @@ module "nlb_target_group" {
 # Load Balancer Configuration. Creates default listener for the Load Balancer.
 #-------------------------------------------------------------------------------------------------------------------
 resource "aws_lb_listener" "nlb_listener" {
-  load_balancer_arn = var.nlb_listener.load_balancer_arn
+  load_balancer_arn = var.nlb_listener.nlb_arn
   port              = var.nlb_listener.port
   protocol          = var.nlb_listener.protocol
   ssl_policy        = var.nlb_listener.protocol == "TLS" ? var.nlb_listener.ssl_policy : null
