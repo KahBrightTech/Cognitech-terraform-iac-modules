@@ -32,7 +32,7 @@ variable "alb_listener" {
       name     = optional(string)
       port     = optional(number)
       protocol = optional(string)
-      attachment = optional(list(object({
+      attachments = optional(list(object({
         target_id = optional(string)
         port      = optional(number)
       })))
