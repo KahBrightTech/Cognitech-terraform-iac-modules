@@ -12,9 +12,9 @@ module "nlb_target_group" {
 
   common = var.common
   target_group = merge(
-    var.alb_listener.target_group,
+    var.nlb_listener.target_group,
     {
-      vpc_id = var.alb_listener.vpc_id
+      vpc_id = var.nlb_listener.vpc_id
     }
   )
 }
@@ -43,11 +43,11 @@ resource "aws_lb_listener" "nlb_listener" {
 
 
 #-------------------------------------------------------------------------------------------------------------------
-# SNI Certificates for ALB
+# SNI Certificates for NLB
 #-------------------------------------------------------------------------------------------------------------------
 
 resource "aws_lb_listener_sni_certificate" "sni_certificates" {
-  for_each        = var.alb_listener.protocol == "HTTPS" && var.alb_listener.sni_certificates != null ? { for cert in var.alb_listener.sni_certificates : cert.domain_name => cert } : {}
+  for_each        = var.nlb_listener.protocol == "HTTPS" && var.nlb_listener.sni_certificates != null ? { for cert in var.nlb_listener.sni_certificates : cert.domain_name => cert } : {}
   certificate_arn = each.value.certificate_arn
-  listener_arn    = aws_lb_listener.alb_listener.arn
+  listener_arn    = aws_lb_listener.nlb_listener.arn
 }
