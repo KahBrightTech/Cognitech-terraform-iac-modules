@@ -29,21 +29,21 @@ resource "aws_lb_listener" "nlb_listener" {
   protocol          = var.nlb_listener.protocol
   ssl_policy        = var.nlb_listener.protocol == "TLS" ? var.nlb_listener.ssl_policy : null
   certificate_arn   = var.nlb_listener.protocol == "TLS" ? var.nlb_listener.certificate_arn : null
+
   default_action {
-    type             = var.nlb_listener.action
-    target_group_arn = var.nlb_listener.action == "forward" && var.nlb_listener.target_group != null && length(module.nlb_target_group) > 0 ? module.nlb_target_group[0].target_group_arn : null
+    type = var.nlb_listener.action
+
+    # For forward actions, target_group_arn is required
+    target_group_arn = var.nlb_listener.action == "forward" ? module.nlb_target_group[0].target_group_arn : null
   }
+
   tags = merge(
     var.common.tags,
     {
       Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.nlb_listener.port}"
     }
   )
-}
-
-
-
-#-------------------------------------------------------------------------------------------------------------------
+} #-------------------------------------------------------------------------------------------------------------------
 # SNI Certificates for NLB
 #-------------------------------------------------------------------------------------------------------------------
 
