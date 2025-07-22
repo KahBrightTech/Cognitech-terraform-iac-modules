@@ -3,13 +3,12 @@
 #--------------------------------------------------------------------
 output "alb_target_group_arn" {
   description = "The ARN of the ALB target group"
-  value       = var.alb_listener.action == "forward" ? module.alb_target_group.target_group_arn : null
+  value       = var.alb_listener.action == "forward" && var.alb_listener.target_group != null && length(module.alb_target_group) > 0 ? module.alb_target_group[0].target_group_arn : null
 }
 
 output "alb_target_group_id" {
   description = "The ID of the ALB target group"
-  value       = var.alb_listener.action == "forward" ? module.alb_target_group.target_group_id : null
-
+  value       = var.alb_listener.action == "forward" && var.alb_listener.target_group != null && length(module.alb_target_group) > 0 ? module.alb_target_group[0].target_group_id : null
 }
 
 #--------------------------------------------------------------------
