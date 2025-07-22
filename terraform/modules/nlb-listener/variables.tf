@@ -11,39 +11,40 @@ variable "common" {
 variable "nlb_listener" {
   description = "Network Load Balancer listener configuration"
   type = object({
-    load_balancer_arn = string
-    port              = number
-    protocol          = string
-    ssl_policy        = optional(string)
-    certificate_arn   = optional(string)
-    forward = optional(object({
-      target_group_arn = string
-    }))
+    nlb_arn         = string
+    action          = optional(string, "forward")
+    port            = number
+    protocol        = string
+    ssl_policy      = optional(string)
+    certificate_arn = optional(string)
+    vpc_id          = string
+    sni_certificates = optional(list(object({
+      domain_name     = string
+      certificate_arn = string
+    })))
     target_group = optional(object({
       name     = string
       port     = number
       protocol = string
-      vpc_id   = string
       attachment = optional(object({
         target_id = string
         port      = number
       }))
       stickiness = optional(object({
-        enabled  = bool
-        type     = string           # e.g., "lb_cookie"
-        duration = optional(number) # Duration in seconds for lb_cookie type
+        enabled         = bool
+        type            = string
+        cookie_duration = optional(number)
+        cookie_name     = optional(string)
       }))
       health_check = object({
-        enabled             = optional(bool, true)
-        protocol            = optional(string)
-        port                = optional(number)
-        path                = optional(string)
-        interval            = optional(number)
-        timeout             = optional(number)
-        healthy_threshold   = optional(number)
-        unhealthy_threshold = optional(number)
+        enabled  = optional(bool, true)
+        protocol = optional(string)
+        port     = optional(number)
+        path     = optional(string)
+        matcher  = optional(string, "200")
       })
     }))
   })
+  default = null
 }
 

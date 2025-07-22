@@ -8,25 +8,48 @@ variable "common" {
     account_name_abr = optional(string)
   })
 }
-variable "listener" {
+variable "alb_listener" {
   description = "Load Balancer listener configuration"
   type = object({
-    load_balancer_arn = string
-    port              = number
-    protocol          = string
-    ssl_policy        = optional(string)
-    certificate_arn   = optional(string)
-
-    # Default action configuration - either fixed_response OR forward, not both
+    alb_arn          = string
+    action           = optional(string, "forward")
+    port             = number
+    protocol         = string
+    ssl_policy       = optional(string)
+    certificate_arn  = optional(string)
+    alt_alb_hostname = optional(string)
+    vpc_id           = string
     fixed_response = optional(object({
       content_type = optional(string, "text/plain")
       message_body = optional(string, "Oops! The page you are looking for does not exist.")
       status_code  = optional(string, "200")
     }))
-
-    forward = optional(object({
-      target_group_arn = string
+    sni_certificates = optional(list(object({
+      domain_name     = string
+      certificate_arn = string
+    })))
+    target_group = optional(object({
+      name     = string
+      port     = number
+      protocol = string
+      attachment = optional(object({
+        target_id = string
+        port      = number
+      }))
+      stickiness = optional(object({
+        enabled         = bool
+        type            = string
+        cookie_duration = optional(number)
+        cookie_name     = optional(string)
+      }))
+      health_check = object({
+        protocol = optional(string)
+        port     = optional(number)
+        path     = optional(string)
+        matcher  = optional(string)
+      })
     }))
   })
+  default = null
 }
 

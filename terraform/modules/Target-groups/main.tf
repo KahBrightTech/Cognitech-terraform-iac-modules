@@ -8,31 +8,35 @@ data "aws_region" "current" {}
 # Target Group Configuration. Creates default listener for the Load Balancer.
 #-------------------------------------------------------------------------------------------------------------------
 
-resource "aws_lb_target_group" "target_group" {
-  name     = var.target_group.name
-  port     = var.target_group.port
-  protocol = var.target_group.protocol
+resource "aws_lb_target_group" "tg" {
+  name               = var.target_group.name
+  port               = var.target_group.port
+  protocol           = var.target_group.protocol
+  vpc_id             = var.target_group.vpc_id
+  preserve_client_ip = try(var.target_group.preserve_client_ip, null)
+  target_type        = var.target_group.target_type
 
   dynamic "stickiness" {
-    for_each = var.target_group.stickiness != null ? [var.target_group.stickiness] : []
+    for_each = var.target_group.stickiness != null ? [1] : []
     content {
-      enabled         = stickiness.value.enabled
-      type            = stickiness.value.type
-      cookie_duration = stickiness.value.duration
+      enabled         = try(var.target_group.stickiness.enabled, null)
+      type            = try(var.target_group.stickiness.type, null)
+      cookie_duration = try(var.target_group.stickiness.cookie_duration, null)
+      cookie_name     = try(var.target_group.stickiness.cookie_name, null)
     }
   }
-
-  vpc_id = var.target_group.vpc_id
-
-  health_check {
-    enabled             = var.target_group.health_check.enabled
-    protocol            = var.target_group.health_check.protocol
-    port                = var.target_group.health_check.port
-    path                = var.target_group.health_check.path
-    interval            = var.target_group.health_check.interval
-    timeout             = var.target_group.health_check.timeout
-    healthy_threshold   = var.target_group.health_check.healthy_threshold
-    unhealthy_threshold = var.target_group.health_check.unhealthy_threshold
+  dynamic "health_check" {
+    for_each = var.target_group.health_check != null ? [1] : []
+    content {
+      protocol            = var.target_group.health_check.protocol
+      port                = var.target_group.health_check.port != var.target_group.port ? var.target_group.health_check.port : null
+      path                = var.target_group.health_check.path
+      matcher             = var.target_group.health_check.matcher
+      interval            = 30
+      timeout             = 10
+      healthy_threshold   = 3
+      unhealthy_threshold = 3
+    }
   }
 
   tags = merge(var.common.tags, {
@@ -46,9 +50,9 @@ resource "aws_lb_target_group" "target_group" {
 #-------------------------------------------------------------------------------------------------------------------
 
 resource "aws_lb_target_group_attachment" "attachment" {
-  count            = var.target_group.attachment != null ? 1 : 0
-  target_group_arn = aws_lb_target_group.target_group.arn
-  target_id        = var.target_group.attachment.target_id
-  port             = var.target_group.attachment.port
+  count            = var.target_group.attachments != null ? length(var.target_group.attachments) : 0
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = var.target_group.attachments[count.index].target_id
+  port             = var.target_group.attachments[count.index].port
 }
 

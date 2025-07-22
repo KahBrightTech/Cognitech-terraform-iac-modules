@@ -1,37 +1,28 @@
 #--------------------------------------------------------------------
-# Load Balancer Listeners Module
+# ALB Target Group Outputs
 #--------------------------------------------------------------------
-output "listener_arn" {
-  description = "The ARN of the Load Balancer listener"
-  value       = aws_lb_listener.listener.arn
+output "alb_target_group_arn" {
+  description = "The ARN of the ALB target group"
+  value       = var.alb_listener.action == "forward" ? module.alb_target_group.target_group_arn : null
 }
 
-output "listener_id" {
-  description = "The ID of the Load Balancer listener"
-  value       = aws_lb_listener.listener.id
+output "alb_target_group_id" {
+  description = "The ID of the ALB target group"
+  value       = var.alb_listener.action == "forward" ? module.alb_target_group.target_group_id : null
+
 }
 
-output "listener_port" {
-  description = "The port of the Load Balancer listener"
-  value       = aws_lb_listener.listener.port
+#--------------------------------------------------------------------
+# ALB Listener Outputs
+#--------------------------------------------------------------------
+output "alb_listener_arn" {
+  description = "The ARN of the ALB listener"
+  value       = aws_lb_listener.alb_listener.arn
 }
 
-output "listener_protocol" {
-  description = "The protocol of the Load Balancer listener"
-  value       = aws_lb_listener.listener.protocol
+output "alb_listener_id" {
+  description = "The ID of the ALB listener"
+  value       = aws_lb_listener.alb_listener.id
 }
 
-output "listener_ssl_policy" {
-  description = "The SSL policy of the Load Balancer listener"
-  value       = aws_lb_listener.listener.ssl_policy
-}
 
-output "listener_certificate_arn" {
-  description = "The ARN of the certificate associated with the Load Balancer listener"
-  value       = aws_lb_listener.listener.certificate_arn
-}
-
-output "listener_default_action" {
-  description = "The default action of the Load Balancer listener"
-  value       = aws_lb_listener.listener.default_action
-}
