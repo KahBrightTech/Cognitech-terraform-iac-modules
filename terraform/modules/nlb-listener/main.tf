@@ -8,7 +8,6 @@ data "aws_region" "current" {}
 # Create Default target group for the Load Balancer
 #-------------------------------------------------------------------------------------------------------------------
 module "nlb_target_group" {
-  count  = var.nlb_listener.action == "forward" && var.nlb_listener.target_group != null ? 1 : 0
   source = "../Target-groups"
 
   common = var.common
@@ -31,10 +30,8 @@ resource "aws_lb_listener" "nlb_listener" {
   certificate_arn   = var.nlb_listener.protocol == "TLS" ? var.nlb_listener.certificate_arn : null
 
   default_action {
-    type = var.nlb_listener.action
-
-    # For forward actions, target_group_arn is required
-    target_group_arn = var.nlb_listener.action == "forward" ? module.nlb_target_group[0].target_group_arn : null
+    type             = var.nlb_listener.action
+    target_group_arn = module.nlb_target_group.target_group_arn
   }
 
   tags = merge(
