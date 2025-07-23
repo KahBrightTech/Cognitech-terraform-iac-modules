@@ -13,7 +13,7 @@ output "alb_target_group_id" {
 
 output "alb_tg_attachments" {
   description = "The attachments of the ALB target group"
-  value       = var.alb_listener.action == "forward" && var.alb_listener.target_group != null && var.alb_listener.target_group.attachments != null ? module.alb_target_group[0].target_group_attachments : []
+  value       = var.alb_listener.action == "forward" && var.alb_listener.target_group != null ? (var.alb_listener.target_group.attachments != null ? module.alb_target_group[0].target_group_attachments : null) : null
 
 }
 #--------------------------------------------------------------------

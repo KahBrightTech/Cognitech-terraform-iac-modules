@@ -11,11 +11,11 @@ variable "common" {
 variable "nlb_listener" {
   description = "Network Load Balancer listener configuration"
   type = object({
-    name            = string
+    name            = optional(string)
     nlb_arn         = string
     action          = optional(string, "forward")
-    port            = number
-    protocol        = string
+    port            = optional(number)
+    protocol        = optional(string)
     ssl_policy      = optional(string)
     certificate_arn = optional(string)
     vpc_id          = string
@@ -24,9 +24,9 @@ variable "nlb_listener" {
       certificate_arn = optional(string)
     })))
     target_group = optional(object({
-      name     = string
-      port     = number
-      protocol = string
+      name     = optional(string)
+      port     = optional(number)
+      protocol = optional(string)
       attachments = optional(list(object({
         target_id = optional(string)
         port      = optional(number)

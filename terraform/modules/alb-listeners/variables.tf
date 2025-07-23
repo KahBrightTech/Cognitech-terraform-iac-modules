@@ -13,8 +13,8 @@ variable "alb_listener" {
   type = object({
     alb_arn          = string
     action           = optional(string, "forward")
-    port             = number
-    protocol         = string
+    port             = optional(number)
+    protocol         = optional(string)
     ssl_policy       = optional(string)
     certificate_arn  = optional(string)
     alt_alb_hostname = optional(string)
@@ -29,9 +29,9 @@ variable "alb_listener" {
       certificate_arn = optional(string)
     })))
     target_group = optional(object({
-      name     = string
-      port     = number
-      protocol = string
+      name     = optional(string)
+      port     = optional(number)
+      protocol = optional(string)
       attachments = optional(list(object({
         target_id = optional(string)
         port      = optional(number)
