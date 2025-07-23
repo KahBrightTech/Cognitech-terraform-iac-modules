@@ -13,7 +13,7 @@ output "nlb_target_group_id" {
 
 output "nlb_attachments" {
   description = "The attachments of the NLB target group"
-  value       = var.nlb.listener.target_group && var.nlb_listener.target_group.attachments != null ? module.nlb_target_group.attachments : []
+  value       = var.nlb_listener.target_group && var.nlb_listener.target_group.attachments != null ? module.nlb_target_group.target_group_attachments : []
 
 }
 #--------------------------------------------------------------------
