@@ -15,6 +15,7 @@ module "nlb_target_group" {
     var.nlb_listener.target_group,
     {
       vpc_id = var.nlb_listener.vpc_id
+      name   = var.nlb_listener.target_group.name != null ? var.nlb_listener.target_group.name : "${var.common.account_name_abr}-${var.common.region_prefix}-nlb-${var.nlb_listener.protocol}-${var.nlb_listener.port}"
     }
   )
 }
