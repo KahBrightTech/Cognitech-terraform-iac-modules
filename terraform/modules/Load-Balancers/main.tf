@@ -9,7 +9,7 @@ data "aws_region" "current" {}
 #--------------------------------------------------------------------
 locals {
   lb_type_suffix = var.load_balancer.type == "application" ? "alb" : "nlb"
-  lb_name        = "${var.common.account_name_abr}-${var.load_balancer.vpc_name_abr}-${var.common.region_prefix}-${var.load_balancer.name}-${local.lb_type_suffix}"
+  lb_name        = var.load_balancer.name != null ? "${var.common.account_name_abr}-${var.load_balancer.vpc_name_abr}-${var.common.region_prefix}-${var.load_balancer.name}-${local.lb_type_suffix}" : "${var.common.account_name_abr}-${var.load_balancer.vpc_name_abr}-${var.common.region_prefix}-${local.lb_type_suffix}"
 }
 
 #-------------------------------------------------------------------------------------------------------------------
