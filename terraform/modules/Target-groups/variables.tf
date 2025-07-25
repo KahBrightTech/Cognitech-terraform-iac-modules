@@ -18,6 +18,7 @@ variable "target_group" {
     target_type        = optional(string, "instance")
     tags               = optional(map(string))
     vpc_id             = string
+    vpc_name_abr       = optional(string)
     attachments = optional(list(object({
       target_id = optional(string)
       port      = optional(number)
