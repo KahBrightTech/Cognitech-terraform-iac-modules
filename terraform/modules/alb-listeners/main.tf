@@ -13,10 +13,10 @@ module "alb_target_group" {
 
   common = var.common
   target_group = merge(
-    var.alb_listener.target_group != null ? var.alb_listener.target_group : {},
+    try(var.alb_listener.target_group, {}),
     {
       vpc_id = var.alb_listener.vpc_id
-      name   = var.alb_listener.target_group != null && var.alb_listener.target_group.name != null ? var.alb_listener.target_group.name : "${var.common.account_name_abr}-${var.common.region_prefix}-alb-${var.alb_listener.protocol}-${var.alb_listener.port}"
+      name   = try(var.alb_listener.target_group.name, "${var.common.account_name_abr}-${var.common.region_prefix}-alb-${var.alb_listener.protocol}-${var.alb_listener.port}")
     }
   )
 }
