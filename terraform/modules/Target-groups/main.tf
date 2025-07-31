@@ -9,7 +9,7 @@ data "aws_region" "current" {}
 #-------------------------------------------------------------------------------------------------------------------
 
 resource "aws_lb_target_group" "tg" {
-  name               = "${var.common.account_name_abr}-${var.target_group.vpc_name_abr}-${var.common.region_prefix}-tg-${var.target_group.name}"
+  name               = "${var.common.account_name_abr}-${var.common.region_prefix}-tg-${var.target_group.name}"
   port               = var.target_group.port
   protocol           = var.target_group.protocol
   vpc_id             = var.target_group.vpc_id
