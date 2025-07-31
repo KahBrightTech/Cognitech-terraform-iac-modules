@@ -48,13 +48,5 @@ variable "nlb_listener" {
     }))
   })
   default = null
-
-  # validation {
-  #   condition = var.nlb_listener == null || (
-  #     var.nlb_listener.action != "forward" ||
-  #     var.nlb_listener.target_group != null
-  #   )
-  #   error_message = "When action is 'forward', target_group must be specified."
-  # }
 }
 

@@ -17,6 +17,7 @@ resource "aws_lb_listener_rule" "rule" {
   action {
     type             = each.value.type
     target_group_arn = length(each.value.target_groups) == 1 ? each.value.target_groups[0].arn : null
+
     dynamic "forward" {
       for_each = each.value.type == "forward" && length(each.value.target_groups) != 1 ? [1] : []
       content {
@@ -24,7 +25,7 @@ resource "aws_lb_listener_rule" "rule" {
           for_each = each.value.target_groups
           content {
             arn    = target_group.value["arn"]
-            weight = try(target_group.value["weight"])
+            weight = target_group.value["weight"]
           }
         }
       }
@@ -43,7 +44,7 @@ resource "aws_lb_listener_rule" "rule" {
   dynamic "condition" {
     for_each = [for rule_condition in each.value.conditions : rule_condition if rule_condition.http_request_methods != null]
     content {
-      host_header {
+      http_request_method {
         values = condition.value["http_request_methods"]
       }
     }
