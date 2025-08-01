@@ -66,6 +66,21 @@ resource "aws_backup_plan" "plan" {
           cold_storage_after = lifecycle.value.cold_storage_after_days
         }
       }
+
+      dynamic "copy_action" {
+        for_each = rule.value.copy_actions != null ? rule.value.copy_actions : []
+        content {
+          destination_vault_arn = copy_action.value.destination_vault_arn
+
+          dynamic "lifecycle" {
+            for_each = copy_action.value.lifecycle != null && (copy_action.value.lifecycle.delete_after_days != null || copy_action.value.lifecycle.cold_storage_after_days != null) ? [copy_action.value.lifecycle] : []
+            content {
+              delete_after       = lifecycle.value.delete_after_days
+              cold_storage_after = lifecycle.value.cold_storage_after_days
+            }
+          }
+        }
+      }
     }
   }
 }

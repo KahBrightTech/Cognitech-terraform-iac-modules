@@ -36,7 +36,7 @@ module "backup" {
 }
 ```
 
-### Advanced Usage with Custom Selection Tags
+### Advanced Usage with Custom Selection Tags and Copy Actions
 
 ```hcl
 module "backup" {
@@ -53,12 +53,27 @@ module "backup" {
   backup = {
     name = "my-backup-vault"
     plan = {
-      schedule          = "cron(0 2 ? * * *)"  # Daily at 2 AM
-      start_window      = 60
-      completion_window = 120
-      lifecycle = {
-        delete_after = 30
-      }
+      name = "my-backup-plan"
+      rules = [
+        {
+          rule_name         = "daily-backup-rule"
+          schedule          = "cron(0 2 ? * * *)"  # Daily at 2 AM
+          start_window      = 60
+          completion_window = 120
+          lifecycle = {
+            delete_after_days = 30
+          }
+          copy_actions = [
+            {
+              destination_vault_arn = "arn:aws:backup:us-west-2:123456789012:backup-vault:my-destination-vault"
+              lifecycle = {
+                delete_after_days = 90
+                cold_storage_after_days = 30
+              }
+            }
+          ]
+        }
+      ]
       selection = {
         selection_name = "my-backup-selection"
         selection_tags = [
@@ -134,6 +149,24 @@ selection_tags = [
 - `STRINGNOTEQUALS`: Matches resources that don't have the specified tag key and value, or don't have the tag key at all
 
 ## Variables
+
+### backup.plan.rules
+
+| Name              | Type         | Default | Description                                          |
+| ----------------- | ------------ | ------- | ---------------------------------------------------- |
+| rule_name         | string       | -       | Name of the backup rule                              |
+| schedule          | string       | -       | Cron expression for backup schedule                  |
+| start_window      | number       | -       | Minutes after schedule when backup starts           |
+| completion_window | number       | -       | Minutes to complete backup                           |
+| lifecycle         | object       | -       | Lifecycle configuration for backups                  |
+| copy_actions      | list(object) | []      | List of copy actions to destination vaults          |
+
+### backup.plan.rules.copy_actions object
+
+| Name                  | Type   | Required | Description                                    |
+| --------------------- | ------ | -------- | ---------------------------------------------- |
+| destination_vault_arn | string | yes      | ARN of the destination backup vault            |
+| lifecycle             | object | no       | Lifecycle configuration for copied backups     |
 
 ### backup.plan.selection
 
