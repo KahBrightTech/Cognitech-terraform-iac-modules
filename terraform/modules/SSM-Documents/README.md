@@ -258,6 +258,60 @@ mainSteps:
       RebootOption: RebootIfNeeded
 ```
 
+## How SSM Associations Execute
+
+Understanding when and how your SSM documents execute is crucial for proper implementation:
+
+### 1. **With Targets Only (No Schedule)**
+```hcl
+targets = {
+  key    = "tag:Environment"
+  values = ["production"]
+}
+# No schedule_expression specified
+```
+- The document runs **immediately** on all instances that match the target criteria
+- It also runs on **new instances** that get the matching tag after the association is created
+- This is event-driven execution
+
+### 2. **With Schedule Only (No Targets)**
+```hcl
+schedule_expression = "cron(0 2 ? * SUN *)"  # Every Sunday at 2 AM
+# No targets specified
+```
+- The document runs at the **scheduled time**
+- It will run on **all instances** that have the SSM agent (no filtering)
+- This is time-driven execution
+
+### 3. **With Both Targets AND Schedule** (Most Common)
+```hcl
+targets = {
+  key    = "tag:Environment"
+  values = ["production"]
+}
+schedule_expression = "cron(0 2 ? * SUN *)"
+```
+- The document runs at the **scheduled time**
+- But **only** on instances that match the target criteria
+- This is the recommended approach for maintenance tasks
+
+### 4. **No Targets, No Schedule**
+```hcl
+# Neither targets nor schedule_expression specified
+```
+- The document runs **immediately once** on all instances
+- New instances won't automatically run it
+- Less common pattern
+
+### Key Execution Points:
+
+- **Targets** = WHO (which instances)
+- **Schedule** = WHEN (what time/frequency)
+- If you have both, it runs on the specified instances at the scheduled time
+- Without a schedule, it runs immediately and on new matching instances
+- The SSM agent on target instances polls for new associations and executes them
+- New instances that match the target criteria will automatically execute the document
+
 ## Best Practices
 
 1. **Version Control**: Store document content in version-controlled files
