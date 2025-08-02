@@ -15,7 +15,7 @@ variable "target_group" {
     port               = optional(number)
     protocol           = optional(string)
     preserve_client_ip = optional(bool)
-    target_type        = optional(string, "instance")
+    target_type        = optional(string)
     tags               = optional(map(string))
     vpc_id             = string
     vpc_name_abr       = optional(string)
