@@ -9,7 +9,7 @@ data "aws_region" "current" {}
 #-------------------------------------------------------------------------------------------------------------------
 
 resource "aws_lb_target_group" "tg" {
-  name               = var.target_group.name
+  name               = "${var.target_group.name}-${replace(lower(var.target_group.protocol), " ", "-")}-${var.target_group.port}"
   port               = var.target_group.port
   protocol           = var.target_group.protocol
   vpc_id             = var.target_group.vpc_id
@@ -40,7 +40,7 @@ resource "aws_lb_target_group" "tg" {
   }
 
   tags = merge(var.common.tags, {
-    Name = "${var.common.account_name}-${var.common.region_prefix}-tg-${var.target_group.name}"
+    Name = "${var.target_group.name}-${replace(lower(var.target_group.protocol), " ", "-")}-${var.target_group.port}"
   })
 
 }
