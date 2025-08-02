@@ -21,10 +21,7 @@ variable "ssm_document" {
       key    = string
       values = list(string)
     }))
-    parameters = optional(object({
-      name  = string
-      value = string
-    }))
+    parameters          = optional(map(list(string)))
     schedule_expression = optional(string)
     output_location = optional(object({
       s3_bucket_name = string

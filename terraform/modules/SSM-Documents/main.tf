@@ -36,19 +36,9 @@ resource "aws_ssm_association" "ssm_association" {
       values = var.ssm_document.targets.values
     }
   }
-  dynamic "parameters" {
-    for_each = var.ssm_document.parameters != null ? [1] : []
-    content {
-      name  = var.ssm_document.parameters.name
-      value = var.ssm_document.parameters.value
-    }
-  }
-  dynamic "schedule_expression" {
-    for_each = var.ssm_document.schedule_expression != null ? [1] : []
-    content {
-      schedule_expression = var.ssm_document.schedule_expression
-    }
-  }
+  parameters = var.ssm_document.parameters
+
+  schedule_expression = var.ssm_document.schedule_expression
   dynamic "output_location" {
     for_each = var.ssm_document.output_location != null ? [1] : []
     content {
