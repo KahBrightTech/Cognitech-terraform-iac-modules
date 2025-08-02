@@ -36,8 +36,6 @@ resource "aws_ssm_association" "ssm_association" {
       values = var.ssm_document.targets.values
     }
   }
-  parameters = var.ssm_document.parameters
-
   schedule_expression = var.ssm_document.schedule_expression
   dynamic "output_location" {
     for_each = var.ssm_document.output_location != null ? [1] : []

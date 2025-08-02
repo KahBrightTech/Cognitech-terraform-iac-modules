@@ -81,8 +81,8 @@ inputs = {
     
     # Pass parameters to the document
     parameters = {
-      "Operation" = ["Install"]
-      "Package"   = ["cloudwatch-agent"]
+      "Operation" = "Install"
+      "Package"   = "cloudwatch-agent"
     }
     
     # Schedule execution (optional)
@@ -186,10 +186,10 @@ targets = {
 
 ```hcl
 parameters = {
-  "ParameterName1" = ["ParameterValue1"]           # Single value parameter
-  "ParameterName2" = ["Value1", "Value2"]          # Multi-value parameter
-  "Operation"      = ["Install"]                   # Example parameter
-  "Package"        = ["cloudwatch-agent", "nginx"] # Example multi-value parameter
+  "ParameterName1" = "ParameterValue1"     # Parameter as key-value pairs
+  "ParameterName2" = "ParameterValue2"     # Each parameter takes a single string value
+  "Operation"      = "Install"             # Example parameter
+  "Package"        = "cloudwatch-agent"    # Example parameter
 }
 ```
 
