@@ -198,3 +198,18 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
     }
   }
 }
+
+#--------------------------------------------------------------------
+# S3 Bucket objects 
+#--------------------------------------------------------------------
+
+module "s3_objects" {
+  source = "../S3-bucket-objects"
+  count  = var.s3.objects != null && length(var.s3.objects) > 0 ? 1 : 0
+  common = var.common
+  s3_bucket = {
+    bucket_id = aws_s3_bucket.private.id
+    objects   = var.s3.objects
+  }
+}
+
