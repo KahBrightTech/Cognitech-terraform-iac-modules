@@ -151,7 +151,7 @@ resource "aws_volume_attachment" "ebs_volume_attachment" {
 # EC2 LB Target Group Attachments   
 #-------------------------------------------------------------------------
 resource "aws_lb_target_group_attachment" "ec2" {
-  count            = length(var.ec2.target_group_arns)
+  count            = var.ec2.target_group_arns != null ? length(var.ec2.target_group_arns) : 0
   target_group_arn = var.ec2.target_group_arns[count.index]
   target_id        = aws_instance.ec2_instance.id
 }
