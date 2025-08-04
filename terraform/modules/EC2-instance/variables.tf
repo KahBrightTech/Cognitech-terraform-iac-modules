@@ -19,6 +19,7 @@ variable "ec2" {
       os_release_date  = optional(string)
       os_base_packages = optional(string)
     })
+    target_group_arns           = optional(list(string))
     associate_public_ip_address = optional(bool, false)
     instance_type               = string
     iam_instance_profile        = string

@@ -147,4 +147,11 @@ resource "aws_volume_attachment" "ebs_volume_attachment" {
   stop_instance_before_detaching = true  # Set to true if you want to stop the instance before detaching the volume
 }
 
-
+#-------------------------------------------------------------------------
+# EC2 LB Target Group Attachments   
+#-------------------------------------------------------------------------
+resource "aws_lb_target_group_attachment" "ec2" {
+  count            = length(var.ec2.target_group_arns)
+  target_group_arn = var.ec2.target_group_arns[count.index]
+  target_id        = aws_instance.ec2_instance.id
+}
