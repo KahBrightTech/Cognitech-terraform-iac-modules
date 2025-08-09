@@ -63,42 +63,58 @@ else
     echo "Docker is already installed."
 fi
 
+#!/bin/bash
 #-------------------------------------------
-# Enable SSH password authentication
+# Enable SSH password authentication - RHEL 9
 #-------------------------------------------
 echo "Configuring SSH password authentication..."
 
 # Backup the original sshd_config
 cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
 
-# Configure SSH for password authentication - be explicit about all settings
+# Remove any override that disables password authentication in /etc/ssh/sshd_config.d/*.conf
+echo "Checking for overrides in /etc/ssh/sshd_config.d/..."
+grep -Rl "^PasswordAuthentication no" /etc/ssh/sshd_config.d/ 2>/dev/null | while read -r file; do
+    echo "Updating $file to enable password authentication"
+    sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' "$file"
+done
+
+grep -Rl "^KbdInteractiveAuthentication no" /etc/ssh/sshd_config.d/ 2>/dev/null | while read -r file; do
+    echo "Updating $file to enable keyboard-interactive authentication"
+    sed -i 's/^KbdInteractiveAuthentication no/KbdInteractiveAuthentication yes/' "$file"
+done
+
+# Append RHEL 9 settings to main sshd_config (if not already present)
 cat >> /etc/ssh/sshd_config << 'EOF'
 
-# Enable password authentication
+# Enable password authentication for RHEL 9
 PasswordAuthentication yes
-ChallengeResponseAuthentication yes
+KbdInteractiveAuthentication yes
 PubkeyAuthentication yes
-AuthenticationMethods publickey,password publickey password
 PermitRootLogin yes
+UsePAM yes
 EOF
 
-# Also use sed to ensure existing lines are updated
+# Update existing lines in sshd_config
 sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sed -i 's/^#*ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#*KbdInteractiveAuthentication.*/KbdInteractiveAuthentication yes/' /etc/ssh/sshd_config
 sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
 sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i 's/^#*UsePAM.*/UsePAM yes/' /etc/ssh/sshd_config
 
 # Restart SSH service to apply changes
+echo "Restarting SSH service..."
 systemctl restart sshd
-echo "SSH password authentication enabled and service restarted."
 
 # Verify SSH configuration
-echo "Verifying SSH configuration:"
-grep -E "^PasswordAuthentication|^ChallengeResponseAuthentication|^PubkeyAuthentication|^PermitRootLogin" /etc/ssh/sshd_config
+echo "Verifying SSH configuration in main file:"
+grep -E "^PasswordAuthentication|^KbdInteractiveAuthentication|^PubkeyAuthentication|^PermitRootLogin|^UsePAM" /etc/ssh/sshd_config
 
 # Test SSH service status
 systemctl status sshd --no-pager
 
-# Show active SSH configuration
-echo "Active SSH configuration:"
-sshd -T | grep -E "passwordauthentication|challengeresponseauthentication|pubkeyauthentication"
+# Show available users
+echo "Available users:"
+cut -d: -f1 /etc/passwd | grep -E "(ec2-user|ssm-user|root|Admin)"
+
+

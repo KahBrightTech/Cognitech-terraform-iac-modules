@@ -96,9 +96,3 @@ echo "SSH password authentication enabled and service restarted."
 echo "Verifying SSH configuration:"
 grep -E "^PasswordAuthentication|^ChallengeResponseAuthentication|^UsePAM|^PubkeyAuthentication|^PermitRootLogin" /etc/ssh/sshd_config
 
-# Test SSH service status
-systemctl status sshd --no-pager
-
-# Show active SSH configuration
-echo "Active SSH configuration:"
-sshd -T | grep -E "passwordauthentication|challengeresponseauthentication|usepam|pubkeyauthentication"
