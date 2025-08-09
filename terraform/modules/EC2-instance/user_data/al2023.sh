@@ -62,3 +62,43 @@ if ! command -v docker &> /dev/null; then
 else
     echo "Docker is already installed."
 fi
+
+#-------------------------------------------
+# Enable SSH password authentication
+#-------------------------------------------
+echo "Configuring SSH password authentication..."
+
+# Backup the original sshd_config
+cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
+
+# Configure SSH for password authentication - be explicit about all settings
+cat >> /etc/ssh/sshd_config << 'EOF'
+
+# Enable password authentication
+PasswordAuthentication yes
+ChallengeResponseAuthentication yes
+PubkeyAuthentication yes
+AuthenticationMethods publickey,password publickey password
+PermitRootLogin yes
+EOF
+
+# Also use sed to ensure existing lines are updated
+sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#*ChallengeResponseAuthentication.*/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# Restart SSH service to apply changes
+systemctl restart sshd
+echo "SSH password authentication enabled and service restarted."
+
+# Verify SSH configuration
+echo "Verifying SSH configuration:"
+grep -E "^PasswordAuthentication|^ChallengeResponseAuthentication|^UsePAM|^PubkeyAuthentication|^PermitRootLogin" /etc/ssh/sshd_config
+
+# Test SSH service status
+systemctl status sshd --no-pager
+
+# Show active SSH configuration
+echo "Active SSH configuration:"
+sshd -T | grep -E "passwordauthentication|challengeresponseauthentication|usepam|pubkeyauthentication"
