@@ -18,7 +18,6 @@ This Terraform module acquires remote state from multiple Terraform state backen
 ## Usage with Terragrunt
 
 ### Basic Configuration
-
 Create a `terragrunt.hcl` file in your formation directory:
 
 ```hcl
