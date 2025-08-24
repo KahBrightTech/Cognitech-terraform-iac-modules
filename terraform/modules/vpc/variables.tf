@@ -14,5 +14,4 @@ variable "vpc" {
     name       = string
     cidr_block = string
   })
-
 }
