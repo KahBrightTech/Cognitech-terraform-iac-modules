@@ -5,7 +5,7 @@ Parameters:
   pAccountName:
     Description: The name of the account in which the policy is being created
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /standard/AWSAccount  
+    Default: /standard/AWSAccount
   pAccountNameLC:
     Description: The name of the account in which the policy is being created
     Type: AWS::SSM::Parameter::Value<String>
@@ -18,6 +18,10 @@ Parameters:
     Type: String
     Description: Secondary region for backup S3 bucket
     Default: us-west-2
+  pAWSAccountId:
+    Description: The AWS Account ID
+    Type: String
+    Default: "485147667400"
 
 Resources:
   TerraformStateBucket:
@@ -39,24 +43,24 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Sid: "EnforcedTLS"
-            Effect: "Deny"
-            Principal: "*"
-            Action: "s3:*"
-            Resource:
-              - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
-              - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
-            Condition:
-              Bool:
-                aws:SecureTransport: "false"
-          - Sid: "RootAccess"
-            Effect: "Allow"
-            Principal:
-              AWS: "arn:aws:iam::485147667400:root"
-            Action: "s3:*"
-            Resource:
-              - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
-              - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
+        - Sid: "EnforcedTLS"
+          Effect: "Deny"
+          Principal: "*"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
+          Condition:
+            Bool:
+              aws:SecureTransport: "false"
+        - Sid: "RootAccess"
+          Effect: "Allow"
+          Principal:
+            AWS: !Sub "arn:aws:iam::${pAWSAccountId}:root"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
 
   TerraformStateBucketSecondary:
     Type: AWS::S3::Bucket
@@ -77,24 +81,24 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Sid: "EnforcedTLS"
-            Effect: "Deny"
-            Principal: "*"
-            Action: "s3:*"
-            Resource:
-              - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
-              - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
-            Condition:
-              Bool:
-                aws:SecureTransport: "false"
-          - Sid: "RootAccess"
-            Effect: "Allow"
-            Principal:
-              AWS: "arn:aws:iam::485147667400:root"
-            Action: "s3:*"
-            Resource:
-              - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
-              - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
+        - Sid: "EnforcedTLS"
+          Effect: "Deny"
+          Principal: "*"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
+          Condition:
+            Bool:
+              aws:SecureTransport: "false"
+        - Sid: "RootAccess"
+          Effect: "Allow"
+          Principal:
+            AWS: "arn:aws:iam::485147667400:root"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
 
   TerraformStateLockTable:
     Type: AWS::DynamoDB::Table
@@ -102,11 +106,11 @@ Resources:
       TableName: !Sub "${pAccountNameLC}-${AWS::Region}-state-lock"
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: LockID
-          AttributeType: S
+      - AttributeName: LockID
+        AttributeType: S
       KeySchema:
-        - AttributeName: LockID
-          KeyType: HASH
+      - AttributeName: LockID
+        KeyType: HASH
 
 Outputs:
   S3BucketName:
