@@ -1,4 +1,4 @@
-# Cognitech Terraform Infrastructure as Code (IaC) Modules
+# uCognitech Terraform Infrastructure as Code (IaC) Modules
 
 A comprehensive collection of reusable Terraform modules and CloudFormation templates designed for enterprise-grade AWS infrastructure deployment with multi-region support and organizational best practices.
 
@@ -10,7 +10,7 @@ A comprehensive collection of reusable Terraform modules and CloudFormation temp
 - [Getting Started](#getting-started)
 - [CloudFormation Templates](#cloudformation-templates)
 - [Terraform Modules](#terraform-modules)
-- [Security & Compliance](#security--compliance)
+- [Security &amp; Compliance](#security--compliance)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 
@@ -45,11 +45,13 @@ This repository provides a standardized approach to AWS infrastructure deploymen
 Before deploying any infrastructure components, ensure the following foundational requirements are met:
 
 #### 1. AWS Organization Setup
+
 - **AWS Organization**: Your AWS account must be part of an AWS Organization
 - **Organization ID**: Must be configured properly for cross-account access and security policies
 - **Cross-account roles**: Proper delegation between management and member accounts
 
 #### 2. Domain and DNS Infrastructure
+
 - **Public Domain**: A registered public domain is required for SSL certificate validation, API endpoints, and DNS resolution
 - **Route 53 Hosted Zone**: Must be configured for your public domain to enable:
   - DNS management and resolution
@@ -60,26 +62,31 @@ Before deploying any infrastructure components, ensure the following foundationa
 > **⚠️ Critical**: Without a public domain and hosted zone, SSL validation and DNS-dependent features will not function in production environments.
 
 #### 3. Identity and Access Management
+
 Configure the following permission sets in **AWS Identity Center (SSO)**:
 
 ##### Admin Role
+
 - Full administrative access for infrastructure deployment
 - Cross-region management capabilities
 - CloudFormation and Terraform execution permissions
 
 ##### NetworkAdministrator Role
+
 - VPC, subnet, and routing management
 - Security group and NACL configuration
 - DNS and certificate management
 - Cross-region networking setup
 
 #### 4. Development Environment
+
 - **Terraform CLI**: Version 1.0+ installed and configured
 - **AWS CLI**: Version 2.0+ with appropriate credentials
 - **Git**: For version control and CI/CD integration
 - **Backend State Management**: S3 bucket with KMS encryption (deployed via templates)
 
 #### 5. Regional Configuration
+
 - **Primary Region**: Typically `us-east-1` for global services
 - **Secondary Region**: For disaster recovery and backup (e.g., `us-west-2`)
 - **Service Availability**: Verify all required AWS services are available in target regions
@@ -88,7 +95,9 @@ Configure the following permission sets in **AWS Identity Center (SSO)**:
 ### Optional Components
 
 #### Ansible Tower Integration
+
 For advanced automation and configuration management:
+
 - **Account Setup**: Create account at [Red Hat Developer Portal](https://developers.redhat.com/products/ansible/download)
 - **Version**: Download Ansible Tower 2.4 (recommended for compatibility)
 - **Storage**: Upload installation package to designated S3 bucket for deployment
@@ -98,12 +107,13 @@ For advanced automation and configuration management:
 ### Quick Start Guide
 
 1. **Clone the Repository**
+
    ```bash
    git clone https://github.com/KahBrightTech/Cognitech-terraform-iac-modules.git
    cd Cognitech-terraform-iac-modules
    ```
-
 2. **Deploy Foundation Infrastructure**
+
    ```bash
    # Deploy KMS keys for state encryption
    aws cloudformation create-stack \
@@ -117,8 +127,8 @@ For advanced automation and configuration management:
      --stack-name terraform-backend \
      --template-body file://Cloudformation/Initializing-account-for-terraform/bucket-and-state-lock.yaml
    ```
-
 3. **Configure Terraform Backend**
+
    ```hcl
    terraform {
      backend "s3" {
@@ -155,6 +165,7 @@ Follow this order for initial setup:
 Creates KMS keys in both primary and secondary regions for Terraform state encryption with organization-wide access controls.
 
 **Key Features**:
+
 - ✅ **Dual-region deployment** from a single stack
 - ✅ **Organization-scoped access** with minimal permissions
 - ✅ **Automatic key rotation** for enhanced security
@@ -162,6 +173,7 @@ Creates KMS keys in both primary and secondary regions for Terraform state encry
 - ✅ **Comprehensive tagging** and naming conventions
 
 **Security Model**:
+
 ```json
 {
   "Version": "2012-10-17",
@@ -188,15 +200,17 @@ Creates KMS keys in both primary and secondary regions for Terraform state encry
 ```
 
 **Parameters**:
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `PrimaryRegion` | Primary AWS region | `us-east-1` |
-| `SecondaryRegion` | Secondary AWS region | `us-west-2` |
-| `KeyAlias` | KMS key alias prefix | `terraform-state-key` |
-| `Environment` | Environment tag | `dev` |
-| `OrganizationId` | AWS Organization ID | `o-orvtyisdyc` |
+
+| Parameter           | Description          | Default                 |
+| ------------------- | -------------------- | ----------------------- |
+| `PrimaryRegion`   | Primary AWS region   | `us-east-1`           |
+| `SecondaryRegion` | Secondary AWS region | `us-west-2`           |
+| `KeyAlias`        | KMS key alias prefix | `terraform-state-key` |
+| `Environment`     | Environment tag      | `dev`                 |
+| `OrganizationId`  | AWS Organization ID  | `o-orvtyisdyc`        |
 
 **Deployment**:
+
 ```bash
 aws cloudformation create-stack \
   --stack-name terraform-kms-dual-region \
@@ -210,12 +224,14 @@ aws cloudformation create-stack \
 #### 🚀 Terraform Backend Infrastructure
 
 **Templates**:
+
 - `bucket-and-state-lock.yaml` - S3 and DynamoDB backend setup
 - `github-iam-role.yaml` - GitHub Actions OIDC integration
 
 **Purpose**: Establishes secure, scalable Terraform state management with CI/CD integration.
 
 **Infrastructure Components**:
+
 - **Primary S3 Bucket**: Terraform state storage with versioning
 - **Secondary S3 Bucket**: Cross-region backup and disaster recovery
 - **DynamoDB Table**: State locking mechanism
@@ -223,6 +239,7 @@ aws cloudformation create-stack \
 - **IAM Roles**: GitHub Actions execution permissions
 
 **Security Features**:
+
 - ✅ TLS-only access policies
 - ✅ Public access blocked
 - ✅ Versioning and backup enabled
@@ -231,14 +248,15 @@ aws cloudformation create-stack \
 **Deployment Sequence**:
 
 1. **Deploy Backend Infrastructure**:
+
    ```bash
    aws cloudformation create-stack \
      --stack-name terraform-backend \
      --template-body file://Cloudformation/Initializing-account-for-terraform/bucket-and-state-lock.yaml \
      --region us-east-1
    ```
-
 2. **Deploy GitHub OIDC Integration**:
+
    ```bash
    aws cloudformation create-stack \
      --stack-name github-oidc \
@@ -256,6 +274,7 @@ aws cloudformation create-stack \
 Located in `terraform/modules/`, these reusable modules provide standardized infrastructure components:
 
 #### Network Infrastructure
+
 - **`vpc/`** - Virtual Private Cloud with multi-AZ support
 - **`subnets/`** - Public and private subnet configurations
 - **`natgateway/`** - NAT Gateway for outbound internet access
@@ -263,24 +282,28 @@ Located in `terraform/modules/`, these reusable modules provide standardized inf
 - **`Security-group/`** - Security group templates
 
 #### Compute & Storage
+
 - **`EC2-instance/`** - EC2 instance templates with user data
 - **`Load-Balancers/`** - Application and Network Load Balancers
 - **`Target-groups/`** - ALB/NLB target group configurations
 - **`S3-Private-bucket/`** - Secure S3 bucket templates
 
 #### Security & Compliance
+
 - **`IAM-Roles/`** - IAM role and policy templates
 - **`IAM-User/`** - IAM user management
 - **`EC2-key-pair/`** - EC2 key pair management
 - **`Secrets-manager/`** - AWS Secrets Manager integration
 
 #### Monitoring & Management
+
 - **`SSM-Parameter-store/`** - Systems Manager parameters
 - **`AWSBackup/`** - Backup and recovery policies
 
 ### Backend Configuration Examples
 
 #### Primary Region Configuration
+
 ```hcl
 terraform {
   backend "s3" {
@@ -295,6 +318,7 @@ terraform {
 ```
 
 #### Secondary Region Configuration
+
 ```hcl
 terraform {
   backend "s3" {
@@ -333,12 +357,14 @@ module "vpc" {
 ## Security & Cost Considerations
 
 **Security:**
+
 - ✅ **Minimal permissions** - Only root admin and organization-wide access
 - ✅ **Organization boundary** - Access restricted to your AWS Organization
 - ✅ **Automatic rotation** enabled for enhanced security
 - ✅ **No unnecessary service roles** - Clean permission model
 
 **Cost:**
+
 - Each KMS key costs $1/month (total: $2/month for both regions)
 - Additional charges apply for key operations (encrypt/decrypt)
 - Consider using the same key for multiple state files in the same region
@@ -351,6 +377,7 @@ module "vpc" {
 4. **Organization Access**: Principals must be within the specified AWS Organization to use the keys
 5. **Domain/DNS Issues**: Verify your public domain and hosted zone are properly configured
 6. **Identity Center Roles**: Ensure Admin and NetworkAdministrator roles are properly configured in AWS Identity Center
+
 # Initializing Account for Terraform
 
 This directory contains CloudFormation templates required to set up the foundational infrastructure for Terraform in an AWS account. These templates prepare your AWS account for Infrastructure as Code (IaC) operations using Terraform.
@@ -443,17 +470,17 @@ aws cloudformation create-stack \
 Before deploying these templates, ensure:
 
 1. **SSM Parameters**: The following SSM parameters must exist:
+
    - `/standard/AWSAccount` - Your AWS account name
    - `/standard/AWSAccountLC` - Your AWS account name in lowercase
-
 2. **AWS CLI**: Configured with appropriate permissions to create:
+
    - S3 buckets and policies
    - DynamoDB tables
    - IAM roles, policies, and OIDC providers
-
 3. **GitHub Repository**: Have your GitHub organization/username ready for OIDC configuration
-
 4. **Ansible Tower** (Optional): For automation and configuration management:
+
    - Create a new account at [Red Hat Developer Portal](https://developers.redhat.com/products/ansible/download)
    - Download Ansible Tower version 2.4 (recommended version for current compatibility)
    - Upload the downloaded package to the data transfer S3 bucket (this bucket will be used for deployments)
@@ -546,12 +573,14 @@ aws cloudformation delete-stack --stack-name terraform-backend
 ## Best Practices & Guidelines
 
 ### Infrastructure Standards
+
 - **Naming Convention**: All resources follow the pattern `${AccountName}-${Region}-${ResourceType}-${Purpose}`
 - **Tagging Strategy**: Consistent tagging across all resources for cost tracking and governance
 - **Security First**: All templates include security best practices and least privilege principles
 - **Multi-Region**: Templates support multi-region deployments for high availability
 
 ### Security Considerations
+
 - **KMS Encryption**: All state files and sensitive data encrypted with customer-managed KMS keys
 - **IAM Policies**: Implement least privilege access patterns
 - **Network Security**: Private subnets for sensitive workloads with NAT Gateway for outbound access
@@ -560,6 +589,7 @@ aws cloudformation delete-stack --stack-name terraform-backend
 - **Repository Scope**: The OIDC configuration allows access from any repository in the specified organization
 
 ### Deployment Workflow
+
 1. **Plan Phase**: Always run `terraform plan` to review changes
 2. **State Management**: Use remote state with DynamoDB locking
 3. **Environment Isolation**: Separate state files for different environments
@@ -572,6 +602,7 @@ aws cloudformation delete-stack --stack-name terraform-backend
 ### Common Issues
 
 #### KMS Key Access Denied
+
 ```bash
 # Verify organization membership
 aws organizations describe-organization
@@ -579,6 +610,7 @@ aws sts get-caller-identity
 ```
 
 #### Stack Creation Failures
+
 ```bash
 # Check stack status
 aws cloudformation describe-stacks --stack-name terraform-backend
@@ -588,18 +620,21 @@ aws cloudformation describe-stack-events --stack-name terraform-backend
 ```
 
 #### Terraform State Lock
+
 ```bash
 # Release stuck lock
 terraform force-unlock <LOCK-ID>
 ```
 
 #### OIDC Authentication Issues
+
 ```bash
 # Verify OIDC provider
 aws iam get-open-id-connect-provider --open-id-connect-provider-arn <provider-arn>
 ```
 
 ### Backend Configuration Validation
+
 ```bash
 # Verify backend access
 aws s3 ls s3://your-state-bucket
@@ -607,6 +642,7 @@ aws dynamodb describe-table --table-name your-lock-table
 ```
 
 ### Useful Administrative Commands
+
 ```bash
 # View stack outputs
 aws cloudformation describe-stacks --stack-name terraform-backend --query 'Stacks[0].Outputs'
@@ -620,6 +656,7 @@ aws cloudformation delete-stack --stack-name terraform-backend
 ```
 
 ### Logging & Monitoring
+
 - CloudTrail logging enabled for all API calls
 - CloudWatch monitoring for infrastructure metrics
 - AWS Config for compliance monitoring
@@ -630,6 +667,7 @@ aws cloudformation delete-stack --stack-name terraform-backend
 ## Contributing
 
 ### Development Guidelines
+
 1. **Test First**: Validate all changes in a development environment
 2. **Documentation**: Update this README if parameters or outputs change
 3. **Template Validation**: Use `aws cloudformation validate-template` before deployment
@@ -637,6 +675,7 @@ aws cloudformation delete-stack --stack-name terraform-backend
 5. **Follow Standards**: Use consistent variable naming conventions and module structure
 
 ### Module Structure
+
 ```
 module-name/
 ├── main.tf          # Primary resource definitions
@@ -647,6 +686,7 @@ module-name/
 ```
 
 ### Code Review Process
+
 1. Follow the existing module structure
 2. Include comprehensive documentation
 3. Add example usage in module README
@@ -660,6 +700,7 @@ module-name/
 **Note**: These templates are designed for the KahBrightTech organization. Modify the default values and hardcoded account IDs as needed for your environment.
 
 ### Customization Requirements
+
 - Update Organization ID in KMS policies
 - Modify GitHub organization names in OIDC configuration
 - Adjust region-specific configurations
@@ -676,6 +717,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Contact
 
 For questions, issues, or contributions:
+
 - Create an issue in this repository
 - Contact the infrastructure team
 - Review individual module README files for specific guidance
