@@ -94,6 +94,22 @@ Before deploying this template, ensure you have:
 
    **Note**: Without a public domain, certain features may not function correctly, especially in production environments where secure access and proper DNS resolution are critical.
 
+5. **Route 53 Hosted Zone**: A hosted zone must be created in Route 53 for your public domain. This is required for:
+   - DNS management and resolution
+   - SSL certificate validation via DNS
+   - Cross-region DNS failover configurations
+   - Subdomain management for different environments
+
+6. **AWS Identity Center Roles**: The following permission sets/roles must be configured in AWS Identity Center (SSO):
+   - **Admin Role**: Full administrative access for deployment and management operations
+   - **NetworkAdministrator Role**: Network-specific permissions for VPC, subnets, routing, and DNS management
+   
+   These roles are essential for:
+   - Deploying infrastructure across multiple regions
+   - Managing network configurations and security groups
+   - Setting up cross-region connectivity and routing
+   - Configuring DNS and certificate management
+
 ## Usage with Terraform
 
 Once the KMS keys are created, reference them in your Terraform backend:
