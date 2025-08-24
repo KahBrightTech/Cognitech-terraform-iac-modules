@@ -1,0 +1,255 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Creates KMS keys in two regions for Terraform state management with organization-wide access'
+
+Parameters:
+  PrimaryRegion:
+    Type: String
+    Default: 'us-east-1'
+    Description: 'Primary region for KMS key creation'
+    AllowedValues:
+    - us-east-1
+    - us-east-2
+    - us-west-1
+    - us-west-2
+    - eu-west-1
+    - eu-west-2
+    - eu-central-1
+    - ap-southeast-1
+    - ap-southeast-2
+    - ap-northeast-1
+
+  SecondaryRegion:
+    Type: String
+    Default: 'us-west-2'
+    Description: 'Secondary region for KMS key creation'
+    AllowedValues:
+    - us-east-1
+    - us-east-2
+    - us-west-1
+    - us-west-2
+    - eu-west-1
+    - eu-west-2
+    - eu-central-1
+    - ap-southeast-1
+    - ap-southeast-2
+    - ap-northeast-1
+
+  KeyAlias:
+    Type: String
+    Default: 'terraform-state-key'
+    Description: 'Alias for the KMS keys'
+
+  Environment:
+    Type: String
+    Default: 'dev'
+    Description: 'Environment name for tagging'
+    AllowedValues:
+    - dev
+    - staging
+    - prod
+
+  OrganizationId:
+    Type: String
+    Default: 'o-orvtyisdyc'
+    Description: 'AWS Organization ID for organization-wide access'
+
+Resources:
+  # Primary Region KMS Key
+  PrimaryKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub 'KMS key for Terraform state encryption in ${PrimaryRegion}'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 'org-wide-access-example'
+        Statement:
+        - Sid: EnableRootAdminPermissions
+          Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Sid: AllowUseOfKeyForOrganization
+          Effect: Allow
+          Principal: '*'
+          Action:
+          - kms:Encrypt
+          - kms:Decrypt
+          - kms:ReEncrypt*
+          - kms:GenerateDataKey*
+          - kms:DescribeKey
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'aws:PrincipalOrgID': !Ref OrganizationId
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      KeyRotationStatus: true
+      MultiRegion: false
+      Tags:
+      - Key: Name
+        Value: !Sub '${KeyAlias}-${PrimaryRegion}'
+      - Key: Environment
+        Value: !Ref Environment
+      - Key: Purpose
+        Value: 'Terraform State Encryption'
+      - Key: Region
+        Value: !Ref PrimaryRegion
+      - Key: ManagedBy
+        Value: 'CloudFormation'
+
+  # Primary Region KMS Key Alias
+  PrimaryKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${KeyAlias}-${PrimaryRegion}'
+      TargetKeyId: !Ref PrimaryKMSKey
+
+  # Secondary Region KMS Key Stack
+  SecondaryKMSKeyStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateBody: !Sub |
+        {
+          "AWSTemplateFormatVersion": "2010-09-09",
+          "Description": "Secondary region KMS key for Terraform",
+          "Resources": {
+            "SecondaryKMSKey": {
+              "Type": "AWS::KMS::Key",
+              "Properties": {
+                "Description": "KMS key for Terraform state encryption in ${SecondaryRegion}",
+                "KeyPolicy": {
+                  "Version": "2012-10-17",
+                  "Id": "org-wide-access-example",
+                  "Statement": [
+                    {
+                      "Sid": "EnableRootAdminPermissions",
+                      "Effect": "Allow",
+                      "Principal": {
+                        "AWS": "arn:aws:iam::${AWS::AccountId}:root"
+                      },
+                      "Action": "kms:*",
+                      "Resource": "*"
+                    },
+                    {
+                      "Sid": "AllowUseOfKeyForOrganization",
+                      "Effect": "Allow",
+                      "Principal": "*",
+                      "Action": [
+                        "kms:Encrypt",
+                        "kms:Decrypt",
+                        "kms:ReEncrypt*",
+                        "kms:GenerateDataKey*",
+                        "kms:DescribeKey"
+                      ],
+                      "Resource": "*",
+                      "Condition": {
+                        "StringEquals": {
+                          "aws:PrincipalOrgID": "${OrganizationId}"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "KeySpec": "SYMMETRIC_DEFAULT",
+                "KeyUsage": "ENCRYPT_DECRYPT",
+                "KeyRotationStatus": true,
+                "MultiRegion": false,
+                "Tags": [
+                  {
+                    "Key": "Name",
+                    "Value": "${KeyAlias}-${SecondaryRegion}"
+                  },
+                  {
+                    "Key": "Environment",
+                    "Value": "${Environment}"
+                  },
+                  {
+                    "Key": "Purpose",
+                    "Value": "Terraform State Encryption"
+                  },
+                  {
+                    "Key": "Region",
+                    "Value": "${SecondaryRegion}"
+                  },
+                  {
+                    "Key": "ManagedBy",
+                    "Value": "CloudFormation"
+                  }
+                ]
+              }
+            },
+            "SecondaryKMSKeyAlias": {
+              "Type": "AWS::KMS::Alias",
+              "Properties": {
+                "AliasName": "alias/${KeyAlias}-${SecondaryRegion}",
+                "TargetKeyId": {
+                  "Ref": "SecondaryKMSKey"
+                }
+              }
+            }
+          },
+          "Outputs": {
+            "SecondaryKMSKeyId": {
+              "Description": "KMS Key ID in secondary region",
+              "Value": {
+                "Ref": "SecondaryKMSKey"
+              }
+            },
+            "SecondaryKMSKeyArn": {
+              "Description": "KMS Key ARN in secondary region",
+              "Value": {
+                "Fn::GetAtt": ["SecondaryKMSKey", "Arn"]
+              }
+            },
+            "SecondaryKMSKeyAlias": {
+              "Description": "KMS Key Alias in secondary region",
+              "Value": {
+                "Ref": "SecondaryKMSKeyAlias"
+              }
+            }
+          }
+        }
+      Parameters: {}
+      Tags:
+      - Key: Name
+        Value: !Sub '${KeyAlias}-secondary-stack'
+      - Key: Environment
+        Value: !Ref Environment
+
+Outputs:
+  PrimaryKMSKeyId:
+    Description: 'KMS Key ID in the primary region'
+    Value: !Ref PrimaryKMSKey
+    Export:
+      Name: !Sub '${AWS::StackName}-PrimaryKMSKeyId'
+
+  PrimaryKMSKeyArn:
+    Description: 'KMS Key ARN in the primary region'
+    Value: !GetAtt PrimaryKMSKey.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-PrimaryKMSKeyArn'
+
+  PrimaryKMSKeyAlias:
+    Description: 'KMS Key Alias in the primary region'
+    Value: !Ref PrimaryKMSKeyAlias
+    Export:
+      Name: !Sub '${AWS::StackName}-PrimaryKMSKeyAlias'
+
+  SecondaryKMSKeyId:
+    Description: 'KMS Key ID in the secondary region'
+    Value: !GetAtt SecondaryKMSKeyStack.Outputs.SecondaryKMSKeyId
+    Export:
+      Name: !Sub '${AWS::StackName}-SecondaryKMSKeyId'
+
+  SecondaryKMSKeyArn:
+    Description: 'KMS Key ARN in the secondary region'
+    Value: !GetAtt SecondaryKMSKeyStack.Outputs.SecondaryKMSKeyArn
+    Export:
+      Name: !Sub '${AWS::StackName}-SecondaryKMSKeyArn'
+
+  SecondaryKMSKeyAlias:
+    Description: 'KMS Key Alias in the secondary region'
+    Value: !GetAtt SecondaryKMSKeyStack.Outputs.SecondaryKMSKeyAlias
+    Export:
+      Name: !Sub '${AWS::StackName}-SecondaryKMSKeyAlias'
