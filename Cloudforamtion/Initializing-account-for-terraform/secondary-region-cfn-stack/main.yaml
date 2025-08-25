@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Terraform state storage (S3 + DynamoDB) and AWS Backup Plan with Daily/Weekly rules
+
+Parameters:
+  pAccountName:
+    Description: The name of the account in which the policy is being created
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /standard/AWSAccount
+  pAccountNameLC:
+    Description: Lowercase account name for bucket naming
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /standard/AWSAccountLC
+  pSecondaryRegion:
+    Description: Secondary region for DR bucket
+    Type: String
+    Default: us-west-2
+  AccountId:
+    Type: String
+    Description: AWS Account ID
+    Default: "485147667400"
+  AwsAccountName:
+    Type: String
+    Description: Account name prefix for resources
+  RegionPrefix:
+    Type: String
+    Description: Region prefix
+    Default: usw2
+
+Resources:
+  # Secondary Terraform State Bucket
+  TerraformStateBucketSecondary:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  TerraformStateBucketPolicySecondary:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TerraformStateBucketSecondary
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Sid: "EnforcedTLS"
+          Effect: "Deny"
+          Principal: "*"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
+          Condition:
+            Bool:
+              aws:SecureTransport: "false"
+        - Sid: "RootAccess"
+          Effect: "Allow"
+          Principal:
+            AWS: "arn:aws:iam::485147667400:root"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
+
+  # AWS Backup Vault & Plan
+  BackupVault:
+    Type: AWS::Backup::BackupVault
+    Properties:
+      BackupVaultName: !Sub "${AwsAccountName}-${RegionPrefix}-usw2-backup-vault"
+
+  BackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Sub "${AwsAccountName}-${RegionPrefix}-backup-plan"
+        BackupPlanRule:
+        - RuleName: "DailyBackup"
+          TargetBackupVault: !Ref BackupVault
+          ScheduleExpression: "cron(0 15 ? * * *)"
+          StartWindowMinutes: 60
+          CompletionWindowMinutes: 120
+          Lifecycle:
+            DeleteAfterDays: 30
+
+        - RuleName: "WeeklyBackup"
+          TargetBackupVault: !Ref BackupVault
+          ScheduleExpression: "cron(0 15 ? * 1 *)"
+          StartWindowMinutes: 120
+          CompletionWindowMinutes: 360
+          Lifecycle:
+            MoveToColdStorageAfterDays: 60
+            DeleteAfterDays: 180
+
+  BackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Properties:
+      BackupPlanId: !Ref BackupPlan
+      BackupSelection:
+        SelectionName: !Sub "${AwsAccountName}-${RegionPrefix}-backup-selection"
+        IamRoleArn: !Sub "arn:aws:iam::${AccountId}:role/AWSBackupDefaultServiceRole"
+        ListOfTags:
+        - ConditionType: STRINGEQUALS
+          ConditionKey: Backup
+          ConditionValue: !Sub "${AwsAccountName}-${RegionPrefix}-continous-backup"
+
+Outputs:
+  S3BucketName:
+    Description: Primary S3 Bucket for Terraform state files
+    Value: !Ref TerraformStateBucket
+
+  S3BucketNameSecondary:
+    Description: Secondary S3 Bucket for Terraform state files
+    Value: !Ref TerraformStateBucketSecondary
+
+  DynamoDBTableName:
+    Description: DynamoDB Table for Terraform state locking
+    Value: !Ref TerraformStateLockTable
+
+  BackupPlanId:
+    Description: ID of the backup plan
+    Value: !Ref BackupPlan
+
+  BackupVaultName:
+    Description: Name of the backup vault
+    Value: !Ref BackupVault

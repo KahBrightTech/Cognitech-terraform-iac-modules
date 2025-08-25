@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploys SSM stacks to create a hierarchy for SSM parameters
+
+Parameters:
+  pPath:
+    Description: The path to create a hierarchy for SSM
+    Type: String
+    Default: /standard/
+  pAccountName:
+    Description: The name of the AWS account
+    Type: String
+    Default: "DEV"
+  pAWSAccountLC:
+    Description: The lowercase name of the AWS account
+    Type: String
+    Default: "dev"
+
+Resources:
+  rAWSAccount:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Description: Account name in uppercase
+      Name: !Sub ${pPath}AWSAccount
+      Type: String
+      Value: !Ref pAccountName
+  rAWSAccountLC:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Description: Account name in lower case
+      Name: !Sub ${pPath}AWSAccountLC
+      Type: String
+      Value: !Ref pAWSAccountLC

@@ -42,6 +42,8 @@ This repository provides a standardized approach to AWS infrastructure deploymen
 
 ### Core Requirements
 
+**⚠️ IMPORTANT: You must have a registered public domain to launch and deploy resources using these modules. Many components require SSL certificates, DNS validation, and Route 53 hosted zones which depend on domain ownership.**
+
 Before deploying any infrastructure components, ensure the following foundational requirements are met:
 
 #### 1. AWS Organization Setup
@@ -60,6 +62,9 @@ Before deploying any infrastructure components, ensure the following foundationa
 > **⚠️ Critical**: Without a public domain and hosted zone, SSL validation and DNS-dependent features will not function in production environments.
 
 #### 3. Identity and Access Management
+
+**⚠️ AWS SSO Initialization Required**: You must first initialize AWS Single Sign-On (SSO) / AWS Identity Center in your AWS Organization before configuring permission sets. Run `aws sso login` and complete the setup process.
+
 Configure the following permission sets in **AWS Identity Center (SSO)**:
 
 ##### Admin Role
@@ -85,7 +90,15 @@ Configure the following permission sets in **AWS Identity Center (SSO)**:
 - **Git**: For version control and CI/CD integration
 - **Backend State Management**: S3 bucket with KMS encryption (deployed via templates)
 
-#### 5. Regional Configuration
+#### 5. SSM Parameter Store Configuration
+**⚠️ Required Parameters**: The following SSM parameters must be created before deploying any infrastructure:
+
+- `/standard/AWSAccount` - Your account name (e.g., "Production", "Development", "Staging")
+- `/standard/AWSAccountLC` - Your account name in lowercase (e.g., "production", "development", "staging")
+
+These parameters are used for consistent naming conventions across all infrastructure components. Deploy the `Cloudformation/SSM-Parameters/account-parameters.yaml` template first to create these parameters.
+
+#### 6. Regional Configuration
 - **Primary Region**: Typically `us-east-1` for global services
 - **Secondary Region**: For disaster recovery and backup (e.g., `us-west-2`)
 - **Service Availability**: Verify all required AWS services are available in target regions

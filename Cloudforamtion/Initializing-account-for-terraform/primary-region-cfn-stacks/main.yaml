@@ -1,0 +1,247 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Combined CloudFormation template to provision: - Terraform backend (S3 bucket, DynamoDB state lock table) - GitHub OIDC IAM Role - KMS Key for Terraform state encryption - Public Route53 Hosted Zone
+
+Parameters:
+  # Common Parameters
+  pAccountName:
+    Description: The name of the account in which the policy is being created
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /standard/AWSAccount
+  pAccountNameLC:
+    Description: The lowercase account name
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /standard/AWSAccountLC
+  pAWSAccountId:
+    Description: The AWS Account ID
+    Type: String
+    Default: ""
+
+  # Terraform Backend Parameters
+  TableName:
+    Type: String
+    Description: Name of the DynamoDB table for Terraform state locking
+    Default: terragrunt-lock-table
+  pSecondaryRegion:
+    Type: String
+    Description: Secondary region for backup S3 bucket
+    Default: us-west-2
+
+  # GitHub OIDC Parameters
+  pGitHubOrg:
+    Type: String
+    Description: The GitHub organization or user (e.g., my-org or my-user)
+    Default: KahBrightTech
+  pAppName:
+    Description: The application for which the role will be created
+    Type: String
+    Default: OIDCGitHubRole
+
+  # KMS Key Parameters
+  Region:
+    Type: String
+    Default: 'us-east-1'
+    Description: 'Region for KMS key creation'
+    AllowedValues:
+    - us-east-1
+    - us-east-2
+    - us-west-1
+    - us-west-2
+    - eu-west-1
+    - eu-west-2
+    - eu-central-1
+    - ap-southeast-1
+    - ap-southeast-2
+    - ap-northeast-1
+  KeyAlias:
+    Type: String
+    Default: 'account-key'
+    Description: 'Alias for the KMS keys'
+
+  Environment:
+    Type: String
+    Default: 'dev'
+    AllowedValues:
+    - dev
+    - staging
+    - prod
+  OrganizationId:
+    Type: String
+    Default: 'o-orvtyisdyc'
+    Description: 'AWS Organization ID for org-wide access'
+
+  # Route53 Hosted Zone Parameters
+  DomainName:
+    Type: String
+    Description: The domain name for the hosted zone (e.g., example.com)
+    Default: ""
+
+Resources:
+  #################################
+  # Terraform State Backend
+  #################################
+  TerraformStateBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${pAccountNameLC}-${AWS::Region}-network-config-state"
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  TerraformStateBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TerraformStateBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Sid: "EnforcedTLS"
+          Effect: "Deny"
+          Principal: "*"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
+          Condition:
+            Bool:
+              aws:SecureTransport: "false"
+        - Sid: "RootAccess"
+          Effect: "Allow"
+          Principal:
+            AWS: !Sub "arn:aws:iam::${pAWSAccountId}:root"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
+
+  TerraformStateLockTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: LockID
+        AttributeType: S
+      KeySchema:
+      - AttributeName: LockID
+        KeyType: HASH
+
+  #################################
+  # GitHub OIDC + IAM Role
+  #################################
+  rGitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: "https://token.actions.githubusercontent.com"
+      ClientIdList:
+      - "sts.amazonaws.com"
+      ThumbprintList:
+      - "d89e3bd43d5d909b47a18977aa9d5ce36cee184c"
+
+  rGitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${pAccountNameLC}-${pAppName}-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Federated: !Ref rGitHubOIDCProvider
+          Action: "sts:AssumeRoleWithWebIdentity"
+          Condition:
+            StringEquals:
+              "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+            StringLike:
+              "token.actions.githubusercontent.com:sub": !Sub "repo:${pGitHubOrg}/*"
+
+  rGitHubActionsPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${pAccountNameLC}-${pAppName}-policy"
+      Roles:
+      - !Ref rGitHubActionsRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Action: "*"
+          Resource: "*"
+
+  #################################
+  # KMS Key
+  #################################
+  KMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "KMS key for Terraform state encryption in ${Region}"
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 'org-wide-access-example'
+        Statement:
+        - Sid: EnableRootAdminPermissions
+          Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Sid: AllowUseOfKeyForOrganization
+          Effect: Allow
+          Principal: '*'
+          Action:
+          - kms:Encrypt
+          - kms:Decrypt
+          - kms:ReEncrypt*
+          - kms:GenerateDataKey*
+          - kms:DescribeKey
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'aws:PrincipalOrgID': !Ref OrganizationId
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      KeyRotationStatus: true
+      MultiRegion: false
+
+  KMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${KeyAlias}-${Region}"
+      TargetKeyId: !Ref KMSKey
+
+  #################################
+  # Route 53 Hosted Zone
+  #################################
+  PublicHostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Ref DomainName
+      HostedZoneConfig:
+        Comment: !Sub "Public hosted zone for ${DomainName}"
+
+Outputs:
+  TerraformStateBucketName:
+    Value: !Ref TerraformStateBucket
+    Description: S3 bucket for Terraform state
+  TerraformStateLockTableName:
+    Value: !Ref TerraformStateLockTable
+    Description: DynamoDB table for Terraform state locking
+  GitHubOIDCProviderArn:
+    Value: !GetAtt rGitHubOIDCProvider.Arn
+    Description: ARN of the GitHub OIDC Provider
+  GitHubActionsRoleArn:
+    Value: !GetAtt rGitHubActionsRole.Arn
+    Description: ARN of the IAM Role for GitHub Actions
+  KMSKeyArn:
+    Value: !Ref KMSKey
+    Description: ARN of the KMS Key
+  HostedZoneId:
+    Value: !Ref PublicHostedZone
+    Description: ID of the Route53 hosted zone
+  NameServers:
+    Value: !GetAtt PublicHostedZone.NameServers
+    Description: NS records for your domain

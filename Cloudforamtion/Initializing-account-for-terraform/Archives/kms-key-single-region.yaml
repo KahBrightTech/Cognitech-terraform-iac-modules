@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Creates KMS key in a single region for Terraform state management with organization-wide access'
+
+Parameters:
+  Region:
+    Type: String
+    Default: 'us-east-1'
+    Description: 'Region for KMS key creation'
+    AllowedValues:
+    - us-east-1
+    - us-east-2
+    - us-west-1
+    - us-west-2
+    - eu-west-1
+    - eu-west-2
+    - eu-central-1
+    - ap-southeast-1
+    - ap-southeast-2
+    - ap-northeast-1
+
+  KeyAlias:
+    Type: String
+    Default: 'terraform-state-key'
+    Description: 'Alias for the KMS keys'
+
+  Environment:
+    Type: String
+    Default: 'dev'
+    Description: 'Environment name for tagging'
+    AllowedValues:
+    - dev
+    - staging
+    - prod
+
+  OrganizationId:
+    Type: String
+    Default: 'o-orvtyisdyc'
+    Description: 'AWS Organization ID for organization-wide access'
+
+Resources:
+  # KMS Key
+  KMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub 'KMS key for Terraform state encryption in ${Region}'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 'org-wide-access-example'
+        Statement:
+        - Sid: EnableRootAdminPermissions
+          Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Sid: AllowUseOfKeyForOrganization
+          Effect: Allow
+          Principal: '*'
+          Action:
+          - kms:Encrypt
+          - kms:Decrypt
+          - kms:ReEncrypt*
+          - kms:GenerateDataKey*
+          - kms:DescribeKey
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'aws:PrincipalOrgID': !Ref OrganizationId
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      KeyRotationStatus: true
+      MultiRegion: false
+      Tags:
+      - Key: Name
+        Value: !Sub '${KeyAlias}-${Region}'
+      - Key: Environment
+        Value: !Ref Environment
+      - Key: Purpose
+        Value: 'Terraform State Encryption'
+      - Key: Region
+        Value: !Ref Region
+      - Key: ManagedBy
+        Value: 'CloudFormation'
+
+  # KMS Key Alias
+  KMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${KeyAlias}-${Region}'
+      TargetKeyId: !Ref KMSKey
+
+Outputs:
+  KMSKeyId:
+    Description: 'KMS Key ID'
+    Value: !Ref KMSKey
+    Export:
+      Name: !Sub '${AWS::StackName}-KMSKeyId'
+
+  KMSKeyArn:
+    Description: 'KMS Key ARN'
+    Value: !GetAtt KMSKey.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-KMSKeyArn'
+
+  KMSKeyAlias:
+    Description: 'KMS Key Alias'
+    Value: !Ref KMSKeyAlias
+    Export:
+      Name: !Sub '${AWS::StackName}-KMSKeyAlias'
