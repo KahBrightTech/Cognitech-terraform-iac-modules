@@ -17,14 +17,31 @@ Parameters:
   AccountId:
     Type: String
     Description: AWS Account ID
-    Default: "485147667400"
-  AwsAccountName:
+    Default: "271457809232"
+  AwsVPCName:
     Type: String
     Description: Account name prefix for resources
+    Default: shared-services
   RegionPrefix:
     Type: String
     Description: Region prefix
     Default: usw2
+  OrganizationId:
+    Type: String
+    Description: AWS Organization ID for KMS key policy
+    Default: "o-orvtyisdyc"
+  KeyAlias:
+    Type: String
+    Description: account-key
+    Default: terraform-state-key
+  Environment:
+    Type: String
+    Description: Environment name
+    Default: prod
+  Region:
+    Type: String
+    Description: AWS Region
+    Default: us-west-2
 
 Resources:
   # Secondary Terraform State Bucket
@@ -66,17 +83,33 @@ Resources:
           - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
           - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
 
+  # AWS Backup IAM Role
+  AWSBackupServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AwsVPCName}-${RegionPrefix}-AWSBackupServiceRole"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: backup.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+      - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+
   # AWS Backup Vault & Plan
   BackupVault:
     Type: AWS::Backup::BackupVault
     Properties:
-      BackupVaultName: !Sub "${AwsAccountName}-${RegionPrefix}-usw2-backup-vault"
+      BackupVaultName: !Sub "${AwsVPCName}-${RegionPrefix}-usw2-backup-vault"
 
   BackupPlan:
     Type: AWS::Backup::BackupPlan
     Properties:
       BackupPlan:
-        BackupPlanName: !Sub "${AwsAccountName}-${RegionPrefix}-backup-plan"
+        BackupPlanName: !Sub "${AwsVPCName}-${RegionPrefix}-backup-plan"
         BackupPlanRule:
         - RuleName: "DailyBackup"
           TargetBackupVault: !Ref BackupVault
@@ -100,30 +133,87 @@ Resources:
     Properties:
       BackupPlanId: !Ref BackupPlan
       BackupSelection:
-        SelectionName: !Sub "${AwsAccountName}-${RegionPrefix}-backup-selection"
-        IamRoleArn: !Sub "arn:aws:iam::${AccountId}:role/AWSBackupDefaultServiceRole"
+        SelectionName: !Sub "${AwsVPCName}-${RegionPrefix}-backup-selection"
+        IamRoleArn: !GetAtt AWSBackupServiceRole.Arn
         ListOfTags:
         - ConditionType: STRINGEQUALS
           ConditionKey: Backup
-          ConditionValue: !Sub "${AwsAccountName}-${RegionPrefix}-continous-backup"
+          ConditionValue: !Sub "${AwsVPCName}-${RegionPrefix}-continous-backup"
+
+  #################################
+  # KMS Key
+  #################################
+  KMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "KMS key for Terraform state encryption in ${Region}"
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: 'org-wide-access-example'
+        Statement:
+        - Sid: EnableRootAdminPermissions
+          Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          Action: 'kms:*'
+          Resource: '*'
+        - Sid: AllowUseOfKeyForOrganization
+          Effect: Allow
+          Principal: '*'
+          Action:
+          - kms:Encrypt
+          - kms:Decrypt
+          - kms:ReEncrypt*
+          - kms:GenerateDataKey*
+          - kms:DescribeKey
+          Resource: '*'
+          Condition:
+            StringEquals:
+              'aws:PrincipalOrgID': !Ref OrganizationId
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
+      EnableKeyRotation: true
+      MultiRegion: false
+
+  KMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${KeyAlias}-${Region}"
+      TargetKeyId: !Ref KMSKey
 
 Outputs:
-  S3BucketName:
-    Description: Primary S3 Bucket for Terraform state files
-    Value: !Ref TerraformStateBucket
-
   S3BucketNameSecondary:
     Description: Secondary S3 Bucket for Terraform state files
     Value: !Ref TerraformStateBucketSecondary
-
-  DynamoDBTableName:
-    Description: DynamoDB Table for Terraform state locking
-    Value: !Ref TerraformStateLockTable
+    Export:
+      Name: !Sub "${pAccountNameLC}-S3BucketNameSecondary"
 
   BackupPlanId:
     Description: ID of the backup plan
     Value: !Ref BackupPlan
+    Export:
+      Name: !Sub "${pAccountNameLC}-BackupPlanId"
 
   BackupVaultName:
     Description: Name of the backup vault
     Value: !Ref BackupVault
+    Export:
+      Name: !Sub "${pAccountNameLC}-BackupVaultName"
+
+  KMSKeyId:
+    Description: ID of the KMS key for Terraform state encryption
+    Value: !Ref KMSKey
+    Export:
+      Name: !Sub "${pAccountNameLC}-KMSKeyId"
+
+  KMSKeyArn:
+    Description: ARN of the KMS key for Terraform state encryption
+    Value: !GetAtt KMSKey.Arn
+    Export:
+      Name: !Sub "${pAccountNameLC}-KMSKeyArn"
+
+  KMSKeyAlias:
+    Description: Alias of the KMS key for Terraform state encryption
+    Value: !Ref KMSKeyAlias
+    Export:
+      Name: !Sub "${pAccountNameLC}-KMSKeyAlias"

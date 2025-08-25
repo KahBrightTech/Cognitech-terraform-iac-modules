@@ -15,7 +15,7 @@ Parameters:
   pAWSAccountId:
     Description: The AWS Account ID
     Type: String
-    Default: ""
+    Default: 271457809232
 
   # Terraform Backend Parameters
   TableName:
@@ -74,7 +74,7 @@ Parameters:
   DomainName:
     Type: String
     Description: The domain name for the hosted zone (e.g., example.com)
-    Default: ""
+    Default: "bkuat.org"
 
 Resources:
   #################################
@@ -204,7 +204,7 @@ Resources:
               'aws:PrincipalOrgID': !Ref OrganizationId
       KeySpec: SYMMETRIC_DEFAULT
       KeyUsage: ENCRYPT_DECRYPT
-      KeyRotationStatus: true
+      EnableKeyRotation: true
       MultiRegion: false
 
   KMSKeyAlias:
@@ -227,21 +227,35 @@ Outputs:
   TerraformStateBucketName:
     Value: !Ref TerraformStateBucket
     Description: S3 bucket for Terraform state
+    Export:
+      Name: !Sub "${pAccountNameLC}-TerraformStateBucketName"
   TerraformStateLockTableName:
     Value: !Ref TerraformStateLockTable
     Description: DynamoDB table for Terraform state locking
+    Export:
+      Name: !Sub "${pAccountNameLC}-TerraformStateLockTableName"
   GitHubOIDCProviderArn:
     Value: !GetAtt rGitHubOIDCProvider.Arn
     Description: ARN of the GitHub OIDC Provider
+    Export:
+      Name: !Sub "${pAccountNameLC}-GitHubOIDCProviderArn"
   GitHubActionsRoleArn:
     Value: !GetAtt rGitHubActionsRole.Arn
     Description: ARN of the IAM Role for GitHub Actions
+    Export:
+      Name: !Sub "${pAccountNameLC}-GitHubActionsRoleArn"
   KMSKeyArn:
     Value: !Ref KMSKey
     Description: ARN of the KMS Key
+    Export:
+      Name: !Sub "${pAccountNameLC}-KMSKeyArn"
   HostedZoneId:
     Value: !Ref PublicHostedZone
     Description: ID of the Route53 hosted zone
+    Export:
+      Name: !Sub "${pAccountNameLC}-HostedZoneId"
   NameServers:
-    Value: !GetAtt PublicHostedZone.NameServers
-    Description: NS records for your domain
+    Value: !Join [ ",", !GetAtt PublicHostedZone.NameServers ]
+    Description: NS records for your domain (comma-separated)
+    Export:
+      Name: !Sub "${pAccountNameLC}-NameServers"

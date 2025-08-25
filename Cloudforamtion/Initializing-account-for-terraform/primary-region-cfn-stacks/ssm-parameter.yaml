@@ -9,11 +9,11 @@ Parameters:
   pAccountName:
     Description: The name of the AWS account
     Type: String
-    Default: "DEV"
+    Default: "QA"
   pAWSAccountLC:
     Description: The lowercase name of the AWS account
     Type: String
-    Default: "dev"
+    Default: "qa"
 
 Resources:
   rAWSAccount:
