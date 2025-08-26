@@ -17,7 +17,7 @@ Parameters:
   AccountId:
     Type: String
     Description: AWS Account ID
-    Default: "271457809232"
+    Default: "533267408704"
   AwsVPCName:
     Type: String
     Description: Account name prefix for resources
@@ -130,6 +130,7 @@ Resources:
 
   BackupSelection:
     Type: AWS::Backup::BackupSelection
+    DependsOn: AWSBackupServiceRole
     Properties:
       BackupPlanId: !Ref BackupPlan
       BackupSelection:

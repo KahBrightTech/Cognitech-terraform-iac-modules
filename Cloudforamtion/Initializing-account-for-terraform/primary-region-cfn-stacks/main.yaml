@@ -15,7 +15,7 @@ Parameters:
   pAWSAccountId:
     Description: The AWS Account ID
     Type: String
-    Default: 271457809232
+    Default: 533267408704
 
   # Terraform Backend Parameters
   TableName:
@@ -69,12 +69,11 @@ Parameters:
     Type: String
     Default: 'o-orvtyisdyc'
     Description: 'AWS Organization ID for org-wide access'
-
   # Route53 Hosted Zone Parameters
-  DomainName:
-    Type: String
-    Description: The domain name for the hosted zone (e.g., example.com)
-    Default: "bkuat.org"
+  # DomainName:
+  #   Type: String
+  #   Description: The domain name for the hosted zone (e.g., example.com)
+  #   Default: "bkuat.org"
 
 Resources:
   #################################
@@ -212,16 +211,15 @@ Resources:
     Properties:
       AliasName: !Sub "alias/${KeyAlias}-${Region}"
       TargetKeyId: !Ref KMSKey
-
   #################################
   # Route 53 Hosted Zone
   #################################
-  PublicHostedZone:
-    Type: AWS::Route53::HostedZone
-    Properties:
-      Name: !Ref DomainName
-      HostedZoneConfig:
-        Comment: !Sub "Public hosted zone for ${DomainName}"
+  # PublicHostedZone:
+  #   Type: AWS::Route53::HostedZone
+  #   Properties:
+  #     Name: !Ref DomainName
+  #     HostedZoneConfig:
+  #       Comment: !Sub "Public hosted zone for ${DomainName}"
 
 Outputs:
   TerraformStateBucketName:
@@ -249,13 +247,13 @@ Outputs:
     Description: ARN of the KMS Key
     Export:
       Name: !Sub "${pAccountNameLC}-KMSKeyArn"
-  HostedZoneId:
-    Value: !Ref PublicHostedZone
-    Description: ID of the Route53 hosted zone
-    Export:
-      Name: !Sub "${pAccountNameLC}-HostedZoneId"
-  NameServers:
-    Value: !Join [ ",", !GetAtt PublicHostedZone.NameServers ]
-    Description: NS records for your domain (comma-separated)
-    Export:
-      Name: !Sub "${pAccountNameLC}-NameServers"
+  # HostedZoneId:
+  #   Value: !Ref PublicHostedZone
+  #   Description: ID of the Route53 hosted zone
+  #   Export:
+  #     Name: !Sub "${pAccountNameLC}-HostedZoneId"
+  # NameServers:
+  #   Value: !Join [ ",", !GetAtt PublicHostedZone.NameServers ]
+  #   Description: NS records for your domain (comma-separated)
+  #   Export:
+  #     Name: !Sub "${pAccountNameLC}-NameServers"
