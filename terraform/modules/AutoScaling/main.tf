@@ -43,7 +43,7 @@ resource "aws_autoscaling_group" "main" {
   health_check_type         = var.Autoscaling_group.health_check_type
   desired_capacity          = var.Autoscaling_group.desired_capacity
   force_delete              = var.Autoscaling_group.force_delete
-  launch_configuration      = module.launch_template.name
+  launch_configuration      = var.Autoscaling_group.launch_configuration
   vpc_zone_identifier       = [aws_subnet.example1.id, aws_subnet.example2.id]
   target_group_arns         = var.Autoscaling_group.attach_target_groups
   dynamic "timeouts" {
