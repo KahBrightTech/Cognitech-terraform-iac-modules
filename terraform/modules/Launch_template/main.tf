@@ -57,7 +57,7 @@ resource "aws_launch_template" "main" {
   iam_instance_profile {
     name = var.launch_template.instance_profile
   }
-  image_id      = var.launch_template.image_id
+  image_id      = data.aws_ami.launch_template.id
   instance_type = var.launch_template.instance_type
   key_name      = var.launch_template.key_name
   network_interfaces {
