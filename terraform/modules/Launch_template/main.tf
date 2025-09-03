@@ -60,9 +60,11 @@ resource "aws_launch_template" "main" {
   image_id      = data.aws_ami.launch_template.id
   instance_type = var.launch_template.instance_type
   key_name      = var.launch_template.key_name
-  network_interfaces {
-    associate_public_ip_address = var.launch_template.associate_public_ip_address
-  }
+  # network_interfaces {
+  #   associate_public_ip_address = var.launch_template.network_interfaces.associate_public_ip_address
+  #   security_groups             = var.launch_template.network_interfaces.security_groups
+  #   delete_on_termination       = var.launch_template.network_interfaces.delete_on_termination
+  # }
   vpc_security_group_ids = var.launch_template.vpc_security_group_ids
   user_data              = var.launch_template.user_data
   tags = merge(var.common.tags, {

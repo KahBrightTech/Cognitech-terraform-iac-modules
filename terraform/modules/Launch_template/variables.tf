@@ -23,7 +23,12 @@ variable "launch_template" {
     associate_public_ip_address = optional(bool)
     vpc_security_group_ids      = optional(list(string))
     tags                        = optional(map(string))
-    user_data                   = optional(string)
+    # network_interfaces = optional(list(object({
+    #   security_groups             = optional(list(string))
+    #   delete_on_termination       = optional(bool)
+    #   associate_public_ip_address = optional(bool)
+    # })))
+    user_data = optional(string)
   })
   default = null
 }
