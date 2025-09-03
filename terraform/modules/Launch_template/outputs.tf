@@ -1,9 +1,9 @@
-output "launch_template_id" {
+output "id" {
   description = "The ID of the launch template"
   value       = aws_launch_template.main.id
 }
 
-output "launch_template_arn" {
+output "arn" {
   description = "The ARN of the launch template"
   value       = aws_launch_template.main.arn
 }
