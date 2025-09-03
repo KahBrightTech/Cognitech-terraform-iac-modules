@@ -64,6 +64,8 @@ resource "aws_launch_template" "main" {
     associate_public_ip_address = var.launch_template.associate_public_ip_address
   }
   vpc_security_group_ids = var.launch_template.vpc_security_group_ids
-  tags                   = var.launch_template.tags
   user_data              = var.launch_template.user_data
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.launch_template.name}-lt"
+  })
 }
