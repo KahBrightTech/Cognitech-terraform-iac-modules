@@ -13,6 +13,7 @@ variable "launch_template" {
   type = object({
     name             = string
     instance_profile = optional(string)
+    custom_ami       = optional(string)
     ami_config = object({
       os_release_date  = optional(string)
       os_base_packages = optional(string)

@@ -1,11 +1,14 @@
 output "launch_template_id" {
-  value = aws_launch_template.main.id
+  description = "The ID of the launch template"
+  value       = aws_launch_template.main.id
 }
 
 output "launch_template_arn" {
-  value = aws_launch_template.main.arn
+  description = "The ARN of the launch template"
+  value       = aws_launch_template.main.arn
 }
 
 output "name" {
-  value = aws_launch_template.main.name
+  description = "The name of the launch template"
+  value       = aws_launch_template.main.name
 }

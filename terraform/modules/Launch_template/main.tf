@@ -49,8 +49,8 @@ locals {
     #Ubuntu AMIs
     UBUNTU20 = { pattern = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*", owners = ["amazon"] }
   }
-  ami        = var.ec2.custom_ami != null ? var.ec2.custom_ami : (contains(["W19", "W22"], var.ec2.ami_config.os_release_date) ? local.ami_map[var.ec2.ami_config.os_release_date][var.ec2.ami_config.os_base_packages].pattern : local.ami_map[var.ec2.ami_config.os_release_date].pattern)
-  ami_owners = var.ec2.custom_ami != null ? null : (contains(["W19", "W22"], var.ec2.ami_config.os_release_date) ? local.ami_map[var.ec2.ami_config.os_release_date][var.ec2.ami_config.os_base_packages].owners : local.ami_map[var.ec2.ami_config.os_release_date].owners)
+  ami        = var.launch_template.custom_ami != null ? var.launch_template.custom_ami : (contains(["W19", "W22"], var.launch_template.ami_config.os_release_date) ? local.ami_map[var.launch_template.ami_config.os_release_date][var.launch_template.ami_config.os_base_packages].pattern : local.ami_map[var.launch_template.ami_config.os_release_date].pattern)
+  ami_owners = var.launch_template.custom_ami != null ? null : (contains(["W19", "W22"], var.launch_template.ami_config.os_release_date) ? local.ami_map[var.launch_template.ami_config.os_release_date][var.launch_template.ami_config.os_base_packages].owners : local.ami_map[var.launch_template.ami_config.os_release_date].owners)
 }
 resource "aws_launch_template" "main" {
   name = var.launch_template.name
