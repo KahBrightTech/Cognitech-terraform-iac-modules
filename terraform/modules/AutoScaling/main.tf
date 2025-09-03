@@ -43,9 +43,12 @@ resource "aws_autoscaling_group" "main" {
   health_check_type         = var.Autoscaling_group.health_check_type
   desired_capacity          = var.Autoscaling_group.desired_capacity
   force_delete              = var.Autoscaling_group.force_delete
-  launch_configuration      = var.Autoscaling_group.launch_configuration
-  vpc_zone_identifier       = var.Autoscaling_group.subnet_ids
-  target_group_arns         = var.Autoscaling_group.attach_target_groups
+  launch_template {
+    id      = var.Autoscaling_group.launch_template.id
+    version = var.Autoscaling_group.launch_template.version
+  }
+  vpc_zone_identifier = var.Autoscaling_group.subnet_ids
+  target_group_arns   = var.Autoscaling_group.attach_target_groups
   dynamic "timeouts" {
     for_each = var.Autoscaling_group.timeouts != null ? [var.Autoscaling_group.timeouts] : []
     content {
