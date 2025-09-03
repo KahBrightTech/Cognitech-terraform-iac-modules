@@ -45,6 +45,7 @@ resource "aws_autoscaling_group" "main" {
   force_delete              = var.Autoscaling_group.force_delete
   launch_configuration      = module.launch_template.name
   vpc_zone_identifier       = [aws_subnet.example1.id, aws_subnet.example2.id]
+  target_group_arns         = var.Autoscaling_group.attach_target_groups
   dynamic "timeouts" {
     for_each = var.Autoscaling_group.timeouts != null ? [var.Autoscaling_group.timeouts] : []
     content {

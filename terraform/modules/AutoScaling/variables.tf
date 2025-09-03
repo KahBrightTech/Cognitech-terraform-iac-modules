@@ -85,6 +85,7 @@ variable "Autoscaling_group" {
     force_delete              = optional(bool)
     desired_capacity          = optional(number)
     subnet_ids                = optional(list(string))
+    attach_target_groups      = optional(list(string))
     timeouts = optional(object({
       delete = optional(string)
     }))
