@@ -66,7 +66,7 @@ resource "aws_launch_template" "main" {
   #   delete_on_termination       = var.launch_template.network_interfaces.delete_on_termination
   # }
   vpc_security_group_ids = var.launch_template.vpc_security_group_ids
-  user_data              = var.launch_template.user_data
+  user_data              = filebase64(var.launch_template.user_data)
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.launch_template.name}-lt"
   })
