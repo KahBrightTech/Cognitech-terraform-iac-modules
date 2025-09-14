@@ -29,22 +29,32 @@ resource "aws_iam_user" "iam_user" {
 }
 
 #--------------------------------------------------------------------
-# IAM Keeper Secret 
+# AWS Secrets Manager Secret for IAM User Access Keys
 #--------------------------------------------------------------------
-resource "secretsmanager_login" "iam_user_access_key" {
+resource "aws_secretsmanager_secret" "iam_user_credentials" {
+  count                   = var.iam_user.create_access_key ? 1 : 0
+  name                    = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_user.name}-credentials"
+  description             = "Access credentials for IAM user ${var.iam_user.name}"
+  recovery_window_in_days = var.iam_user.secrets_manager.recovery_window_in_days
+
+  tags = merge(var.common.tags,
+    {
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_user.name}-credentials"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "iam_user_credentials" {
+  count     = var.iam_user.create_access_key ? 1 : 0
+  secret_id = aws_secretsmanager_secret.iam_user_credentials[0].id
+  secret_string = jsonencode({
+    access_key_id     = data.external.create_access_key.result["access_key_id"]
+    secret_access_key = data.external.create_access_key.result["exists"] == "false" ? data.external.create_access_key.result["secret_access_key"] : "*** EXISTING KEY - SECRET NOT AVAILABLE ***"
+    username          = aws_iam_user.iam_user.name
+    created_date      = timestamp()
+  })
+
   depends_on = [data.external.create_access_key]
-  folder_uid = var.iam_user.keeper_folder_uid
-  title      = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_user.name}"
-  login {
-    required       = true
-    privacy_screen = true
-    value          = data.external.create_access_key.result["access_key_id"]
-  }
-  password {
-    required       = true
-    privacy_screen = true
-    value          = data.external.create_access_key.result["exists"] == "false" ? data.external.create_access_key.result["secret_access_key"] : null
-  }
 }
 
 #--------------------------------------------------------------------
