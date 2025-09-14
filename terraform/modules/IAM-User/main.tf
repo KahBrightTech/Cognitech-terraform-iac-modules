@@ -52,8 +52,10 @@ resource "aws_secretsmanager_secret_version" "iam_user_credentials" {
     access_key_id     = data.external.create_access_key.result["access_key_id"]
     secret_access_key = data.external.create_access_key.result["exists"] == "false" ? data.external.create_access_key.result["secret_access_key"] : "*** EXISTING KEY - SECRET NOT AVAILABLE ***"
     username          = aws_iam_user.iam_user.name
-    created_date      = timestamp()
   })
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
 
   depends_on = [data.external.create_access_key]
 }
