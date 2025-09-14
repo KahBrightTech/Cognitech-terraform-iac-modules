@@ -80,6 +80,42 @@ resource "aws_iam_group_membership" "iam_group_membership" {
 }
 
 #--------------------------------------------------------------------
+# IAM Group Policies
+#--------------------------------------------------------------------
+resource "aws_iam_policy" "group_policies" {
+  for_each = {
+    for policy in var.iam_user.group_policies : "${policy.group_name}-${policy.policy_name}" => policy
+  }
+
+  name        = "${var.common.account_name}-${var.common.region_prefix}-${each.value.policy_name}"
+  description = each.value.description
+  policy      = each.value.policy
+
+  tags = merge(var.common.tags,
+    {
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${each.value.policy_name}"
+    }
+  )
+}
+
+#--------------------------------------------------------------------
+# IAM Group Policy Attachments
+#--------------------------------------------------------------------
+resource "aws_iam_group_policy_attachment" "group_policy_attachments" {
+  for_each = {
+    for policy in var.iam_user.group_policies : "${policy.group_name}-${policy.policy_name}" => policy
+  }
+
+  group      = aws_iam_group.iam_groups[each.value.group_name].name
+  policy_arn = aws_iam_policy.group_policies[each.key].arn
+
+  depends_on = [
+    aws_iam_group.iam_groups,
+    aws_iam_policy.group_policies
+  ]
+}
+
+#--------------------------------------------------------------------
 # IAM User Policy 
 #--------------------------------------------------------------------
 resource "aws_iam_policy" "policy" {

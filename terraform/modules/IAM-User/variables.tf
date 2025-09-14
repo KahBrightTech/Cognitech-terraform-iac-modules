@@ -32,6 +32,12 @@ variable "iam_user" {
       description = optional(string)
       policy      = string
     }))
+    group_policies = optional(list(object({
+      group_name  = string
+      policy_name = string
+      description = optional(string)
+      policy      = string
+    })), [])
   })
   default = null
 }

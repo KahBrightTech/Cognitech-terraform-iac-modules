@@ -30,6 +30,7 @@ module "iam_user" {
     name                = "service-user"
     notifications_email = "admin@example.com"
     create_access_key   = true
+    groups              = ["developers", "read-only"]
     
     secrets_manager = {
       recovery_window_in_days = 30
@@ -50,6 +51,40 @@ module "iam_user" {
         ]
       })
     }
+    
+    group_policies = [
+      {
+        group_name  = "developers"
+        policy_name = "dev-s3-access"
+        description = "S3 access for developers"
+        policy = jsonencode({
+          Version = "2012-10-17"
+          Statement = [
+            {
+              Effect = "Allow"
+              Action = ["s3:*"]
+              Resource = ["arn:aws:s3:::dev-bucket/*"]
+            }
+          ]
+        })
+      },
+      {
+        group_name  = "read-only"
+        policy_name = "readonly-access"
+        description = "Read-only access policy"
+        policy = jsonencode({
+          Version = "2012-10-17"
+          Statement = [
+            {
+              Effect = "Allow"
+              Action = ["s3:GetObject", "s3:ListBucket"]
+              Resource = "*"
+            }
+          ]
+        })
+      }
+    ]
+  }
   }
 }
 ```
@@ -80,6 +115,7 @@ module "iam_user" {
 | force_destroy | Allow force destruction | `bool` | `false` | no |
 | groups | List of IAM groups | `list(string)` | `null` | no |
 | policy | IAM policy configuration | `object` | `null` | no |
+| group_policies | List of policies to attach to groups | `list(object)` | `[]` | no |
 
 ### Secrets Manager Object
 
@@ -87,6 +123,15 @@ module "iam_user" {
 |------|-------------|------|---------|:--------:|
 | recovery_window_in_days | Secret recovery window | `number` | `30` | no |
 | description | Secret description | `string` | `null` | no |
+
+### Group Policies Object
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| group_name | Name of the IAM group to attach policy to | `string` | n/a | yes |
+| policy_name | Name for the policy | `string` | n/a | yes |
+| description | Policy description | `string` | `null` | no |
+| policy | Policy document in JSON format | `string` | n/a | yes |
 
 ## Outputs
 
@@ -97,6 +142,8 @@ module "iam_user" {
 | secrets_manager_secret_arn | The ARN of the Secrets Manager secret |
 | secrets_manager_secret_name | The name of the Secrets Manager secret |
 | access_key_id | The access key ID (sensitive) |
+| iam_groups | The names of the IAM groups created |
+| group_policy_arns | The ARNs of the group policies created |
 
 ## Secret Structure
 
