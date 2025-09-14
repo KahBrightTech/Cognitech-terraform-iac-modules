@@ -36,6 +36,7 @@ resource "aws_secretsmanager_secret" "iam_user_credentials" {
   name                    = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_user.name}-credentials"
   description             = "Access credentials for IAM user ${var.iam_user.name}"
   recovery_window_in_days = var.iam_user.secrets_manager.recovery_window_in_days
+  policy                  = var.iam_user.secrets_manager.policy
 
   tags = merge(var.common.tags,
     {

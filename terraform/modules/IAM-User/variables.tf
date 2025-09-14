@@ -25,6 +25,7 @@ variable "iam_user" {
     secrets_manager = optional(object({
       recovery_window_in_days = optional(number, 30)
       description             = optional(string, null)
+      policy                  = optional(string)
     }), {})
     policy = optional(object({
       name        = string
