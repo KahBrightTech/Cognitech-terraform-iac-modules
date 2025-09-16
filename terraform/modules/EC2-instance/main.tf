@@ -130,7 +130,7 @@ resource "aws_ebs_volume" "ebs_volume" {
   kms_key_id        = each.value.kms_key_id
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2.name}-ebs-volume"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2.name}-ebs-volume-${each.key}"
   })
 
 }
@@ -139,9 +139,9 @@ resource "aws_ebs_volume" "ebs_volume" {
 # EBS Volume Attachment - Attaches the EBS volume to the EC2 instance
 #-------------------------------------------------------------------------
 resource "aws_volume_attachment" "ebs_volume_attachment" {
-  count                          = var.ec2.ebs_device_volume != null ? 1 : 0
-  device_name                    = var.ec2.ebs_device_volume.name # Specify the device name for the EBS volume attachment
-  volume_id                      = aws_ebs_volume.ebs_volume[0].id
+  for_each                       = { for ebs in var.ec2.ebs_device_volume : ebs.name => ebs }
+  device_name                    = each.value.name # Specify the device name for the EBS volume attachment
+  volume_id                      = aws_ebs_volume.ebs_volume[each.value.name].id
   instance_id                    = aws_instance.ec2_instance.id
   skip_destroy                   = false # Set to true if you want to skip the destroy operation for this resource 
   stop_instance_before_detaching = true  # Set to true if you want to stop the instance before detaching the volume
