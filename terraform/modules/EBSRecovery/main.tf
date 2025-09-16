@@ -81,25 +81,13 @@ resource "aws_ebs_volume" "restored" {
 }
 
 # Resize existing volumes (resize operations only)
-resource "aws_ebs_volume" "resized" {
+# Use aws_volume_modification to resize existing volumes
+resource "aws_volume_modification" "resize_volumes" {
   for_each = var.dr_volume_restore.operation_type == "resize" ? data.aws_ebs_volume.existing_volumes : {}
 
-  availability_zone = each.value.availability_zone
-  type              = each.value.type
-  size              = local.device_config[each.key].size
-  iops              = each.value.iops
-  throughput        = each.value.throughput
-  encrypted         = each.value.encrypted
-  kms_key_id        = each.value.kms_key_id
-
-  tags = each.value.tags
-
-  lifecycle {
-    ignore_changes = [snapshot_id]
-  }
-}
-
-# Attach restored volumes to the target instance (restore operations only)
+  volume_id = each.value.id
+  size      = local.device_config[each.key].size
+} # Attach restored volumes to the target instance (restore operations only)
 resource "aws_volume_attachment" "attach_restored" {
   for_each = var.dr_volume_restore.operation_type == "restore" ? aws_ebs_volume.restored : {}
 

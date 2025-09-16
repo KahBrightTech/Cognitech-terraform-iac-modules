@@ -6,12 +6,12 @@ output "volume_ids" {
       for device_name, volume in aws_ebs_volume.restored : device_name => volume.id
     },
     {
-      for device_name, volume in aws_ebs_volume.resized : device_name => volume.id
+      for device_name, modification in aws_volume_modification.resize_volumes : device_name => modification.volume_id
     }
   )
 }
 
-# Output the volume ARNs (both restored and resized)
+# Output the volume ARNs (restored volumes only, resized volumes retain their original ARNs)
 output "volume_arns" {
   description = "Map of device names to EBS volume ARNs"
   value = merge(
@@ -19,7 +19,7 @@ output "volume_arns" {
       for device_name, volume in aws_ebs_volume.restored : device_name => volume.arn
     },
     {
-      for device_name, volume in aws_ebs_volume.resized : device_name => volume.arn
+      for device_name, volume_data in data.aws_ebs_volume.existing_volumes : device_name => volume_data.arn
     }
   )
 }
@@ -41,13 +41,13 @@ output "volumes" {
       }
     },
     {
-      for device_name, volume in aws_ebs_volume.resized : device_name => {
-        id                = volume.id
-        arn               = volume.arn
-        availability_zone = volume.availability_zone
-        size              = volume.size
-        type              = volume.type
-        encrypted         = volume.encrypted
+      for device_name, modification in aws_volume_modification.resize_volumes : device_name => {
+        id                = modification.volume_id
+        arn               = data.aws_ebs_volume.existing_volumes[device_name].arn
+        availability_zone = data.aws_ebs_volume.existing_volumes[device_name].availability_zone
+        size              = modification.size
+        type              = data.aws_ebs_volume.existing_volumes[device_name].volume_type
+        encrypted         = data.aws_ebs_volume.existing_volumes[device_name].encrypted
         operation_type    = "resized"
       }
     }
