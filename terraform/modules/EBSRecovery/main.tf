@@ -11,9 +11,25 @@ data "aws_instance" "target" {
   }
 }
 
+# Create locals to handle both old and new format
+locals {
+  # Support both device_names list and device_volumes map for backward compatibility
+  device_config = var.dr_volume_restore.device_volumes != null ? {
+    for k, v in var.dr_volume_restore.device_volumes : v.device_name => {
+      device_name = v.device_name
+      size        = v.size
+    }
+    } : {
+    for device in var.dr_volume_restore.device_names : device => {
+      device_name = device
+      size        = null # Will use snapshot size
+    }
+  }
+}
+
 # Lookup the most recent snapshot for each device on the source instance
 data "aws_ebs_snapshot" "latest_by_device" {
-  for_each    = toset(var.dr_volume_restore.device_names) # list of devices
+  for_each    = local.device_config
   most_recent = true
 
   filter {
@@ -23,7 +39,7 @@ data "aws_ebs_snapshot" "latest_by_device" {
 
   filter {
     name   = "tag:DeviceName"
-    values = [each.value]
+    values = [each.value.device_name]
   }
 
   owners = [var.dr_volume_restore.account_id]
@@ -42,12 +58,14 @@ resource "aws_ebs_volume" "restored" {
   availability_zone = var.dr_volume_restore.target_az
   snapshot_id       = each.value.id
   type              = "gp3"
+  # Use specified size if provided, otherwise use snapshot size
+  size = local.device_config[each.key].size != null ? local.device_config[each.key].size : null
 
   tags = merge(
     {
       Name        = var.dr_volume_restore.source_instance_name
       RestoredFor = var.dr_volume_restore.source_instance_name
-      DeviceName  = data.aws_ebs_snapshot.latest_by_device[each.key].tags["DeviceName"]
+      DeviceName  = local.device_config[each.key].device_name
     },
     var.dr_volume_restore.restore_volume_tags
   )
@@ -57,7 +75,7 @@ resource "aws_ebs_volume" "restored" {
 resource "aws_volume_attachment" "attach_restored" {
   for_each = aws_ebs_volume.restored
 
-  device_name = data.aws_ebs_snapshot.latest_by_device[each.key].tags["DeviceName"]
+  device_name = local.device_config[each.key].device_name
   volume_id   = each.value.id
   instance_id = data.aws_instance.target.id
 
