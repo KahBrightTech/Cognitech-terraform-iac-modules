@@ -122,12 +122,12 @@ resource "aws_instance" "ec2_instance" {
 # EBS Volume - Creates an EBS volume with the specified configuration
 #-------------------------------------------------------------------------
 resource "aws_ebs_volume" "ebs_volume" {
-  for_each          = { for ebs in var.ec2.ebs_device_volume : ebs.name => ebs }
+  count             = var.ec2.ebs_device_volume != null ? 1 : 0
   availability_zone = aws_instance.ec2_instance.availability_zone # Creates the EBS volume in the same AZ as the EC2 instance
-  size              = each.value.volume_size
-  type              = each.value.volume_type
-  encrypted         = each.value.encrypted
-  kms_key_id        = each.value.kms_key_id
+  size              = var.ec2.ebs_device_volume.volume_size
+  type              = var.ec2.ebs_device_volume.volume_type
+  encrypted         = var.ec2.ebs_device_volume.encrypted
+  kms_key_id        = var.ec2.ebs_device_volume.kms_key_id
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2.name}-ebs-volume"
