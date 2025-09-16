@@ -11,18 +11,13 @@ data "aws_instance" "target" {
   }
 }
 
-# Create locals to handle both old and new format
+# Create locals to handle device volumes configuration
 locals {
-  # Support both device_names list and device_volumes map for backward compatibility
-  device_config = var.dr_volume_restore.device_volumes != null ? {
+  # Use device_volumes map directly
+  device_config = {
     for k, v in var.dr_volume_restore.device_volumes : v.device_name => {
       device_name = v.device_name
       size        = v.size
-    }
-    } : {
-    for device in var.dr_volume_restore.device_names : device => {
-      device_name = device
-      size        = null # Will use snapshot size
     }
   }
 }

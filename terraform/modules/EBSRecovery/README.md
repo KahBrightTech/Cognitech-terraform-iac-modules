@@ -5,36 +5,12 @@ This module provides disaster recovery functionality for EBS volumes by restorin
 ## Features
 
 - Restores EBS volumes from snapshots to a target instance
-- Supports both simple device name lists and device configurations with custom sizes
+- Supports device configurations with custom sizes
 - Automatically stops the target instance before volume restoration
 - Automatically starts the target instance after all volumes are attached
-- Backward compatible with existing configurations
+- Flexible volume sizing (use snapshot size or specify custom size)
 
 ## Usage
-
-### Option 1: Simple device names (backward compatible)
-
-```hcl
-module "ebs_recovery" {
-  source = "./modules/EBSRecovery"
-
-  common = var.common
-
-  dr_volume_restore = {
-    source_instance_name = "source-instance-name"
-    target_instance_name = "target-instance-name"
-    target_az            = "us-west-2a"
-    device_names         = ["/dev/sdf", "/dev/sdg", "/dev/sdh"]
-    restore_volume_tags = {
-      Environment = "production"
-      Backup      = "true"
-    }
-    account_id = "123456789012"
-  }
-}
-```
-
-### Option 2: Device configuration with custom sizes
 
 ```hcl
 module "ebs_recovery" {
@@ -84,12 +60,9 @@ module "ebs_recovery" {
 | source_instance_name | Name of the source instance (tagged in snapshots) | `string` | n/a | yes |
 | target_instance_name | Name of the target instance to restore volumes to | `string` | n/a | yes |
 | target_az | Availability zone where volumes will be created | `string` | n/a | yes |
-| device_names | List of device names (backward compatibility) | `list(string)` | `null` | no* |
-| device_volumes | Map of device configurations with optional sizes | `map(object)` | `null` | no* |
+| device_volumes | Map of device configurations with optional sizes | `map(object)` | n/a | yes |
 | restore_volume_tags | Tags to apply to restored volumes | `map(string)` | n/a | yes |
 | account_id | AWS account ID that owns the snapshots | `string` | n/a | yes |
-
-\* Either `device_names` or `device_volumes` must be specified.
 
 ### device_volumes object
 
