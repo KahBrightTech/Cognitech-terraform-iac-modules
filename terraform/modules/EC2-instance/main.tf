@@ -144,7 +144,7 @@ resource "aws_volume_attachment" "ebs_volume_attachment" {
   volume_id                      = aws_ebs_volume.ebs_volume[each.value.name].id
   instance_id                    = aws_instance.ec2_instance.id
   skip_destroy                   = false # Set to true if you want to skip the destroy operation for this resource 
-  stop_instance_before_detaching = true  # Set to true if you want to stop the instance before detaching the volume
+  stop_instance_before_detaching = false # Set to false to avoid stopping the instance during volume operations
 }
 
 #-------------------------------------------------------------------------
