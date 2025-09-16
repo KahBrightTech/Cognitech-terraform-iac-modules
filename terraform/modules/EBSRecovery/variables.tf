@@ -22,7 +22,8 @@ variable "dr_volume_restore" {
     }))
     restore_volume_tags = map(string)
     account_id          = string
-    stop_instance       = optional(bool, true) # Whether to stop instance during operations
+    stop_instance       = optional(bool, true)        # Whether to stop instance during operations
+    operation_type      = optional(string, "restore") # "restore" or "resize"
   })
   default = null
 
@@ -31,5 +32,12 @@ variable "dr_volume_restore" {
       var.dr_volume_restore.device_volumes != null && length(var.dr_volume_restore.device_volumes) > 0
     )
     error_message = "device_volumes must be specified with at least one entry."
+  }
+
+  validation {
+    condition = var.dr_volume_restore == null ? true : (
+      contains(["restore", "resize"], var.dr_volume_restore.operation_type)
+    )
+    error_message = "operation_type must be either 'restore' or 'resize'."
   }
 }
