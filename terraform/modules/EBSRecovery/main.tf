@@ -63,7 +63,7 @@ resource "aws_volume_attachment" "attach_restored" {
 
   depends_on = [
     aws_ec2_instance_state.stop_target,
-    aws_ebs_volume.restored[each.key]
+    aws_ebs_volume.restored
   ]
 }
 
