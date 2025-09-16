@@ -3,7 +3,6 @@
 #--------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
-
 # Lookup the destination instance (different from source)
 data "aws_instance" "target" {
   filter {
@@ -11,22 +10,6 @@ data "aws_instance" "target" {
     values = [var.dr_volume_restore.target_instance_name]
   }
 }
-
-# Get existing volumes attached to the target instance (for resize operations)
-data "aws_ebs_volume" "existing_volumes" {
-  for_each = var.dr_volume_restore.operation_type == "resize" ? local.device_config : {}
-
-  filter {
-    name   = "attachment.instance-id"
-    values = [data.aws_instance.target.id]
-  }
-
-  filter {
-    name   = "attachment.device"
-    values = [each.value.device_name]
-  }
-}
-
 locals {
   # Convert list of objects into a map keyed by device_name
   device_config = {
@@ -35,9 +18,9 @@ locals {
 }
 
 
-# Lookup the most recent snapshot for each device on the source instance (restore operations only)
+# Lookup the most recent snapshot for each device on the source instance
 data "aws_ebs_snapshot" "latest_by_device" {
-  for_each    = var.dr_volume_restore.operation_type == "restore" ? local.device_config : {}
+  for_each    = local.device_config
   most_recent = true
 
   filter {
@@ -53,16 +36,16 @@ data "aws_ebs_snapshot" "latest_by_device" {
   owners = [var.dr_volume_restore.account_id]
 }
 
-# Stop the destination instance before restoring volumes (conditional and only for restore operations)
+# Stop the destination instance before restoring volumes (conditional)
 resource "aws_ec2_instance_state" "stop_target" {
-  count       = var.dr_volume_restore.operation_type == "restore" && var.dr_volume_restore.stop_instance ? 1 : 0
+  count       = (var.dr_volume_restore.stop_instance && !var.dr_volume_restore.resize) ? 1 : 0
   instance_id = data.aws_instance.target.id
   state       = "stopped"
 }
 
-# Restore volumes from snapshots (restore operations only)
+# Restore volumes from snapshots
 resource "aws_ebs_volume" "restored" {
-  for_each = var.dr_volume_restore.operation_type == "restore" ? data.aws_ebs_snapshot.latest_by_device : {}
+  for_each = data.aws_ebs_snapshot.latest_by_device
 
   availability_zone = var.dr_volume_restore.target_az
   snapshot_id       = each.value.id
@@ -80,16 +63,9 @@ resource "aws_ebs_volume" "restored" {
   )
 }
 
-# Resize existing volumes (resize operations only)
-# Use aws_volume_modification to resize existing volumes
-resource "aws_volume_modification" "resize_volumes" {
-  for_each = var.dr_volume_restore.operation_type == "resize" ? data.aws_ebs_volume.existing_volumes : {}
-
-  volume_id = each.value.id
-  size      = local.device_config[each.key].size
-} # Attach restored volumes to the target instance (restore operations only)
+# Attach restored volumes to the target instance
 resource "aws_volume_attachment" "attach_restored" {
-  for_each = var.dr_volume_restore.operation_type == "restore" ? aws_ebs_volume.restored : {}
+  for_each = aws_ebs_volume.restored
 
   device_name = local.device_config[each.key].device_name
   volume_id   = each.value.id
@@ -100,14 +76,11 @@ resource "aws_volume_attachment" "attach_restored" {
   ]
 }
 
-# Start the target instance once all volumes are attached (conditional and only for restore operations)
+# Start the target instance once all volumes are attached (conditional)
 resource "aws_ec2_instance_state" "start_target" {
-  count       = var.dr_volume_restore.operation_type == "restore" && var.dr_volume_restore.stop_instance ? 1 : 0
+  count       = (var.dr_volume_restore.stop_instance && !var.dr_volume_restore.resize) ? 1 : 0
   instance_id = data.aws_instance.target.id
   state       = "running"
 
   depends_on = [aws_volume_attachment.attach_restored]
 }
-
-
-
