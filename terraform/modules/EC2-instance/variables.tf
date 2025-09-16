@@ -32,14 +32,14 @@ variable "ec2" {
       encrypted             = optional(bool, false)
       kms_key_id            = optional(string, null)
     }), null)
-    ebs_device_volume = optional(object({
+    ebs_device_volume = optional(list(object({
       name                  = string
       volume_size           = number
       volume_type           = optional(string, "gp3")
       delete_on_termination = optional(bool, true)
       encrypted             = optional(bool, false)
       kms_key_id            = optional(string, null)
-    }), null)
+    })), [])
     subnet_id          = string
     Schedule_name      = optional(string)
     backup_plan_name   = optional(string)
