@@ -10,17 +10,13 @@ data "aws_instance" "target" {
     values = [var.dr_volume_restore.target_instance_name]
   }
 }
-
-# Create locals to handle device volumes configuration
 locals {
-  # Convert list to map using device_name as key for easier lookup
+  # Convert list of objects into a map keyed by device_name
   device_config = {
-    for volume in var.dr_volume_restore.device_volumes : volume.device_name => {
-      device_name = volume.device_name
-      size        = volume.size
-    }
+    for volume in var.dr_volume_restore.device_volumes : volume.device_name => volume
   }
 }
+
 
 # Lookup the most recent snapshot for each device on the source instance
 data "aws_ebs_snapshot" "latest_by_device" {
