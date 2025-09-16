@@ -22,6 +22,7 @@ variable "dr_volume_restore" {
     }))
     restore_volume_tags = map(string)
     account_id          = string
+    stop_instance       = optional(bool, true) # Whether to stop instance during operations
   })
   default = null
 

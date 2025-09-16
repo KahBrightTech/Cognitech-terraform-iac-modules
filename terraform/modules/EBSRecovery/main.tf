@@ -36,8 +36,9 @@ data "aws_ebs_snapshot" "latest_by_device" {
   owners = [var.dr_volume_restore.account_id]
 }
 
-# Stop the destination instance before restoring volumes
+# Stop the destination instance before restoring volumes (conditional)
 resource "aws_ec2_instance_state" "stop_target" {
+  count       = var.dr_volume_restore.stop_instance ? 1 : 0
   instance_id = data.aws_instance.target.id
   state       = "stopped"
 }
@@ -71,13 +72,13 @@ resource "aws_volume_attachment" "attach_restored" {
   instance_id = data.aws_instance.target.id
 
   depends_on = [
-    aws_ec2_instance_state.stop_target,
     aws_ebs_volume.restored
   ]
 }
 
-# Start the target instance once all volumes are attached
+# Start the target instance once all volumes are attached (conditional)
 resource "aws_ec2_instance_state" "start_target" {
+  count       = var.dr_volume_restore.stop_instance ? 1 : 0
   instance_id = data.aws_instance.target.id
   state       = "running"
 
