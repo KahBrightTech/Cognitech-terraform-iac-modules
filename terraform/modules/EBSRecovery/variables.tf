@@ -16,7 +16,7 @@ variable "dr_volume_restore" {
     source_instance_name = string
     target_instance_name = string
     target_az            = string
-    device_volumes = map(object({
+    device_volumes = list(object({
       device_name = string
       size        = optional(number) # Size in GB, if not specified uses snapshot size
     }))

@@ -22,20 +22,20 @@ module "ebs_recovery" {
     source_instance_name = "source-instance-name"
     target_instance_name = "target-instance-name"
     target_az            = "us-west-2a"
-    device_volumes = {
-      "volume1" = {
+    device_volumes = [
+      {
         device_name = "/dev/sdf"
         size        = 100  # GB - will resize the volume to 100GB
-      }
-      "volume2" = {
+      },
+      {
         device_name = "/dev/sdg"
         size        = 200  # GB - will resize the volume to 200GB
-      }
-      "volume3" = {
+      },
+      {
         device_name = "/dev/sdh"
         # size not specified - will use the original snapshot size
       }
-    }
+    ]
     restore_volume_tags = {
       Environment = "production"
       Backup      = "true"
@@ -60,7 +60,7 @@ module "ebs_recovery" {
 | source_instance_name | Name of the source instance (tagged in snapshots) | `string` | n/a | yes |
 | target_instance_name | Name of the target instance to restore volumes to | `string` | n/a | yes |
 | target_az | Availability zone where volumes will be created | `string` | n/a | yes |
-| device_volumes | Map of device configurations with optional sizes | `map(object)` | n/a | yes |
+| device_volumes | List of device configurations with optional sizes | `list(object)` | n/a | yes |
 | restore_volume_tags | Tags to apply to restored volumes | `map(string)` | n/a | yes |
 | account_id | AWS account ID that owns the snapshots | `string` | n/a | yes |
 

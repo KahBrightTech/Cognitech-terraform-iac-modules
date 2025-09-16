@@ -13,11 +13,11 @@ data "aws_instance" "target" {
 
 # Create locals to handle device volumes configuration
 locals {
-  # Use device_volumes map directly
+  # Convert list to map using device_name as key for easier lookup
   device_config = {
-    for k, v in var.dr_volume_restore.device_volumes : v.device_name => {
-      device_name = v.device_name
-      size        = v.size
+    for volume in var.dr_volume_restore.device_volumes : volume.device_name => {
+      device_name = volume.device_name
+      size        = volume.size
     }
   }
 }
