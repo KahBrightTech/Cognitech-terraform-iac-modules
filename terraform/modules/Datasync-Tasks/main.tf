@@ -155,7 +155,7 @@ resource "aws_iam_policy" "policy" {
       ),
       "[[account_name_abr]]", var.common.account_name_abr
     ),
-    "[[region]]", data.aws_region.current.name
+    "[[region]]", data.aws_region.current.id
   ))) : jsonencode(jsondecode(file(var.datasync.iam_role.policy.policy)))
 
   tags = merge(var.common.tags, {
@@ -180,7 +180,7 @@ resource "aws_iam_role" "role" {
       ),
       "[[account_name_abr]]", var.common.account_name_abr
     ),
-    "[[region]]", data.aws_region.current.name
+    "[[region]]", data.aws_region.current.id
   ))) : jsonencode(jsondecode(file(var.datasync.iam_role.assume_role_policy)))
   force_detach_policies = var.datasync.iam_role.force_detach_policies
   max_session_duration  = var.datasync.iam_role.max_session_duration

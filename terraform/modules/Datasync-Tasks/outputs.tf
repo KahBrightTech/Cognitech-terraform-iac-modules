@@ -7,9 +7,9 @@ output "datasync_task_arn" {
   value       = var.datasync.task != null ? aws_datasync_task.task[0].arn : null
 }
 
-output "datasync_task_status" {
-  description = "Status of the DataSync task"
-  value       = var.datasync.task != null ? aws_datasync_task.task[0].status : null
+output "datasync_task_id" {
+  description = "ID of the DataSync task"
+  value       = var.datasync.task != null ? aws_datasync_task.task[0].id : null
 }
 
 output "datasync_schedule_rule_arn" {
