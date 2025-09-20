@@ -18,7 +18,7 @@ resource "aws_datasync_location_s3" "s3" {
   s3_storage_class = var.datasync.s3_location.s3_storage_class
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.s3_location.location_type}-location"
   })
 }
 
@@ -34,7 +34,7 @@ resource "aws_datasync_location_efs" "efs" {
   }
   in_transit_encryption = var.datasync.efs_location.in_transit_encryption
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.efs_location.location_type}-location"
   })
 }
 
@@ -49,7 +49,7 @@ resource "aws_datasync_location_fsx_windows_file_system" "fsx" {
   security_group_arns = var.datasync.fsx_windows_location.security_group_arns
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.fsx_windows_location.location_type}-location"
   })
 }
 
@@ -61,7 +61,7 @@ resource "aws_datasync_location_fsx_lustre_file_system" "lustre" {
   security_group_arns = var.datasync.fsx_lustre_location.security_group_arns
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.fsx_lustre_location.location_type}-location"
   })
 }
 
@@ -97,7 +97,7 @@ resource "aws_datasync_location_fsx_ontap_file_system" "ontap" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-${var.datasync.fsx_ontap_location.protocol}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.fsx_ontap_location.location_type}-${var.datasync.fsx_ontap_location.protocol}-location"
   })
 }
 
@@ -116,7 +116,7 @@ resource "aws_datasync_location_fsx_openzfs_file_system" "openzfs" {
     }
   }
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.fsx_openzfs_location.location_type}-location"
   })
 }
 
@@ -136,7 +136,7 @@ resource "aws_datasync_location_nfs" "nfs" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.nfs_location.location_type}-location"
   })
 }
 
@@ -159,7 +159,7 @@ resource "aws_datasync_location_smb" "smb" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.smb_location.location_type}-location"
   })
 }
 
@@ -195,7 +195,7 @@ resource "aws_datasync_location_hdfs" "hdfs" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.hdfs_location.location_type}-location"
   })
 }
 
@@ -214,7 +214,7 @@ resource "aws_datasync_location_object_storage" "object_storage" {
   server_certificate = var.datasync.object_storage_location.server_certificate
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.object_storage_location.location_type}-location"
   })
 }
 
@@ -237,7 +237,7 @@ resource "aws_datasync_location_azure_blob" "azure_blob" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.azure_blob_location.location_type}-location"
   })
 }
 
