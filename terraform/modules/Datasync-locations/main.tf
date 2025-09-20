@@ -68,7 +68,6 @@ resource "aws_datasync_location_fsx_lustre_file_system" "lustre" {
 # FSx for NetApp ONTAP Location
 resource "aws_datasync_location_fsx_ontap_file_system" "ontap" {
   count                       = var.datasync.fsx_ontap_location != null ? 1 : 0
-  fsx_filesystem_arn          = var.datasync.fsx_ontap_location.fsx_filesystem_arn
   subdirectory                = var.datasync.fsx_ontap_location.subdirectory
   security_group_arns         = var.datasync.fsx_ontap_location.security_group_arns
   storage_virtual_machine_arn = var.datasync.fsx_ontap_location.storage_virtual_machine_arn

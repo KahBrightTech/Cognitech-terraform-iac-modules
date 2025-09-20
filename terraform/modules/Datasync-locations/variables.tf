@@ -54,8 +54,7 @@ variable "datasync" {
 
     # FSx for NetApp ONTAP Location Configuration
     fsx_ontap_location = optional(object({
-      fsx_filesystem_arn = string
-      subdirectory       = optional(string)
+      subdirectory = optional(string)
       protocol = object({
         nfs = optional(object({
           mount_options = object({

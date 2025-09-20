@@ -82,45 +82,45 @@ output "nfs_location_uri" {
 # SMB Location Outputs
 output "smb_location_arn" {
   description = "ARN of the DataSync SMB location"
-  value       = var.datasync.smb_location != null ? aws_datasync_location_smb.this[0].arn : null
+  value       = var.datasync.smb_location != null ? aws_datasync_location_smb.smb[0].arn : null
 }
 
 output "smb_location_uri" {
   description = "URI of the DataSync SMB location"
-  value       = var.datasync.smb_location != null ? aws_datasync_location_smb.this[0].uri : null
+  value       = var.datasync.smb_location != null ? aws_datasync_location_smb.smb[0].uri : null
 }
 
 # HDFS Location Outputs
 output "hdfs_location_arn" {
   description = "ARN of the DataSync HDFS location"
-  value       = var.datasync.hdfs_location != null ? aws_datasync_location_hdfs.this[0].arn : null
+  value       = var.datasync.hdfs_location != null ? aws_datasync_location_hdfs.hdfs[0].arn : null
 }
 
 output "hdfs_location_uri" {
   description = "URI of the DataSync HDFS location"
-  value       = var.datasync.hdfs_location != null ? aws_datasync_location_hdfs.this[0].uri : null
+  value       = var.datasync.hdfs_location != null ? aws_datasync_location_hdfs.hdfs[0].uri : null
 }
 
 # Object Storage Location Outputs
 output "object_storage_location_arn" {
   description = "ARN of the DataSync Object Storage location"
-  value       = var.datasync.object_storage_location != null ? aws_datasync_location_object_storage.this[0].arn : null
+  value       = var.datasync.object_storage_location != null ? aws_datasync_location_object_storage.object_storage[0].arn : null
 }
 
 output "object_storage_location_uri" {
   description = "URI of the DataSync Object Storage location"
-  value       = var.datasync.object_storage_location != null ? aws_datasync_location_object_storage.this[0].uri : null
+  value       = var.datasync.object_storage_location != null ? aws_datasync_location_object_storage.object_storage[0].uri : null
 }
 
 # Azure Blob Location Outputs
 output "azure_blob_location_arn" {
   description = "ARN of the DataSync Azure Blob location"
-  value       = var.datasync.azure_blob_location != null ? aws_datasync_location_azure_blob.this[0].arn : null
+  value       = var.datasync.azure_blob_location != null ? aws_datasync_location_azure_blob.azure_blob[0].arn : null
 }
 
 output "azure_blob_location_uri" {
   description = "URI of the DataSync Azure Blob location"
-  value       = var.datasync.azure_blob_location != null ? aws_datasync_location_azure_blob.this[0].uri : null
+  value       = var.datasync.azure_blob_location != null ? aws_datasync_location_azure_blob.azure_blob[0].uri : null
 }
 
 #--------------------------------------------------------------------
@@ -130,17 +130,17 @@ output "azure_blob_location_uri" {
 output "all_location_arns" {
   description = "List of all created DataSync location ARNs"
   value = compact([
-    var.datasync.s3_location != null ? aws_datasync_location_s3.this[0].arn : null,
-    var.datasync.efs_location != null ? aws_datasync_location_efs.this[0].arn : null,
-    var.datasync.fsx_windows_location != null ? aws_datasync_location_fsx_windows_file_system.this[0].arn : null,
-    var.datasync.fsx_lustre_location != null ? aws_datasync_location_fsx_lustre_file_system.this[0].arn : null,
-    var.datasync.fsx_ontap_location != null ? aws_datasync_location_fsx_ontap_file_system.this[0].arn : null,
-    var.datasync.fsx_openzfs_location != null ? aws_datasync_location_fsx_openzfs_file_system.this[0].arn : null,
-    var.datasync.nfs_location != null ? aws_datasync_location_nfs.this[0].arn : null,
-    var.datasync.smb_location != null ? aws_datasync_location_smb.this[0].arn : null,
-    var.datasync.hdfs_location != null ? aws_datasync_location_hdfs.this[0].arn : null,
-    var.datasync.object_storage_location != null ? aws_datasync_location_object_storage.this[0].arn : null,
-    var.datasync.azure_blob_location != null ? aws_datasync_location_azure_blob.this[0].arn : null,
+    var.datasync.s3_location != null ? aws_datasync_location_s3.s3[0].arn : null,
+    var.datasync.efs_location != null ? aws_datasync_location_efs.efs[0].arn : null,
+    var.datasync.fsx_windows_location != null ? aws_datasync_location_fsx_windows_file_system.fsx[0].arn : null,
+    var.datasync.fsx_lustre_location != null ? aws_datasync_location_fsx_lustre_file_system.lustre[0].arn : null,
+    var.datasync.fsx_ontap_location != null ? aws_datasync_location_fsx_ontap_file_system.ontap[0].arn : null,
+    var.datasync.fsx_openzfs_location != null ? aws_datasync_location_fsx_openzfs_file_system.openzfs[0].arn : null,
+    var.datasync.nfs_location != null ? aws_datasync_location_nfs.nfs[0].arn : null,
+    var.datasync.smb_location != null ? aws_datasync_location_smb.smb[0].arn : null,
+    var.datasync.hdfs_location != null ? aws_datasync_location_hdfs.hdfs[0].arn : null,
+    var.datasync.object_storage_location != null ? aws_datasync_location_object_storage.object_storage[0].arn : null,
+    var.datasync.azure_blob_location != null ? aws_datasync_location_azure_blob.azure_blob[0].arn : null,
   ])
 }
 
