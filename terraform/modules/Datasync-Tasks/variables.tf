@@ -13,7 +13,6 @@ variable "datasync" {
   description = "DataSync configuration with all location types and task settings"
   type = object({
     # Common Configuration
-    location_type = string
     # CloudWatch Log Group Configuration
     create_cloudwatch_log_group   = optional(bool, false)
     cloudwatch_log_group_name     = optional(string)
@@ -21,9 +20,9 @@ variable "datasync" {
 
     # DataSync Task Configuration
     task = optional(object({
-      name                     = string
-      source_location_arn      = string
-      destination_location_arn = string
+      name                     = optional(string)
+      source_location_arn      = optional(string)
+      destination_location_arn = optional(string)
       cloudwatch_log_group_arn = optional(string)
       options = optional(object({
         atime                          = optional(string)
@@ -57,16 +56,16 @@ variable "datasync" {
       name                      = string
       description               = optional(string)
       path                      = optional(string, "/")
-      assume_role_policy        = string
+      assume_role_policy        = optional(string)
       custom_assume_role_policy = optional(bool, true)
       force_detach_policies     = optional(bool, false)
       managed_policy_arns       = optional(list(string))
       max_session_duration      = optional(number, 3600)
       permissions_boundary      = optional(string)
       policy = optional(object({
-        name          = string
+        name          = optional(string)
         description   = optional(string)
-        policy        = string
+        policy        = optional(string)
         path          = optional(string, "/")
         custom_policy = optional(bool, true)
       }))
