@@ -50,26 +50,6 @@ variable "datasync" {
         value       = string
       })))
     }))
-    # IAM Role and Policy Configuration
-    create_iam_resources = optional(bool, false)
-    iam_role = optional(object({
-      name                      = string
-      description               = optional(string)
-      path                      = optional(string, "/")
-      assume_role_policy        = optional(string)
-      custom_assume_role_policy = optional(bool, true)
-      force_detach_policies     = optional(bool, false)
-      managed_policy_arns       = optional(list(string))
-      max_session_duration      = optional(number, 3600)
-      permissions_boundary      = optional(string)
-      policy = optional(object({
-        name          = optional(string)
-        description   = optional(string)
-        policy        = optional(string)
-        path          = optional(string, "/")
-        custom_policy = optional(bool, true)
-      }))
-    }))
   })
   default = null
 }
