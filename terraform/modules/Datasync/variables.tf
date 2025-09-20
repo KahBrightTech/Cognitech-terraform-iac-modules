@@ -12,10 +12,16 @@ variable "common" {
 variable "datasync" {
   description = "DataSync configuration with all location types and task settings"
   type = object({
+    # Common Configuration
+    location_type = string
+    # CloudWatch Log Group Configuration
+    create_cloudwatch_log_group   = optional(bool, false)
+    cloudwatch_log_group_name     = optional(string)
+    cloudwatch_log_retention_days = optional(number, 30)
+
     # DataSync Task Configuration
     task = optional(object({
       name                     = string
-      location_name            = string
       source_location_arn      = string
       destination_location_arn = string
       cloudwatch_log_group_arn = optional(string)

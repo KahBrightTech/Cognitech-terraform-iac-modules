@@ -5,6 +5,19 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 #--------------------------------------------------------------------
+# CloudWatch Log Group (Optional)
+#--------------------------------------------------------------------
+resource "aws_cloudwatch_log_group" "datasync" {
+  count             = var.datasync.create_cloudwatch_log_group ? 1 : 0
+  name              = var.datasync.cloudwatch_log_group_name != null ? "/aws/datasync/${var.datasync.cloudwatch_log_group_name}" : null
+  retention_in_days = var.datasync.cloudwatch_log_retention_days
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.cloudwatch_log_group_name}-log-group"
+  })
+}
+
+#--------------------------------------------------------------------
 # DataSync Locations
 #--------------------------------------------------------------------
 
@@ -19,7 +32,7 @@ resource "aws_datasync_location_s3" "s3" {
   s3_storage_class = var.datasync.s3_location.s3_storage_class
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-s3-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -35,7 +48,7 @@ resource "aws_datasync_location_efs" "efs" {
   }
   in_transit_encryption = var.datasync.efs_location.in_transit_encryption
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-efs-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -50,7 +63,7 @@ resource "aws_datasync_location_fsx_windows_file_system" "fsx" {
   security_group_arns = var.datasync.fsx_windows_location.security_group_arns
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-fsx-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -62,7 +75,7 @@ resource "aws_datasync_location_fsx_lustre_file_system" "lustre" {
   security_group_arns = var.datasync.fsx_lustre_location.security_group_arns
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-lustre-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -99,7 +112,7 @@ resource "aws_datasync_location_fsx_ontap_file_system" "ontap" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-${var.datasync.fsx_ontap_location.protocol}-ontap-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-${var.datasync.fsx_ontap_location.protocol}-location"
   })
 }
 
@@ -118,7 +131,7 @@ resource "aws_datasync_location_fsx_openzfs_file_system" "openzfs" {
     }
   }
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-openzfs-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -138,7 +151,7 @@ resource "aws_datasync_location_nfs" "nfs" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-nfs-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -161,7 +174,7 @@ resource "aws_datasync_location_smb" "smb" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-smb-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -197,7 +210,7 @@ resource "aws_datasync_location_hdfs" "hdfs" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-hdfs-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -216,7 +229,7 @@ resource "aws_datasync_location_object_storage" "object_storage" {
   server_certificate = var.datasync.object_storage_location.server_certificate
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-object-storage-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -239,7 +252,7 @@ resource "aws_datasync_location_azure_blob" "azure_blob" {
   }
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_name}-azure-blob-location"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.location_type}-location"
   })
 }
 
@@ -253,7 +266,7 @@ resource "aws_datasync_task" "task" {
   name                     = var.datasync.task.name
   source_location_arn      = var.datasync.task.source_location_arn
   destination_location_arn = var.datasync.task.destination_location_arn
-  cloudwatch_log_group_arn = var.datasync.task.cloudwatch_log_group_arn
+  cloudwatch_log_group_arn = var.datasync.task.cloudwatch_log_group_arn != null ? var.datasync.task.cloudwatch_log_group_arn : (var.datasync.create_cloudwatch_log_group ? aws_cloudwatch_log_group.datasync[0].arn : null)
 
   dynamic "options" {
     for_each = var.datasync.task.options != null ? [var.datasync.task.options] : []

@@ -185,3 +185,17 @@ output "datasync_locations_count" {
     var.datasync.azure_blob_location != null ? "azure_blob" : null,
   ]))
 }
+
+#--------------------------------------------------------------------
+# CloudWatch Log Group Outputs
+#--------------------------------------------------------------------
+
+output "cloudwatch_log_group_arn" {
+  description = "ARN of the CloudWatch log group for DataSync"
+  value       = var.datasync.create_cloudwatch_log_group ? aws_cloudwatch_log_group.datasync[0].arn : null
+}
+
+output "cloudwatch_log_group_name" {
+  description = "Name of the CloudWatch log group for DataSync"
+  value       = var.datasync.create_cloudwatch_log_group ? aws_cloudwatch_log_group.datasync[0].name : null
+}
