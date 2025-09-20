@@ -6,78 +6,78 @@
 # S3 Location Outputs
 output "s3_location_arn" {
   description = "ARN of the DataSync S3 location"
-  value       = var.datasync.s3_location != null ? aws_datasync_location_s3.this[0].arn : null
+  value       = var.datasync.s3_location != null ? aws_datasync_location_s3.s3[0].arn : null
 }
 
 output "s3_location_uri" {
   description = "URI of the DataSync S3 location"
-  value       = var.datasync.s3_location != null ? aws_datasync_location_s3.this[0].uri : null
+  value       = var.datasync.s3_location != null ? aws_datasync_location_s3.s3[0].uri : null
 }
 
 # EFS Location Outputs
 output "efs_location_arn" {
   description = "ARN of the DataSync EFS location"
-  value       = var.datasync.efs_location != null ? aws_datasync_location_efs.this[0].arn : null
+  value       = var.datasync.efs_location != null ? aws_datasync_location_efs.efs[0].arn : null
 }
 
 output "efs_location_uri" {
   description = "URI of the DataSync EFS location"
-  value       = var.datasync.efs_location != null ? aws_datasync_location_efs.this[0].uri : null
+  value       = var.datasync.efs_location != null ? aws_datasync_location_efs.efs[0].uri : null
 }
 
 # FSx Windows Location Outputs
 output "fsx_windows_location_arn" {
   description = "ARN of the DataSync FSx Windows location"
-  value       = var.datasync.fsx_windows_location != null ? aws_datasync_location_fsx_windows_file_system.this[0].arn : null
+  value       = var.datasync.fsx_windows_location != null ? aws_datasync_location_fsx_windows_file_system.fsx[0].arn : null
 }
 
 output "fsx_windows_location_uri" {
   description = "URI of the DataSync FSx Windows location"
-  value       = var.datasync.fsx_windows_location != null ? aws_datasync_location_fsx_windows_file_system.this[0].uri : null
+  value       = var.datasync.fsx_windows_location != null ? aws_datasync_location_fsx_windows_file_system.fsx[0].uri : null
 }
 
 # FSx Lustre Location Outputs
 output "fsx_lustre_location_arn" {
   description = "ARN of the DataSync FSx Lustre location"
-  value       = var.datasync.fsx_lustre_location != null ? aws_datasync_location_fsx_lustre_file_system.this[0].arn : null
+  value       = var.datasync.fsx_lustre_location != null ? aws_datasync_location_fsx_lustre_file_system.lustre[0].arn : null
 }
 
 output "fsx_lustre_location_uri" {
   description = "URI of the DataSync FSx Lustre location"
-  value       = var.datasync.fsx_lustre_location != null ? aws_datasync_location_fsx_lustre_file_system.this[0].uri : null
+  value       = var.datasync.fsx_lustre_location != null ? aws_datasync_location_fsx_lustre_file_system.lustre[0].uri : null
 }
 
 # FSx ONTAP Location Outputs
 output "fsx_ontap_location_arn" {
   description = "ARN of the DataSync FSx ONTAP location"
-  value       = var.datasync.fsx_ontap_location != null ? aws_datasync_location_fsx_ontap_file_system.this[0].arn : null
+  value       = var.datasync.fsx_ontap_location != null ? aws_datasync_location_fsx_ontap_file_system.ontap[0].arn : null
 }
 
 output "fsx_ontap_location_uri" {
   description = "URI of the DataSync FSx ONTAP location"
-  value       = var.datasync.fsx_ontap_location != null ? aws_datasync_location_fsx_ontap_file_system.this[0].uri : null
+  value       = var.datasync.fsx_ontap_location != null ? aws_datasync_location_fsx_ontap_file_system.ontap[0].uri : null
 }
 
 # FSx OpenZFS Location Outputs
 output "fsx_openzfs_location_arn" {
   description = "ARN of the DataSync FSx OpenZFS location"
-  value       = var.datasync.fsx_openzfs_location != null ? aws_datasync_location_fsx_openzfs_file_system.this[0].arn : null
+  value       = var.datasync.fsx_openzfs_location != null ? aws_datasync_location_fsx_openzfs_file_system.openzfs[0].arn : null
 }
 
 output "fsx_openzfs_location_uri" {
   description = "URI of the DataSync FSx OpenZFS location"
-  value       = var.datasync.fsx_openzfs_location != null ? aws_datasync_location_fsx_openzfs_file_system.this[0].uri : null
+  value       = var.datasync.fsx_openzfs_location != null ? aws_datasync_location_fsx_openzfs_file_system.openzfs[0].uri : null
 }
 
 # NFS Location Outputs
 output "nfs_location_arn" {
   description = "ARN of the DataSync NFS location"
-  value       = var.datasync.nfs_location != null ? aws_datasync_location_nfs.this[0].arn : null
+  value       = var.datasync.nfs_location != null ? aws_datasync_location_nfs.nfs[0].arn : null
 }
 
 output "nfs_location_uri" {
   description = "URI of the DataSync NFS location"
-  value       = var.datasync.nfs_location != null ? aws_datasync_location_nfs.this[0].uri : null
+  value       = var.datasync.nfs_location != null ? aws_datasync_location_nfs.nfs[0].uri : null
 }
 
 # SMB Location Outputs
