@@ -71,5 +71,5 @@ variable "datasync" {
       }))
     }))
   })
-  default = {}
+  default = null
 }

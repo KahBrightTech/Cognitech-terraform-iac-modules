@@ -167,5 +167,5 @@ variable "datasync" {
       access_tier = optional(string)
     }))
   })
-  default = {}
+  default = null
 }
