@@ -54,6 +54,13 @@ resource "aws_ebs_volume" "restored" {
     },
     var.dr_volume_restore.restore_volume_tags
   )
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      snapshot_id
+    ]
+  }
 }
 
 # Attach restored volumes to the target instance
