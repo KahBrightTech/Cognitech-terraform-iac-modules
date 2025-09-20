@@ -4,10 +4,6 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 # Get stable role ARNs using sort() to ensure consistent ordering
-locals {
-  admin_role_arn   = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
-  network_role_arn = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
-}
 
 #--------------------------------------------------------------------
 # CloudWatch Log Group (Optional)
