@@ -3,7 +3,6 @@
 #--------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
-# Get stable role ARNs using sort() to ensure consistent ordering
 
 #--------------------------------------------------------------------
 # CloudWatch Log Group (Optional)
@@ -19,9 +18,8 @@ resource "aws_cloudwatch_log_group" "datasync" {
 }
 
 #--------------------------------------------------------------------
-# DataSync Task (Optional)
+# DataSync Task
 #--------------------------------------------------------------------
-
 resource "aws_datasync_task" "task" {
   count = var.datasync.task != null ? 1 : 0
 
@@ -65,75 +63,12 @@ resource "aws_datasync_task" "task" {
       value       = includes.value.value
     }
   }
+  schedule {
+    schedule_expression = var.datasync.task.schedule_expression
+  }
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.task.name}-task"
-  })
-}
-
-# DataSync Task Schedule (if specified)
-resource "aws_cloudwatch_event_rule" "datasync_schedule" {
-  count = var.datasync.task != null && var.datasync.task.schedule_expression != null ? 1 : 0
-
-  name                = "${var.datasync.task.name}-schedule"
-  description         = "Schedule for DataSync task ${var.datasync.task.name}"
-  schedule_expression = var.datasync.task.schedule_expression
-
-  tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.task.name}-schedule"
-  })
-}
-
-resource "aws_cloudwatch_event_target" "datasync_target" {
-  count     = var.datasync.task != null && var.datasync.task.schedule_expression != null ? 1 : 0
-  rule      = aws_cloudwatch_event_rule.datasync_schedule[0].name
-  target_id = "DataSyncTaskTarget"
-  arn       = aws_datasync_task.task[0].arn
-
-  role_arn = aws_iam_role.datasync_events_role[0].arn
-}
-
-# IAM role for CloudWatch Events to execute DataSync task
-resource "aws_iam_role" "datasync_events_role" {
-  count = var.datasync.task != null && var.datasync.task.schedule_expression != null ? 1 : 0
-
-  name = "${var.datasync.task.name}-events-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "events.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.task.name}-event-role"
-  })
-}
-
-resource "aws_iam_role_policy" "datasync_events_policy" {
-  count = var.datasync.task != null && var.datasync.task.schedule_expression != null ? 1 : 0
-
-  name = "${var.datasync.task.name}-events-policy"
-  role = aws_iam_role.datasync_events_role[0].id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "datasync:StartTaskExecution"
-        ]
-        Resource = aws_datasync_task.task[0].arn
-      }
-    ]
   })
 }
 
