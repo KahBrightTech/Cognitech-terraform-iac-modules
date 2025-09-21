@@ -21,7 +21,7 @@ resource "aws_cloudwatch_log_group" "datasync" {
 # DataSync Task
 #--------------------------------------------------------------------
 resource "aws_datasync_task" "task" {
-  count = var.datasync.task != null ? 1 : 0
+  count = var.datasync.task != null && var.datasync.task.schedule_expression != null ? 1 : 0
 
   name                     = var.datasync.task.name
   source_location_arn      = var.datasync.task.source_location_arn
