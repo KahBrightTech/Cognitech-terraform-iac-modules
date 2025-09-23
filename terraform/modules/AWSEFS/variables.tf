@@ -13,7 +13,7 @@ variable "efs" {
   description = "Configuration for EFS file system"
   type = object({
     name                            = string
-    creation_token                  = string
+    creation_token                  = optional(string)
     performance_mode                = optional(string, "generalPurpose")
     throughput_mode                 = optional(string, "bursting")
     provisioned_throughput_in_mibps = optional(number)
@@ -44,7 +44,6 @@ variable "efs" {
       }))
       tags = optional(map(string), {})
     })), {})
-
     tags = optional(map(string), {})
   })
 
@@ -62,4 +61,5 @@ variable "efs" {
     condition     = var.efs.throughput_mode != "provisioned" || var.efs.provisioned_throughput_in_mibps != null
     error_message = "When throughput_mode is 'provisioned', provisioned_throughput_in_mibps must be specified."
   }
+  default = null
 }

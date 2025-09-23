@@ -6,6 +6,7 @@ data "aws_region" "current" {}
 
 #--------------------------------------------------------------------
 # CloudWatch Log Group (Optional)
+# Note: DataSync requires resource-based policy to write to CloudWatch Logs
 #--------------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "datasync" {
   count             = var.datasync.create_cloudwatch_log_group ? 1 : 0
@@ -15,6 +16,41 @@ resource "aws_cloudwatch_log_group" "datasync" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.cloudwatch_log_group_name}-log-group"
   })
+}
+
+#--------------------------------------------------------------------
+# CloudWatch Log Group Resource Policy for DataSync
+#--------------------------------------------------------------------
+data "aws_iam_policy_document" "datasync_log_group_policy" {
+  count = var.datasync.create_cloudwatch_log_group ? 1 : 0
+
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["datasync.amazonaws.com"]
+    }
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    resources = [
+      "${aws_cloudwatch_log_group.datasync[0].arn}:*"
+    ]
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+      values = [
+        "arn:aws:datasync:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task/*"
+      ]
+    }
+  }
+}
+
+resource "aws_cloudwatch_log_resource_policy" "datasync" {
+  count           = var.datasync.create_cloudwatch_log_group ? 1 : 0
+  policy_name     = "${var.common.account_name}-${var.common.region_prefix}-datasync-logs-policy"
+  policy_document = data.aws_iam_policy_document.datasync_log_group_policy[0].json
 }
 
 #--------------------------------------------------------------------
@@ -29,12 +65,12 @@ resource "aws_datasync_task" "task" {
   cloudwatch_log_group_arn = var.datasync.task.cloudwatch_log_group_arn != null ? var.datasync.task.cloudwatch_log_group_arn : (var.datasync.create_cloudwatch_log_group ? aws_cloudwatch_log_group.datasync[0].arn : null)
 
   dynamic "options" {
-    for_each = var.datasync.task.options != null ? [var.datasync.task.options] : []
+    for_each = var.datasync.task.options != null ? [var.datasync.task.options] : [{}]
     content {
       atime                          = options.value.atime
       bytes_per_second               = options.value.bytes_per_second
       gid                            = options.value.gid
-      log_level                      = options.value.log_level
+      log_level                      = options.value.log_level != null ? options.value.log_level : (var.datasync.create_cloudwatch_log_group || var.datasync.task.cloudwatch_log_group_arn != null ? "TRANSFER" : "OFF")
       mtime                          = options.value.mtime
       overwrite_mode                 = options.value.overwrite_mode
       posix_permissions              = options.value.posix_permissions
