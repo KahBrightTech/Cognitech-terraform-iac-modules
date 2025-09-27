@@ -47,5 +47,6 @@ variable "vpc_endpoints" {
     condition     = var.vpc_endpoints.dns_record_ip_type == null || contains(["ipv4", "dualstack", "ipv6"], var.vpc_endpoints.dns_record_ip_type)
     error_message = "DNS record IP type must be one of: ipv4, dualstack, or ipv6."
   }
+  default = null
 }
 
