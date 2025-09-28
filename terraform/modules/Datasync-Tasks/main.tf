@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "datasync_log_group_policy" {
 
 resource "aws_cloudwatch_log_resource_policy" "datasync" {
   count           = var.datasync.create_cloudwatch_log_group ? 1 : 0
-  policy_name     = "${var.common.account_name}-${var.common.region_prefix}-datasync-logs-policy"
+  policy_name     = "${var.common.account_name}-${var.common.region_prefix}-${var.datasync.cloudwatch_log_group_name}-datasync-logs-policy"
   policy_document = data.aws_iam_policy_document.datasync_log_group_policy[0].json
 }
 
