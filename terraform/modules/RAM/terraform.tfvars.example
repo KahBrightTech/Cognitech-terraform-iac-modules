@@ -1,0 +1,95 @@
+#--------------------------------------------------------------------
+# Example Configuration for RAM Module
+#--------------------------------------------------------------------
+
+# Common variables for all resources
+common = {
+  global           = true
+  account_name     = "production"
+  region_prefix    = "us-east-1"
+  account_name_abr = "prod"
+  tags = {
+    Environment = "production"
+    Project     = "infrastructure"
+    Owner       = "devops-team"
+    CostCenter  = "12345"
+  }
+}
+
+# RAM sharing configuration
+ram = {
+  enabled                   = true
+  share_name               = "CrossAccount-Resource-Share"
+  allow_external_principals = true
+  
+  # Example: Sharing Transit Gateway with other accounts
+  resource_arns = [
+    "arn:aws:ec2:us-east-1:123456789012:transit-gateway/tgw-0123456789abcdef0"
+  ]
+  
+  # List of AWS account IDs to share resources with
+  principals = [
+    "987654321098",  # Account ID for development environment
+    "456789012345"   # Account ID for staging environment
+  ]
+}
+
+#--------------------------------------------------------------------
+# Alternative Examples for Different Resource Types
+#--------------------------------------------------------------------
+
+# Example 1: Sharing VPC Subnets
+# ram = {
+#   enabled                   = true
+#   share_name               = "VPC-Subnet-Share"
+#   allow_external_principals = true
+#   resource_arns = [
+#     "arn:aws:ec2:us-east-1:123456789012:subnet/subnet-0123456789abcdef0",
+#     "arn:aws:ec2:us-east-1:123456789012:subnet/subnet-abcdef0123456789"
+#   ]
+#   principals = ["987654321098"]
+# }
+
+# Example 2: Sharing Route 53 Resolver Rules
+# ram = {
+#   enabled                   = true
+#   share_name               = "DNS-Resolver-Share"
+#   allow_external_principals = true
+#   resource_arns = [
+#     "arn:aws:route53resolver:us-east-1:123456789012:resolver-rule/rslvr-rr-0123456789abcdef0"
+#   ]
+#   principals = ["987654321098", "456789012345"]
+# }
+
+# Example 3: Sharing License Manager Configurations
+# ram = {
+#   enabled                   = true
+#   share_name               = "License-Config-Share"
+#   allow_external_principals = true
+#   resource_arns = [
+#     "arn:aws:license-manager:us-east-1:123456789012:license-configuration/lic-0123456789abcdef0"
+#   ]
+#   principals = ["987654321098"]
+# }
+
+# Example 4: Sharing with Organization Units (requires AWS Organizations)
+# ram = {
+#   enabled                   = true
+#   share_name               = "Organization-Share"
+#   allow_external_principals = false
+#   resource_arns = [
+#     "arn:aws:ec2:us-east-1:123456789012:transit-gateway/tgw-0123456789abcdef0"
+#   ]
+#   principals = [
+#     "ou-root-123456789"  # Organization unit ID
+#   ]
+# }
+
+# Example 5: Disabled RAM sharing (no resources will be created)
+# ram = {
+#   enabled                   = false
+#   share_name               = "Disabled-Share"
+#   allow_external_principals = true
+#   resource_arns            = []
+#   principals               = []
+# }
