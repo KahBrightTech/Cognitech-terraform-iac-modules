@@ -14,8 +14,10 @@ resource "aws_ram_resource_share" "main" {
   name                      = var.ram.share_name
   allow_external_principals = var.ram.allow_external_principals
 
-  tags = merge(var.common.tags, {
-    Name = var.ram.share_name
+  tags = merge(
+    var.common.tags,
+    {
+      Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.ram.share_name}-fsx"
   })
 }
 
