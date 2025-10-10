@@ -62,7 +62,12 @@ resource "aws_fsx_windows_file_system" "main" {
     }
   }
 
-  tags = var.common.tags
+  tags = merge(
+    var.common.tags,
+    {
+      Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.windows_fsx.name}-fsx"
+    }
+  )
 
   dynamic "lifecycle" {
     for_each = var.windows_fsx.prevent_destroy ? [1] : []

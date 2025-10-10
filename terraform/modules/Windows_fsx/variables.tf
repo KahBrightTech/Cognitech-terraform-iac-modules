@@ -16,6 +16,7 @@ variable "windows_fsx" {
     storage_capacity    = number
     throughput_capacity = number
     subnet_ids          = list(string)
+    name                = optional(string)
 
     # Optional parameters with defaults
     storage_type        = optional(string, "SSD")

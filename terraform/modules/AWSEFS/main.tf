@@ -71,11 +71,11 @@ resource "aws_efs_access_point" "access_point" {
     }
   }
 
+
   tags = merge(
-    var.efs.tags,
-    each.value.tags,
+    var.common.tags,
     {
-      Name = each.value.name
+      Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.efs.name}-efs"
     }
   )
 }
