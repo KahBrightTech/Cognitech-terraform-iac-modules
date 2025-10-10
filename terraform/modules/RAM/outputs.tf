@@ -17,11 +17,6 @@ output "resource_share_name" {
   value       = var.ram.enabled ? aws_ram_resource_share.main[0].name : null
 }
 
-output "resource_share_status" {
-  description = "The status of the resource share"
-  value       = var.ram.enabled ? aws_ram_resource_share.main[0].status : null
-}
-
 output "associated_resources" {
   description = "List of resource ARNs associated with the share"
   value       = var.ram.enabled ? var.ram.resource_arns : []
