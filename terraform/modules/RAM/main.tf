@@ -25,9 +25,9 @@ resource "aws_ram_resource_share" "main" {
 # Creates RAM Share Associations
 #--------------------------------------------------------------------
 resource "aws_ram_principal_association" "main" {
-  count = var.ram.enabled && length(var.ram.principals) > 0 ? length(var.ram.principals) : 0
+  for_each = var.ram.enabled ? toset(var.ram.principals) : []
 
-  principal          = var.ram.principals[count.index]
+  principal          = each.value
   resource_share_arn = aws_ram_resource_share.main[0].arn
 
   depends_on = [aws_ram_resource_share.main]
@@ -38,9 +38,9 @@ resource "aws_ram_principal_association" "main" {
 #--------------------------------------------------------------------
 
 resource "aws_ram_resource_association" "main" {
-  count = var.ram.enabled && length(var.ram.resource_arns) > 0 ? length(var.ram.resource_arns) : 0
+  for_each = var.ram.enabled ? toset(var.ram.resource_arns) : []
 
-  resource_arn       = var.ram.resource_arns[count.index]
+  resource_arn       = each.value
   resource_share_arn = aws_ram_resource_share.main[0].arn
 
   depends_on = [aws_ram_resource_share.main]
