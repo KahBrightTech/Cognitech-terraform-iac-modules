@@ -17,7 +17,7 @@ resource "aws_ram_resource_share" "main" {
   tags = merge(
     var.common.tags,
     {
-      Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.ram.share_name}-fsx"
+      Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.ram.share_name}-share"
   })
 }
 
