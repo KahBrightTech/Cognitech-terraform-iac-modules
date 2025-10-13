@@ -12,20 +12,12 @@ Parameters:
     Description: The lowercase account name
     Type: AWS::SSM::Parameter::Value<String>
     Default: /standard/AWSAccountLC
-  pAWSAccountId:
-    Description: The AWS Account ID
-    Type: String
-    Default: 533267408704
 
   # Terraform Backend Parameters
   TableName:
     Type: String
     Description: Name of the DynamoDB table for Terraform state locking
     Default: terragrunt-lock-table
-  pSecondaryRegion:
-    Type: String
-    Description: Secondary region for backup S3 bucket
-    Default: us-west-2
 
   # GitHub OIDC Parameters
   pGitHubOrg:
@@ -60,20 +52,12 @@ Parameters:
 
   Environment:
     Type: String
-    Default: 'dev'
-    AllowedValues:
-    - dev
-    - staging
-    - prod
+    Default: 'ntw'
+
   OrganizationId:
     Type: String
     Default: 'o-orvtyisdyc'
     Description: 'AWS Organization ID for org-wide access'
-  # Route53 Hosted Zone Parameters
-  # DomainName:
-  #   Type: String
-  #   Description: The domain name for the hosted zone (e.g., example.com)
-  #   Default: "bkuat.org"
 
 Resources:
   #################################
@@ -111,7 +95,15 @@ Resources:
         - Sid: "RootAccess"
           Effect: "Allow"
           Principal:
-            AWS: !Sub "arn:aws:iam::${pAWSAccountId}:root"
+            AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
+        - Sid: "RoleAccess"
+          Effect: "Allow"
+          Principal:
+            AWS: !Sub "arn:aws:iam::${AWS::AccountId}:role/${pAccountNameLC}-${pAppName}-role"
           Action: "s3:*"
           Resource:
           - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"

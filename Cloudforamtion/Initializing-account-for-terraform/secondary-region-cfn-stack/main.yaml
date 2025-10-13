@@ -10,14 +10,6 @@ Parameters:
     Description: Lowercase account name for bucket naming
     Type: AWS::SSM::Parameter::Value<String>
     Default: /standard/AWSAccountLC
-  pSecondaryRegion:
-    Description: Secondary region for DR bucket
-    Type: String
-    Default: us-west-2
-  AccountId:
-    Type: String
-    Description: AWS Account ID
-    Default: "533267408704"
   AwsVPCName:
     Type: String
     Description: Account name prefix for resources
@@ -37,18 +29,14 @@ Parameters:
   Environment:
     Type: String
     Description: Environment name
-    Default: prod
-  Region:
-    Type: String
-    Description: AWS Region
-    Default: us-west-2
+    Default: ntw
 
 Resources:
   # Secondary Terraform State Bucket
   TerraformStateBucketSecondary:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
+      BucketName: !Sub "${pAccountNameLC}-${AWS::Region}-network-config-state"
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -69,19 +57,27 @@ Resources:
           Principal: "*"
           Action: "s3:*"
           Resource:
-          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
-          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
           Condition:
             Bool:
               aws:SecureTransport: "false"
         - Sid: "RootAccess"
           Effect: "Allow"
           Principal:
-            AWS: "arn:aws:iam::485147667400:root"
+            AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
           Action: "s3:*"
           Resource:
-          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state"
-          - !Sub "arn:aws:s3:::${pAccountNameLC}-${pSecondaryRegion}-network-config-state/*"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
+        - Sid: "RoleAccess"
+          Effect: "Allow"
+          Principal:
+            AWS: "arn:aws:iam::${AWS::AccountId}:role/${pAccountNameLC}-OIDCGitHubRole-role"
+          Action: "s3:*"
+          Resource:
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
+          - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state/*"
 
   # AWS Backup IAM Role
   AWSBackupServiceRole:
@@ -147,7 +143,7 @@ Resources:
   KMSKey:
     Type: AWS::KMS::Key
     Properties:
-      Description: !Sub "KMS key for Terraform state encryption in ${Region}"
+      Description: !Sub "KMS key for Terraform state encryption in ${AWS::Region}"
       KeyPolicy:
         Version: '2012-10-17'
         Id: 'org-wide-access-example'
@@ -179,7 +175,7 @@ Resources:
   KMSKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: !Sub "alias/${KeyAlias}-${Region}"
+      AliasName: !Sub "alias/${KeyAlias}-${AWS::Region}"
       TargetKeyId: !Ref KMSKey
 
 Outputs:
