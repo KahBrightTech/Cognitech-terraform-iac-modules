@@ -30,6 +30,10 @@ Parameters:
     Type: String
     Description: Environment name
     Default: ntw
+  pAppName:
+    Description: The application for which the role will be created
+    Type: String
+    Default: OIDCGitHubRole
 
 Resources:
   # Secondary Terraform State Bucket
@@ -73,7 +77,7 @@ Resources:
         - Sid: "RoleAccess"
           Effect: "Allow"
           Principal:
-            AWS: "arn:aws:iam::${AWS::AccountId}:role/${pAccountNameLC}-OIDCGitHubRole-role"
+            AWS: !Sub "arn:aws:iam::${AWS::AccountId}:role/${pAccountNameLC}-${pAppName}-role"
           Action: "s3:*"
           Resource:
           - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
