@@ -31,14 +31,14 @@ variable "ram" {
 
   validation {
     condition     = !var.ram.enabled || length(var.ram.principals) > 0
-    error_message = "At least one principal (AWS account ID or organization unit) must be provided when RAM sharing is enabled."
+    error_message = "At least one principal (AWS account ID or organization ARN) must be provided when RAM sharing is enabled."
   }
 
   validation {
     condition = alltrue([
-      for principal in var.ram.principals : can(regex("^(\\d{12}|o-[a-z0-9]{10,32}|ou-[a-z0-9-]{16,68})$", principal))
+      for principal in var.ram.principals : can(regex("^(\\d{12}|arn:aws:organizations::[0-9]{12}:organization/o-[a-z0-9]{10,32})$", principal))
     ])
-    error_message = "Principals must be valid AWS account IDs (12 digits), organization IDs (o-xxxxxxxxxx), or organizational unit IDs (ou-xxxxxxxxxxxxxxxx)."
+    error_message = "Principals must be valid AWS account IDs (12 digits) or organization ARNs (arn:aws:organizations::account-id:organization/o-xxxxxxxxxx)."
   }
 }
 
