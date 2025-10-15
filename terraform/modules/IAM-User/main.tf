@@ -38,11 +38,11 @@ resource "aws_secretsmanager_secret" "iam_user_credentials" {
   recovery_window_in_days = var.iam_user.secrets_manager.recovery_window_in_days
   policy                  = var.iam_user.secrets_manager.policy
 
-  tags = merge(var.common.tags,
-    {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_user.name}-credentials"
-    }
-  )
+  # tags = merge(var.common.tags,
+  #   {
+  #     Name = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_user.name}-credentials"
+  #   }
+  # )
 }
 
 resource "aws_secretsmanager_secret_version" "iam_user_credentials" {

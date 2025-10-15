@@ -6,12 +6,11 @@ resource "aws_secretsmanager_secret" "secret" {
   force_overwrite_replica_secret = true
   policy                         = var.secrets_manager.policy
 
-  tags = merge(var.common.tags,
-    {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.secrets_manager.name}"
-    }
-  )
-
+  # tags = merge(var.common.tags,
+  #   {
+  #     Name = "${var.common.account_name}-${var.common.region_prefix}-${var.secrets_manager.name}"
+  #   }
+  # )
 }
 
 resource "aws_secretsmanager_secret_version" "secret" {
