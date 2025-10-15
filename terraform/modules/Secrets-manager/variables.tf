@@ -19,6 +19,14 @@ variable "secrets_manager" {
     value                   = optional(map(string))
   })
   default = null
+
+  validation {
+    condition = var.secrets_manager == null || (
+      (var.secrets_manager.name != null && var.secrets_manager.name_prefix == null) ||
+      (var.secrets_manager.name == null && var.secrets_manager.name_prefix != null)
+    )
+    error_message = "Either 'name' or 'name_prefix' must be specified, but not both."
+  }
 }
 
 
