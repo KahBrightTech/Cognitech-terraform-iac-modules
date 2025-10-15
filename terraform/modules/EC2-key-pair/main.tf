@@ -32,8 +32,8 @@ resource "aws_key_pair" "generated_key" {
 }
 
 resource "aws_secretsmanager_secret" "private_key_secret" {
-  count                          = var.key_pair.create_secret ? 1 : 0
-  name                           = "${var.common.account_name}-${var.common.region_prefix}-${var.key_pair.secret_name}"
+  count = var.key_pair.create_secret ? 1 : 0
+  # name                           = "${var.common.account_name}-${var.common.region_prefix}-${var.key_pair.secret_name}"
   name_prefix                    = "${var.common.account_name}-${var.common.region_prefix}-${var.key_pair.secret_name}"
   description                    = var.key_pair.secret_description
   recovery_window_in_days        = 7
