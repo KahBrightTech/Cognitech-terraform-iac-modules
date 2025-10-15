@@ -52,7 +52,7 @@ Parameters:
 
   Environment:
     Type: String
-    Default: 'ntw'
+    Default: 'mdpp'
 
   OrganizationId:
     Type: String

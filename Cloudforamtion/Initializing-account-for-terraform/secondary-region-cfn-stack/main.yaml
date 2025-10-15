@@ -29,7 +29,7 @@ Parameters:
   Environment:
     Type: String
     Description: Environment name
-    Default: ntw
+    Default: mdpp
   pAppName:
     Description: The application for which the role will be created
     Type: String
