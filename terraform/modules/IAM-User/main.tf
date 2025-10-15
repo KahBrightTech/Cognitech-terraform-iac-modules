@@ -33,7 +33,7 @@ resource "aws_iam_user" "iam_user" {
 #--------------------------------------------------------------------
 resource "aws_secretsmanager_secret" "iam_user_credentials" {
   count                   = var.iam_user.create_access_key ? 1 : 0
-  name                    = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_user.name}-credentials"
+  name_prefix             = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_user.secrets_manager.name_prefix}-credentials"
   description             = "Access credentials for IAM user ${var.iam_user.name}"
   recovery_window_in_days = var.iam_user.secrets_manager.recovery_window_in_days
   policy                  = var.iam_user.secrets_manager.policy

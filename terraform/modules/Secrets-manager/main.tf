@@ -1,6 +1,7 @@
 resource "aws_secretsmanager_secret" "secret" {
   count                          = 1
   name                           = "${var.common.account_name}-${var.common.region_prefix}-${var.secrets_manager.name}"
+  name_prefix                    = "${var.common.account_name}-${var.common.region_prefix}-${var.secrets_manager.name}"
   description                    = var.secrets_manager.description
   recovery_window_in_days        = var.secrets_manager.recovery_window_in_days
   force_overwrite_replica_secret = true

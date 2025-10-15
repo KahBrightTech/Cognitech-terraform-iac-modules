@@ -23,6 +23,7 @@ variable "iam_user" {
     user_type            = optional(string, "standard") # standard or service-linked
     create_access_key    = optional(bool, true)         # Whether to create access keys for this user
     secrets_manager = optional(object({
+      name_prefix             = optional(string)
       recovery_window_in_days = optional(number, 30)
       description             = optional(string, null)
       policy                  = optional(string)
