@@ -12,7 +12,8 @@ variable "common" {
 variable "key_pair" {
   description = "Key pair configuration for EC2 instances"
   type = object({
-    name               = string
+    name               = optional(string)
+    name_prefix        = optional(string)
     secret_name        = optional(string)
     secret_description = optional(string)
     policy             = optional(string)
