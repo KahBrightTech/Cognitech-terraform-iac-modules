@@ -67,7 +67,8 @@ locals {
 # S3 Bucket - Creates a private S3 bucket
 #--------------------------------------------------------------------
 resource "aws_s3_bucket" "private" {
-  bucket = local.bucket_name
+  bucket        = local.bucket_name
+  force_destroy = var.s3.force_destroy
   tags = merge(var.common.tags,
     {
       Name = "${var.common.account_name}-${var.common.region_prefix}-${var.s3.name}"
@@ -114,7 +115,6 @@ resource "aws_s3_bucket_policy" "default" {
 }
 resource "aws_s3_bucket_versioning" "bucket" {
   bucket = local.bucket_name
-
   versioning_configuration {
     status = var.s3.enable_versioning == true ? "Enabled" : "Disabled"
   }
