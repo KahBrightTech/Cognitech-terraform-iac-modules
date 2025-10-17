@@ -24,9 +24,7 @@ variable "transit_gateway" {
       share_name                = optional(string, "transit-gateway-share")
       allow_external_principals = optional(bool, false)
       principals                = optional(list(string), [])
-      }), {
-      enabled = false
-    })
+    }))
   })
 }
 

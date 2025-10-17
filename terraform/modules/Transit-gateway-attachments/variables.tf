@@ -28,9 +28,7 @@ variable "tgw_attachments" {
       share_name                = optional(string, "tgw-attachment-share")
       allow_external_principals = optional(bool, false)
       principals                = optional(list(string), [])
-      }), {
-      enabled = false
-    })
+    }))
   })
 }
 
