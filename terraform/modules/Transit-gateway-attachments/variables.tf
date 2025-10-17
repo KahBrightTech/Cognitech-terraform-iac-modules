@@ -23,12 +23,6 @@ variable "tgw_attachments" {
     name                 = optional(string)
     shared_vpc_name      = optional(string)
     customer_vpc_name    = optional(string)
-    ram = optional(object({
-      enabled                   = optional(bool, false)
-      share_name                = optional(string, "tgw-attachment-share")
-      allow_external_principals = optional(bool, false)
-      principals                = optional(list(string), [])
-    }))
   })
 }
 
