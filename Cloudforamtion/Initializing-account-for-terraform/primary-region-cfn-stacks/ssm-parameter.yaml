@@ -9,11 +9,15 @@ Parameters:
   pAccountName:
     Description: The name of the AWS account
     Type: String
-    Default: "MD-PREPROD"
+    Default: "MD-PROD"
   pAWSAccountLC:
     Description: The lowercase name of the AWS account
     Type: String
-    Default: "md-preprod"
+    Default: "md-prod"
+  pEnvironment:
+    Description: The lowercase name of the AWS account
+    Type: String
+    Default: "mdp"
 
 Resources:
   rAWSAccount:
@@ -37,3 +41,10 @@ Resources:
       Name: !Sub ${pPath}AWSAccountId
       Type: String
       Value: !Ref "AWS::AccountId"
+  rEnvironment:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Description: Environment name
+      Name: !Sub ${pPath}Environment
+      Type: String
+      Value: !Ref pEnvironment

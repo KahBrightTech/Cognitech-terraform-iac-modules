@@ -19,6 +19,14 @@ variable "transit_gateway" {
     dns_support                     = string
     amazon_side_asn                 = number
     vpc_name                        = string
+    ram = optional(object({
+      enabled                   = optional(bool, false)
+      share_name                = optional(string, "transit-gateway-share")
+      allow_external_principals = optional(bool, false)
+      principals                = optional(list(string), [])
+      }), {
+      enabled = false
+    })
   })
 }
 
