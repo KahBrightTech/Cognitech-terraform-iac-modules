@@ -77,7 +77,8 @@ Resources:
         - Sid: "RoleAccess"
           Effect: "Allow"
           Principal:
-            AWS: !Sub "arn:aws:iam::${AWS::AccountId}:role/${pAccountNameLC}-${pAppName}-role"
+          - AWS: !Sub "arn:aws:iam::${AWS::AccountId}:role/${pAccountNameLC}-${pAppName}-role"
+          - - "arn:aws:iam::637423478842:role/network-OIDCGitHubRole-role"
           Action: "s3:*"
           Resource:
           - !Sub "arn:aws:s3:::${pAccountNameLC}-${AWS::Region}-network-config-state"
