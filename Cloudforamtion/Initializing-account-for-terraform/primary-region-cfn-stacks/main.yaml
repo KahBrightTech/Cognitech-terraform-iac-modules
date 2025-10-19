@@ -12,6 +12,10 @@ Parameters:
     Description: The lowercase account name
     Type: AWS::SSM::Parameter::Value<String>
     Default: /standard/AWSAccountLC
+  Environment:
+    Description: The environment for which the resources are being created
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /standard/Environment
 
   # Terraform Backend Parameters
   TableName:
@@ -49,10 +53,6 @@ Parameters:
     Type: String
     Default: 'account-key'
     Description: 'Alias for the KMS keys'
-
-  Environment:
-    Type: String
-    Default: 'mdpp'
 
   OrganizationId:
     Type: String
