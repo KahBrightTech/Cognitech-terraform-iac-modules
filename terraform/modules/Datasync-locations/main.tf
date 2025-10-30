@@ -6,8 +6,9 @@ data "aws_region" "current" {}
 #--------------------------------------------------------------------
 # DataSync Locations
 #--------------------------------------------------------------------
-
+#--------------------------------------------------------------------
 # S3 Location
+#--------------------------------------------------------------------
 resource "aws_datasync_location_s3" "s3" {
   count         = var.datasync.s3_location != null ? 1 : 0
   s3_bucket_arn = var.datasync.s3_location.s3_bucket_arn
