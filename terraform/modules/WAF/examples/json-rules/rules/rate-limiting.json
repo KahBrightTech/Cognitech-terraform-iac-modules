@@ -1,0 +1,34 @@
+{
+  "description": "Rate limiting rules for different endpoints",
+  "version": "1.0",
+  "rules": [
+    {
+      "name": "APIRateLimit",
+      "priority": 30,
+      "action": "block",
+      "statement_type": "rate_limit",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": 1000,
+      "aggregate_key_type": "IP",
+      "field_to_match": "uri_path",
+      "positional_constraint": "STARTS_WITH",
+      "search_string": "/api/",
+      "text_transformation": "NONE"
+    },
+    {
+      "name": "LoginRateLimit",
+      "priority": 31,
+      "action": "block",
+      "statement_type": "rate_limit",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": 50,
+      "aggregate_key_type": "IP",
+      "field_to_match": "uri_path",
+      "positional_constraint": "EXACTLY_MATCHES",
+      "search_string": "/login",
+      "text_transformation": "NONE"
+    }
+  ]
+}

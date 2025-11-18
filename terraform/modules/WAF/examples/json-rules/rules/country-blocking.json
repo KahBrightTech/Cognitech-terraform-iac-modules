@@ -1,0 +1,48 @@
+{
+  "description": "Country blocking and IP whitelisting rules",
+  "version": "1.0",
+  "rules": [
+    {
+      "name": "AllowOfficeIP",
+      "priority": 1,
+      "action": "allow",
+      "statement_type": "ip_set",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": null,
+      "positional_constraint": null,
+      "search_string": null,
+      "text_transformation": null
+    },
+    {
+      "name": "BlockCameroon",
+      "priority": 5,
+      "action": "block",
+      "statement_type": "geo_match",
+      "ip_set_arn": null,
+      "country_codes": ["CM"],
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": null,
+      "positional_constraint": null,
+      "search_string": null,
+      "text_transformation": null
+    },
+    {
+      "name": "BlockSuspiciousCountries",
+      "priority": 10,
+      "action": "block",
+      "statement_type": "geo_match",
+      "ip_set_arn": null,
+      "country_codes": ["CN", "RU", "KP"],
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": null,
+      "positional_constraint": null,
+      "search_string": null,
+      "text_transformation": null
+    }
+  ]
+}

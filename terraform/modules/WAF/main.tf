@@ -27,6 +27,15 @@ locals {
       override_action = "none"
     }
   ] : var.waf.managed_rule_groups
+
+  # Process JSON rule files
+  json_rules = length(var.waf.rule_files) > 0 ? flatten([
+    for file_path in var.waf.rule_files :
+    jsondecode(file(file_path)).rules
+  ]) : []
+
+  # Merge custom rules with JSON rules
+  all_custom_rules = concat(var.waf.custom_rules, local.json_rules)
 }
 
 #--------------------------------------------------------------------
@@ -92,9 +101,9 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # Custom Rules
+  # Custom Rules (from variables and JSON files)
   dynamic "rule" {
-    for_each = var.waf.custom_rules
+    for_each = local.all_custom_rules
     content {
       name     = rule.value.name
       priority = rule.value.priority
@@ -120,7 +129,9 @@ resource "aws_wafv2_web_acl" "main" {
         dynamic "ip_set_reference_statement" {
           for_each = rule.value.statement_type == "ip_set" ? [1] : []
           content {
-            arn = rule.value.ip_set_arn
+            arn = rule.value.ip_set_arn != null ? rule.value.ip_set_arn : (
+              var.waf.ip_sets.create_whitelist ? aws_wafv2_ip_set.ip_whitelist[0].arn : null
+            )
           }
         }
 

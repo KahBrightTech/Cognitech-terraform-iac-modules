@@ -99,6 +99,9 @@ output "waf_summary" {
     default_action         = var.waf.default_action
     managed_rules_count    = length(local.default_managed_rules)
     custom_rules_count     = length(var.waf.custom_rules)
+    json_rules_count       = length(local.json_rules)
+    total_custom_rules     = length(local.all_custom_rules)
+    json_files_loaded      = length(var.waf.rule_files)
     rate_limit_rules_count = length(var.waf.rate_limit_rules)
     ip_whitelist_enabled   = var.waf.ip_sets.create_whitelist
     ip_blacklist_enabled   = var.waf.ip_sets.create_blacklist

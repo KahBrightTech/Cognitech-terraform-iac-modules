@@ -101,6 +101,9 @@ variable "waf" {
         }))
       }), null)
     }), {})
+
+    # JSON Rule Files
+    rule_files = optional(list(string), [])
   })
 
   validation {

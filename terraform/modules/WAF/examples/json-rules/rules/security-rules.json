@@ -1,0 +1,48 @@
+{
+  "description": "Security and threat protection rules",
+  "version": "1.0",
+  "rules": [
+    {
+      "name": "BlockSQLInjection",
+      "priority": 20,
+      "action": "block",
+      "statement_type": "byte_match",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": "query_string",
+      "positional_constraint": "CONTAINS",
+      "search_string": "union select",
+      "text_transformation": "LOWERCASE"
+    },
+    {
+      "name": "BlockXSS",
+      "priority": 21,
+      "action": "block",
+      "statement_type": "byte_match",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": "body",
+      "positional_constraint": "CONTAINS",
+      "search_string": "<script>",
+      "text_transformation": "LOWERCASE"
+    },
+    {
+      "name": "BlockBadBots",
+      "priority": 25,
+      "action": "block",
+      "statement_type": "byte_match",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": "single_header",
+      "positional_constraint": "CONTAINS",
+      "search_string": "BadBot",
+      "text_transformation": "NONE"
+    }
+  ]
+}
