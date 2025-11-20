@@ -29,9 +29,10 @@ variable "scope" {
 variable "rule_group" {
   description = "WAF rule group configuration"
   type = object({
-    name        = string
-    description = optional(string)
-    capacity    = number
+    name             = string
+    description      = optional(string)
+    capacity         = number
+    rule_group_files = optional(list(string), [])
     rules = list(object({
       name                  = string
       priority              = number
@@ -70,16 +71,4 @@ variable "rule_group" {
     ])
     error_message = "Statement type must be one of: ip_set, geo_match, rate_limit, byte_match, sqli_match, xss_match, size_constraint."
   }
-}
-
-variable "rule_group_files" {
-  description = "List of JSON file paths containing rule group configurations"
-  type        = list(string)
-  default     = []
-}
-
-variable "additional_tags" {
-  description = "Additional tags to apply to all resources"
-  type        = map(string)
-  default     = {}
 }

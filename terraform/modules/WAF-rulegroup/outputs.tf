@@ -28,7 +28,7 @@ output "rule_group_summary" {
   description = "Summary of rule group configuration"
   value = local.rule_group != null ? {
     rule_group_created = length(aws_wafv2_rule_group.rule_group) > 0
-    json_files_loaded  = length(var.rule_group_files)
+    json_files_loaded  = var.rule_group != null ? length(var.rule_group.rule_group_files) : 0
     scope              = var.scope
     capacity_used      = local.rule_group.capacity
     rules_count        = length(local.rule_group.rules)

@@ -8,15 +8,12 @@ data "aws_region" "current" {}
 # Locals
 #--------------------------------------------------------------------
 locals {
-  # Load rule group from JSON files (take first one if multiple)
-  json_rule_group = length(var.rule_group_files) > 0 ? (
+  json_rule_group = var.rule_group != null && length(var.rule_group.rule_group_files) > 0 ? (
     flatten([
-      for file_path in var.rule_group_files :
+      for file_path in var.rule_group.rule_group_files :
       jsondecode(file(file_path)).rule_groups
     ])[0]
   ) : null
-
-  # Use variable rule group or JSON rule group
   rule_group = var.rule_group != null ? var.rule_group : local.json_rule_group
 }
 
