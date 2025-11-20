@@ -8,25 +8,6 @@ data "aws_region" "current" {}
 # Locals
 #--------------------------------------------------------------------
 locals {
-  waf_name = var.waf.name != null ? var.waf.name : "${var.common.account_name_abr}-${var.common.region_prefix}-waf"
-
-  # Default managed rule groups if none specified
-  default_managed_rules = var.waf.managed_rule_groups == null ? [
-    {
-      name            = "AWSManagedRulesCommonRuleSet"
-      priority        = 10
-      vendor_name     = "AWS"
-      exclude_rules   = []
-      override_action = "none"
-    },
-    {
-      name            = "AWSManagedRulesKnownBadInputsRuleSet"
-      priority        = 20
-      vendor_name     = "AWS"
-      exclude_rules   = []
-      override_action = "none"
-    }
-  ] : var.waf.managed_rule_groups
 
   # Process JSON rule files
   json_rules = length(var.waf.rule_files) > 0 ? flatten([
@@ -34,8 +15,17 @@ locals {
     jsondecode(file(file_path)).rules
   ]) : []
 
+  # Process JSON rule group files
+  json_rule_groups = length(var.waf.rule_group_files) > 0 ? flatten([
+    for file_path in var.waf.rule_group_files :
+    jsondecode(file(file_path)).rule_groups
+  ]) : []
+
   # Merge custom rules with JSON rules
   all_custom_rules = concat(var.waf.custom_rules, local.json_rules)
+
+  # Merge rule groups with JSON rule groups
+  all_rule_groups = concat(var.waf.rule_groups, local.json_rule_groups)
 }
 
 #--------------------------------------------------------------------
@@ -44,7 +34,7 @@ locals {
 resource "aws_wafv2_web_acl" "main" {
   count = var.waf.create_waf ? 1 : 0
 
-  name        = local.waf_name
+  name        = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.waf.name}-waf"
   description = var.waf.description
   scope       = var.waf.scope
 
@@ -62,7 +52,7 @@ resource "aws_wafv2_web_acl" "main" {
 
   # Managed Rule Groups
   dynamic "rule" {
-    for_each = local.default_managed_rules
+    for_each = var.waf.managed_rule_groups
     content {
       name     = rule.value.name
       priority = rule.value.priority
@@ -95,7 +85,7 @@ resource "aws_wafv2_web_acl" "main" {
 
       visibility_config {
         cloudwatch_metrics_enabled = true
-        metric_name                = replace(rule.value.name, "AWS", "")
+        metric_name                = rule.value.name
         sampled_requests_enabled   = true
       }
     }
@@ -129,9 +119,7 @@ resource "aws_wafv2_web_acl" "main" {
         dynamic "ip_set_reference_statement" {
           for_each = rule.value.statement_type == "ip_set" ? [1] : []
           content {
-            arn = rule.value.ip_set_arn != null ? rule.value.ip_set_arn : (
-              var.waf.ip_sets.create_whitelist ? aws_wafv2_ip_set.ip_whitelist[0].arn : null
-            )
+            arn = rule.value.ip_set_arn
           }
         }
 
@@ -189,14 +177,91 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # Rate Limiting Rules
+  # Rule Group References
   dynamic "rule" {
-    for_each = var.waf.rate_limit_rules
+    for_each = var.waf.rule_group_references
+    content {
+      name     = rule.value.name
+      priority = rule.value.priority
+
+      override_action {
+        dynamic "none" {
+          for_each = rule.value.override_action == "none" ? [1] : []
+          content {}
+        }
+
+        dynamic "count" {
+          for_each = rule.value.override_action == "count" ? [1] : []
+          content {}
+        }
+      }
+
+      statement {
+        rule_group_reference_statement {
+          arn = rule.value.rule_group_key != null ? aws_wafv2_rule_group.rule_groups[rule.value.rule_group_key].arn : rule.value.rule_group_arn
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name                = rule.value.name
+        sampled_requests_enabled   = true
+      }
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = var.waf.cloudwatch_metrics_enabled
+    metric_name                = "${var.waf.name}-waf-metric"
+    sampled_requests_enabled   = var.waf.sampled_requests_enabled
+  }
+
+  tags = merge(var.common.tags, var.waf.additional_tags, {
+    Name = var.waf.name
+  })
+}
+
+#--------------------------------------------------------------------
+# IP Sets
+#--------------------------------------------------------------------
+resource "aws_wafv2_ip_set" "ip_sets" {
+  for_each = { for idx, ip_set in var.waf.ip_sets : idx => ip_set if ip_set.create }
+
+  name               = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.waf.name}-ipset-${each.key}"
+  description        = each.value.description != null ? each.value.description : "IP Set for WAF - ${each.key}"
+  scope              = var.waf.scope
+  ip_address_version = each.value.ip_address_version
+
+  addresses = each.value.addresses
+
+  tags = merge(var.common.tags, var.waf.additional_tags, {
+    Name = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.waf.name}-${each.value.name}-ipset-${each.key}"
+  })
+}
+
+#--------------------------------------------------------------------
+# Rule Groups
+#--------------------------------------------------------------------
+resource "aws_wafv2_rule_group" "custom_rule_groups" {
+  for_each = { for idx, rg in local.all_rule_groups : idx => rg if rg.create }
+
+  name        = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.waf.name}-${each.value.name}-rulegroup-${each.key}"
+  description = each.value.description != null ? each.value.description : "Custom Rule Group for WAF - ${each.key}"
+  scope       = var.waf.scope
+  capacity    = each.value.capacity
+
+  dynamic "rule" {
+    for_each = each.value.rules
     content {
       name     = rule.value.name
       priority = rule.value.priority
 
       action {
+        dynamic "allow" {
+          for_each = rule.value.action == "allow" ? [1] : []
+          content {}
+        }
+
         dynamic "block" {
           for_each = rule.value.action == "block" ? [1] : []
           content {}
@@ -209,19 +274,166 @@ resource "aws_wafv2_web_acl" "main" {
       }
 
       statement {
-        rate_based_statement {
-          limit              = rule.value.limit
-          aggregate_key_type = rule.value.aggregate_key_type
+        dynamic "ip_set_reference_statement" {
+          for_each = rule.value.statement_type == "ip_set" ? [1] : []
+          content {
+            arn = rule.value.ip_set_arn
+          }
+        }
 
-          dynamic "scope_down_statement" {
-            for_each = rule.value.scope_down_statement != null ? [1] : []
-            content {
-              dynamic "geo_match_statement" {
-                for_each = rule.value.scope_down_statement.type == "geo_match" ? [1] : []
+        dynamic "geo_match_statement" {
+          for_each = rule.value.statement_type == "geo_match" ? [1] : []
+          content {
+            country_codes = rule.value.country_codes
+          }
+        }
+
+        dynamic "rate_based_statement" {
+          for_each = rule.value.statement_type == "rate_limit" ? [1] : []
+          content {
+            limit              = rule.value.rate_limit
+            aggregate_key_type = rule.value.aggregate_key_type
+          }
+        }
+
+        dynamic "byte_match_statement" {
+          for_each = rule.value.statement_type == "byte_match" ? [1] : []
+          content {
+            field_to_match {
+              dynamic "uri_path" {
+                for_each = rule.value.field_to_match == "uri_path" ? [1] : []
+                content {}
+              }
+
+              dynamic "query_string" {
+                for_each = rule.value.field_to_match == "query_string" ? [1] : []
+                content {}
+              }
+
+              dynamic "body" {
+                for_each = rule.value.field_to_match == "body" ? [1] : []
+                content {}
+              }
+
+              dynamic "single_header" {
+                for_each = rule.value.field_to_match == "single_header" ? [1] : []
                 content {
-                  country_codes = rule.value.scope_down_statement.country_codes
+                  name = rule.value.header_name
                 }
               }
+            }
+
+            positional_constraint = rule.value.positional_constraint
+            search_string         = rule.value.search_string
+
+            text_transformation {
+              priority = 1
+              type     = rule.value.text_transformation
+            }
+          }
+        }
+
+        dynamic "sqli_match_statement" {
+          for_each = rule.value.statement_type == "sqli_match" ? [1] : []
+          content {
+            field_to_match {
+              dynamic "uri_path" {
+                for_each = rule.value.field_to_match == "uri_path" ? [1] : []
+                content {}
+              }
+
+              dynamic "query_string" {
+                for_each = rule.value.field_to_match == "query_string" ? [1] : []
+                content {}
+              }
+
+              dynamic "body" {
+                for_each = rule.value.field_to_match == "body" ? [1] : []
+                content {}
+              }
+
+              dynamic "single_header" {
+                for_each = rule.value.field_to_match == "single_header" ? [1] : []
+                content {
+                  name = rule.value.header_name
+                }
+              }
+            }
+
+            text_transformation {
+              priority = 1
+              type     = rule.value.text_transformation
+            }
+          }
+        }
+
+        dynamic "xss_match_statement" {
+          for_each = rule.value.statement_type == "xss_match" ? [1] : []
+          content {
+            field_to_match {
+              dynamic "uri_path" {
+                for_each = rule.value.field_to_match == "uri_path" ? [1] : []
+                content {}
+              }
+
+              dynamic "query_string" {
+                for_each = rule.value.field_to_match == "query_string" ? [1] : []
+                content {}
+              }
+
+              dynamic "body" {
+                for_each = rule.value.field_to_match == "body" ? [1] : []
+                content {}
+              }
+
+              dynamic "single_header" {
+                for_each = rule.value.field_to_match == "single_header" ? [1] : []
+                content {
+                  name = rule.value.header_name
+                }
+              }
+            }
+
+            text_transformation {
+              priority = 1
+              type     = rule.value.text_transformation
+            }
+          }
+        }
+
+        dynamic "size_constraint_statement" {
+          for_each = rule.value.statement_type == "size_constraint" ? [1] : []
+          content {
+            field_to_match {
+              dynamic "uri_path" {
+                for_each = rule.value.field_to_match == "uri_path" ? [1] : []
+                content {}
+              }
+
+              dynamic "query_string" {
+                for_each = rule.value.field_to_match == "query_string" ? [1] : []
+                content {}
+              }
+
+              dynamic "body" {
+                for_each = rule.value.field_to_match == "body" ? [1] : []
+                content {}
+              }
+
+              dynamic "single_header" {
+                for_each = rule.value.field_to_match == "single_header" ? [1] : []
+                content {
+                  name = rule.value.header_name
+                }
+              }
+            }
+
+            comparison_operator = rule.value.comparison_operator
+            size                = rule.value.size
+
+            text_transformation {
+              priority = 1
+              type     = rule.value.text_transformation
             }
           }
         }
@@ -236,48 +448,16 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   visibility_config {
-    cloudwatch_metrics_enabled = var.waf.cloudwatch_metrics_enabled
-    metric_name                = "${local.waf_name}-metric"
-    sampled_requests_enabled   = var.waf.sampled_requests_enabled
+    cloudwatch_metrics_enabled = true
+    metric_name                = each.value.name != null ? each.value.name : "${var.waf.name}-rulegroup-${each.key}"
+    sampled_requests_enabled   = true
   }
 
   tags = merge(var.common.tags, var.waf.additional_tags, {
-    Name = local.waf_name
+    Name = each.value.name != null ? each.value.name : "${var.waf.name}-rulegroup-${each.key}"
   })
 }
 
-#--------------------------------------------------------------------
-# IP Sets
-#--------------------------------------------------------------------
-resource "aws_wafv2_ip_set" "ip_whitelist" {
-  count = var.waf.ip_sets.create_whitelist ? 1 : 0
-
-  name               = "${local.waf_name}-whitelist"
-  description        = "IP whitelist for WAF"
-  scope              = var.waf.scope
-  ip_address_version = var.waf.ip_sets.ip_address_version
-
-  addresses = var.waf.ip_sets.whitelist_ips
-
-  tags = merge(var.common.tags, var.waf.additional_tags, {
-    Name = "${local.waf_name}-whitelist"
-  })
-}
-
-resource "aws_wafv2_ip_set" "ip_blacklist" {
-  count = var.waf.ip_sets.create_blacklist ? 1 : 0
-
-  name               = "${local.waf_name}-blacklist"
-  description        = "IP blacklist for WAF"
-  scope              = var.waf.scope
-  ip_address_version = var.waf.ip_sets.ip_address_version
-
-  addresses = var.waf.ip_sets.blacklist_ips
-
-  tags = merge(var.common.tags, var.waf.additional_tags, {
-    Name = "${local.waf_name}-blacklist"
-  })
-}
 
 #--------------------------------------------------------------------
 # WAF Association with ALB/CloudFront
@@ -361,10 +541,10 @@ resource "aws_wafv2_web_acl_logging_configuration" "main" {
 resource "aws_cloudwatch_log_group" "waf_log_group" {
   count = var.waf.logging.create_log_group ? 1 : 0
 
-  name              = "/aws/wafv2/${local.waf_name}"
+  name              = "/aws/wafv2/${var.waf.name}"
   retention_in_days = var.waf.logging.log_retention_days
 
   tags = merge(var.common.tags, var.waf.additional_tags, {
-    Name = "/aws/wafv2/${local.waf_name}"
+    Name = "/aws/wafv2/${var.waf.name}"
   })
 }

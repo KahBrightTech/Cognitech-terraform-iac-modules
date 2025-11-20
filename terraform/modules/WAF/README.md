@@ -7,13 +7,14 @@ This Terraform module creates and manages AWS WAF v2 (Web Application Firewall) 
 - ✅ **WAF v2 Web ACL** with flexible configuration
 - ✅ **Managed Rule Groups** (AWS and third-party)
 - ✅ **Custom Rules** (IP-based, geo-blocking, rate limiting, string matching)
-- ✅ **IP Sets** (whitelist and blacklist)
+- ✅ **Custom Rule Groups** with JSON file support
+- ✅ **IP Sets** with flexible addressing
 - ✅ **Rate Limiting** with scope-down statements
 - ✅ **ALB/CloudFront Association**
 - ✅ **Comprehensive Logging** with filtering and redaction
 - ✅ **CloudWatch Integration** with metrics and monitoring
+- ✅ **JSON Configuration** for rules and rule groups
 - ✅ **Flexible Tagging**
-- ✅ **Consolidated Configuration** using single `waf` variable
 
 ## Usage
 
@@ -45,7 +46,7 @@ module "waf" {
 }
 ```
 
-### Advanced WAF with Custom Rules and IP Sets
+### Advanced WAF with Custom Rules, Rule Groups and IP Sets
 
 ```hcl
 module "waf_advanced" {
@@ -63,103 +64,131 @@ module "waf_advanced" {
     account_name_abr = "mc"
   }
 
-  waf_name        = "advanced-web-app-waf"
-  waf_description = "Advanced WAF with custom rules and IP filtering"
-  scope           = "REGIONAL"
-  default_action  = "allow"
+  waf = {
+    create_waf    = true
+    name          = "advanced-web-app-waf"
+    description   = "Advanced WAF with custom rules and rule groups"
+    scope         = "REGIONAL"
+    default_action = "allow"
 
-  # Custom managed rule groups
-  managed_rule_groups = [
-    {
-      name            = "AWSManagedRulesCommonRuleSet"
-      priority        = 10
-      vendor_name     = "AWS"
-      exclude_rules   = ["SizeRestrictions_BODY", "GenericRFI_BODY"]
-      override_action = "none"
-    },
-    {
-      name            = "AWSManagedRulesKnownBadInputsRuleSet"
-      priority        = 20
-      vendor_name     = "AWS"
-      exclude_rules   = []
-      override_action = "none"
-    },
-    {
-      name            = "AWSManagedRulesSQLiRuleSet"
-      priority        = 30
-      vendor_name     = "AWS"
-      exclude_rules   = []
-      override_action = "none"
-    }
-  ]
-
-  # Custom rules
-  custom_rules = [
-    {
-      name                  = "BlockSpecificCountries"
-      priority              = 100
-      action                = "block"
-      statement_type        = "geo_match"
-      country_codes         = ["CN", "RU", "KP"]
-    },
-    {
-      name                  = "AllowWhitelistedIPs"
-      priority              = 50
-      action                = "allow"
-      statement_type        = "ip_set"
-      ip_set_arn           = module.waf_advanced.ip_whitelist_arn
-    }
-  ]
-
-  # Rate limiting rules
-  rate_limit_rules = [
-    {
-      name               = "GeneralRateLimit"
-      priority           = 200
-      action             = "block"
-      limit              = 2000
-      aggregate_key_type = "IP"
-    },
-    {
-      name               = "LoginRateLimit"
-      priority           = 210
-      action             = "block"
-      limit              = 100
-      aggregate_key_type = "IP"
-      scope_down_statement = {
-        type           = "geo_match"
-        country_codes  = ["US", "CA", "GB"]
+    # Custom managed rule groups
+    managed_rule_groups = [
+      {
+        name            = "AWSManagedRulesCommonRuleSet"
+        priority        = 10
+        vendor_name     = "AWS"
+        exclude_rules   = ["SizeRestrictions_BODY", "GenericRFI_BODY"]
+        override_action = "none"
+      },
+      {
+        name            = "AWSManagedRulesSQLiRuleSet"
+        priority        = 30
+        vendor_name     = "AWS"
+        exclude_rules   = []
+        override_action = "none"
       }
+    ]
+
+    # Custom rule groups
+    rule_groups = [
+      {
+        create      = true
+        name        = "custom-security-rules"
+        description = "Custom security rules for application protection"
+        capacity    = 100
+        rules = [
+          {
+            name           = "BlockSQLInjection"
+            priority       = 1
+            action         = "block"
+            statement_type = "sqli_match"
+            field_to_match = "body"
+            text_transformation = "URL_DECODE"
+          },
+          {
+            name           = "BlockXSS"
+            priority       = 2
+            action         = "block"
+            statement_type = "xss_match"
+            field_to_match = "uri_path"
+            text_transformation = "HTML_ENTITY_DECODE"
+          }
+        ]
+      }
+    ]
+
+    # Load rule groups from JSON files
+    rule_group_files = [
+      "${path.module}/rules/security-rules.json",
+      "${path.module}/rules/rate-limiting.json"
+    ]
+
+    # Reference rule groups (both internal and external)
+    rule_group_references = [
+      {
+        name            = "InternalRuleGroup"
+        priority        = 100
+        rule_group_key  = "security-rules"  # References rule group created in this module
+        override_action = "none"
+      },
+      {
+        name            = "ExternalSecurityRules"
+        priority        = 110
+        rule_group_arn  = "arn:aws:wafv2:us-west-2:123456789012:regional/rulegroup/external-rules/12345678-1234-1234-1234-123456789012"
+        override_action = "none"
+      }
+    ]
+
+    # Custom rules
+    custom_rules = [
+      {
+        name                  = "BlockSpecificCountries"
+        priority              = 200
+        action                = "block"
+        statement_type        = "geo_match"
+        country_codes         = ["CN", "RU", "KP"]
+      }
+    ]
+
+    # IP Sets
+    ip_sets = [
+      {
+        create             = true
+        name               = "allowed-ips"
+        description        = "Allowed IP addresses"
+        type               = "whitelist"
+        ip_address_version = "IPV4"
+        addresses          = ["203.0.113.0/24", "198.51.100.0/24"]
+      },
+      {
+        create             = true
+        name               = "blocked-ips"
+        description        = "Blocked IP addresses"
+        type               = "blacklist"
+        ip_address_version = "IPV4"
+        addresses          = ["192.0.2.44/32", "203.0.113.89/32"]
+      }
+    ]
+
+    # ALB Association
+    association = {
+      associate_alb = true
+      alb_arn       = "arn:aws:elasticloadbalancing:us-west-2:123456789012:loadbalancer/app/my-alb/1234567890abcdef"
     }
-  ]
 
-  # IP Sets
-  create_ip_whitelist = true
-  whitelist_ips = [
-    "203.0.113.0/24",
-    "198.51.100.0/24"
-  ]
+    # Logging
+    logging = {
+      enabled             = true
+      create_log_group    = true
+      log_retention_days  = 90
+      redacted_fields     = ["uri_path", "query_string"]
+    }
 
-  create_ip_blacklist = true
-  blacklist_ips = [
-    "192.0.2.44/32",
-    "203.0.113.89/32"
-  ]
-
-  # ALB Association
-  associate_alb = true
-  alb_arn       = "arn:aws:elasticloadbalancing:us-west-2:123456789012:loadbalancer/app/my-alb/1234567890abcdef"
-
-  # Logging
-  enable_logging        = true
-  create_log_group      = true
-  log_retention_days    = 90
-  redacted_fields       = ["uri_path", "query_string"]
-
-  # Additional tags
-  additional_tags = {
-    CostCenter = "security"
-    Owner      = "security-team"
+    # Additional tags
+    additional_tags = {
+      CostCenter = "security"
+      Owner      = "security-team"
+    }
   }
 }
 ```
@@ -263,7 +292,6 @@ module "cloudfront_waf" {
 | default_action | Default action (allow or block) | `string` | `"allow"` |
 | managed_rule_groups | List of managed rule groups | `list(object)` | AWS Common and Known Bad Inputs |
 | custom_rules | List of custom rules | `list(object)` | `[]` |
-| rate_limit_rules | List of rate limiting rules | `list(object)` | `[]` |
 | create_ip_whitelist | Whether to create IP whitelist | `bool` | `false` |
 | create_ip_blacklist | Whether to create IP blacklist | `bool` | `false` |
 | whitelist_ips | List of IPs to whitelist | `list(string)` | `[]` |
@@ -310,6 +338,16 @@ module "cloudfront_waf" {
 - AWS Anonymous IP List
 - Third-party rule groups
 
+### Custom Rule Groups
+Create custom rule groups with configurable capacity and rules:
+- **SQL Injection Match**: Detect and block SQL injection attempts
+- **XSS Match**: Detect and block cross-site scripting attempts
+- **Byte Match**: Block based on URI, headers, or body content
+- **Size Constraint**: Limit request size
+- **IP Set Reference**: Allow/block based on IP sets
+- **Geo Match**: Block traffic from specific countries
+- **Rate Limiting**: Limit requests per IP
+
 ### Custom Rule Types
 - **IP Set Rules**: Allow/block based on IP sets
 - **Geo Match Rules**: Block traffic from specific countries
@@ -322,6 +360,58 @@ module "cloudfront_waf" {
 - Geographic rate limiting
 - URI-based rate limiting
 - Custom aggregation keys
+
+## JSON Configuration
+
+### Rule Groups from JSON Files
+
+You can load rule groups from JSON files using the `rule_group_files` parameter:
+
+```hcl
+waf = {
+  rule_group_files = [
+    "${path.module}/rules/security-rules.json",
+    "${path.module}/rules/rate-limiting.json"
+  ]
+}
+```
+
+### JSON File Format
+
+Example JSON structure for rule groups:
+
+```json
+{
+  "rule_groups": [
+    {
+      "create": true,
+      "name": "custom-security-rules",
+      "description": "Custom security rules for application protection",
+      "capacity": 100,
+      "rules": [
+        {
+          "name": "BlockSQLInjection",
+          "priority": 1,
+          "action": "block",
+          "statement_type": "sqli_match",
+          "field_to_match": "body",
+          "text_transformation": "URL_DECODE"
+        },
+        {
+          "name": "BlockXSS",
+          "priority": 2,
+          "action": "block",
+          "statement_type": "xss_match",
+          "field_to_match": "uri_path",
+          "text_transformation": "HTML_ENTITY_DECODE"
+        }
+      ]
+    }
+  ]
+}
+```
+
+See `examples/rule-groups-example.json` for a complete example with all supported rule types.
 
 ## Logging and Monitoring
 

@@ -26,16 +26,62 @@ variable "waf" {
     default_action             = optional(string, "allow")
     cloudwatch_metrics_enabled = optional(bool, true)
     sampled_requests_enabled   = optional(bool, true)
-    additional_tags            = optional(map(string), {})
+    additional_tags            = optional(map(string))
+
+    # IP Sets (New Structure)
+    ip_sets = optional(list(object({
+      create             = optional(bool, true)
+      name               = optional(string)
+      description        = optional(string)
+      type               = optional(string, "custom")
+      ip_address_version = optional(string, "IPV4")
+      addresses          = list(string)
+    })), [])
+
+    # Rule Groups
+    rule_groups = optional(list(object({
+      create      = optional(bool, true)
+      name        = optional(string)
+      description = optional(string)
+      capacity    = number
+      rules = list(object({
+        name                  = string
+        priority              = number
+        action                = string
+        statement_type        = string
+        ip_set_arn            = optional(string)
+        country_codes         = optional(list(string))
+        rate_limit            = optional(number)
+        aggregate_key_type    = optional(string)
+        field_to_match        = optional(string)
+        header_name           = optional(string)
+        positional_constraint = optional(string)
+        search_string         = optional(string)
+        text_transformation   = optional(string, "NONE")
+        comparison_operator   = optional(string)
+        size                  = optional(number)
+      }))
+    })))
+    rule_group_files = optional(list(string))
+
+    # Rule Group References
+    rule_group_references = optional(list(object({
+      name            = string
+      priority        = number
+      rule_group_key  = optional(string) # Key from rule_groups created in this module
+      rule_group_arn  = optional(string) # ARN of external rule group
+      override_action = optional(string, "none")
+    })))
+
 
     # Managed Rule Groups
     managed_rule_groups = optional(list(object({
       name            = string
       priority        = number
-      vendor_name     = string
-      exclude_rules   = optional(list(string), [])
+      vendor_name     = optional(string, "AWS")
+      exclude_rules   = optional(list(string))
       override_action = optional(string, "none")
-    })), null)
+    })))
 
     # Custom Rules
     custom_rules = optional(list(object({
@@ -48,32 +94,11 @@ variable "waf" {
       rate_limit            = optional(number)
       aggregate_key_type    = optional(string)
       field_to_match        = optional(string)
+      header_name           = optional(string)
       positional_constraint = optional(string)
       search_string         = optional(string)
-      text_transformation   = optional(string)
+      text_transformation   = optional(string, "NONE")
     })), [])
-
-    # Rate Limit Rules
-    rate_limit_rules = optional(list(object({
-      name               = string
-      priority           = number
-      action             = string
-      limit              = number
-      aggregate_key_type = string
-      scope_down_statement = optional(object({
-        type          = string
-        country_codes = optional(list(string))
-      }))
-    })), [])
-
-    # IP Sets
-    ip_sets = optional(object({
-      create_whitelist   = optional(bool, false)
-      create_blacklist   = optional(bool, false)
-      ip_address_version = optional(string, "IPV4")
-      whitelist_ips      = optional(list(string), [])
-      blacklist_ips      = optional(list(string), [])
-    }), {})
 
     # Association
     association = optional(object({
@@ -117,7 +142,21 @@ variable "waf" {
   }
 
   validation {
-    condition     = var.waf.ip_sets.ip_address_version == null || contains(["IPV4", "IPV6"], var.waf.ip_sets.ip_address_version)
-    error_message = "IP address version must be either IPV4 or IPV6."
+    condition = var.waf.ip_sets == null || alltrue([
+      for ip_set in var.waf.ip_sets :
+      ip_set.ip_address_version == null || contains(["IPV4", "IPV6"], ip_set.ip_address_version)
+    ])
+    error_message = "IP address version must be either IPV4 or IPV6 for all IP sets."
   }
+
+  validation {
+    condition = var.waf.rule_group_references == null || alltrue([
+      for ref in var.waf.rule_group_references :
+      (ref.rule_group_key != null && ref.rule_group_arn == null) ||
+      (ref.rule_group_key == null && ref.rule_group_arn != null)
+    ])
+    error_message = "Each rule group reference must specify exactly one of rule_group_key (for internal rule groups) or rule_group_arn (for external rule groups)."
+  }
+
+
 }

@@ -39,25 +39,18 @@ output "web_acl_tags" {
 #--------------------------------------------------------------------
 # IP Sets Outputs
 #--------------------------------------------------------------------
-output "ip_whitelist_id" {
-  description = "The ID of the IP whitelist"
-  value       = var.waf.ip_sets.create_whitelist ? aws_wafv2_ip_set.ip_whitelist[0].id : null
+output "ip_sets" {
+  description = "Map of all IP sets created"
+  value = {
+    for idx, ip_set in aws_wafv2_ip_set.ip_sets : idx => {
+      id   = ip_set.id
+      arn  = ip_set.arn
+      name = ip_set.name
+    }
+  }
 }
 
-output "ip_whitelist_arn" {
-  description = "The ARN of the IP whitelist"
-  value       = var.waf.ip_sets.create_whitelist ? aws_wafv2_ip_set.ip_whitelist[0].arn : null
-}
 
-output "ip_blacklist_id" {
-  description = "The ID of the IP blacklist"
-  value       = var.waf.ip_sets.create_blacklist ? aws_wafv2_ip_set.ip_blacklist[0].id : null
-}
-
-output "ip_blacklist_arn" {
-  description = "The ARN of the IP blacklist"
-  value       = var.waf.ip_sets.create_blacklist ? aws_wafv2_ip_set.ip_blacklist[0].arn : null
-}
 
 #--------------------------------------------------------------------
 # Association Outputs
@@ -91,40 +84,34 @@ output "log_group_arn" {
 output "waf_summary" {
   description = "Summary of the WAF configuration"
   value = var.waf.create_waf ? {
-    web_acl_id             = aws_wafv2_web_acl.main[0].id
-    web_acl_arn            = aws_wafv2_web_acl.main[0].arn
-    web_acl_name           = aws_wafv2_web_acl.main[0].name
-    web_acl_capacity       = aws_wafv2_web_acl.main[0].capacity
-    scope                  = aws_wafv2_web_acl.main[0].scope
-    default_action         = var.waf.default_action
-    managed_rules_count    = length(local.default_managed_rules)
-    custom_rules_count     = length(var.waf.custom_rules)
-    json_rules_count       = length(local.json_rules)
-    total_custom_rules     = length(local.all_custom_rules)
-    json_files_loaded      = length(var.waf.rule_files)
-    rate_limit_rules_count = length(var.waf.rate_limit_rules)
-    ip_whitelist_enabled   = var.waf.ip_sets.create_whitelist
-    ip_blacklist_enabled   = var.waf.ip_sets.create_blacklist
-    logging_enabled        = var.waf.logging.enabled
-    alb_associated         = var.waf.association.associate_alb && var.waf.association.alb_arn != null
+    web_acl_id            = aws_wafv2_web_acl.main[0].id
+    web_acl_arn           = aws_wafv2_web_acl.main[0].arn
+    web_acl_name          = aws_wafv2_web_acl.main[0].name
+    web_acl_capacity      = aws_wafv2_web_acl.main[0].capacity
+    scope                 = aws_wafv2_web_acl.main[0].scope
+    default_action        = var.waf.default_action
+    managed_rules_count   = length(var.waf.managed_rule_groups)
+    custom_rules_count    = length(var.waf.custom_rules)
+    json_rules_count      = length(local.json_rules)
+    total_custom_rules    = length(local.all_custom_rules)
+    json_files_loaded     = length(var.waf.rule_files)
+    rule_groups_count     = length(var.waf.rule_groups)
+    rule_group_refs_count = length(var.waf.rule_group_references)
+    ip_sets_count         = length(var.waf.ip_sets)
+    logging_enabled       = var.waf.logging.enabled
+    alb_associated        = var.waf.association.associate_alb && var.waf.association.alb_arn != null
   } : null
 }
 
 output "ip_sets_summary" {
   description = "Summary of IP sets configuration"
   value = {
-    whitelist = var.waf.ip_sets.create_whitelist ? {
-      id              = aws_wafv2_ip_set.ip_whitelist[0].id
-      arn             = aws_wafv2_ip_set.ip_whitelist[0].arn
-      name            = aws_wafv2_ip_set.ip_whitelist[0].name
-      addresses_count = length(var.waf.ip_sets.whitelist_ips)
-    } : null
-    blacklist = var.waf.ip_sets.create_blacklist ? {
-      id              = aws_wafv2_ip_set.ip_blacklist[0].id
-      arn             = aws_wafv2_ip_set.ip_blacklist[0].arn
-      name            = aws_wafv2_ip_set.ip_blacklist[0].name
-      addresses_count = length(var.waf.ip_sets.blacklist_ips)
-    } : null
+    for idx, ip_set in var.waf.ip_sets : idx => {
+      name            = ip_set.name
+      type            = ip_set.type
+      addresses_count = length(ip_set.addresses)
+      address_version = ip_set.ip_address_version
+    }
   }
 }
 

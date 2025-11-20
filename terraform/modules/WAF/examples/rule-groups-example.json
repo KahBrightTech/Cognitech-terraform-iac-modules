@@ -1,0 +1,54 @@
+{
+  "description": "AWS Managed Rule Sets for comprehensive web application protection",
+  "version": "1.0",
+  "rules": [
+    {
+      "name": "AWSManagedAdminProtection",
+      "priority": 1,
+      "action": "block",
+      "statement_type": "managed_rule_group",
+      "vendor_name": "AWS",
+      "managed_rule_group_name": "AWSManagedRulesAdminProtectionRuleSet",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": null,
+      "positional_constraint": null,
+      "search_string": null,
+      "text_transformation": null
+    },
+    {
+      "name": "AWSManagedCommonRules",
+      "priority": 5,
+      "action": "block",
+      "statement_type": "managed_rule_group",
+      "vendor_name": "AWS",
+      "managed_rule_group_name": "AWSManagedRulesCommonRuleSet",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": null,
+      "positional_constraint": null,
+      "search_string": null,
+      "text_transformation": null
+    },
+    {
+      "name": "AWSManagedWordPressRules",
+      "priority": 10,
+      "action": "block",
+      "statement_type": "managed_rule_group",
+      "vendor_name": "AWS",
+      "managed_rule_group_name": "AWSManagedRulesWordPressRuleSet",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": null,
+      "positional_constraint": null,
+      "search_string": null,
+      "text_transformation": null
+    }
+  ]
+}
