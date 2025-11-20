@@ -209,7 +209,7 @@ resource "aws_wafv2_web_acl_association" "main" {
   count = var.waf.association.associate_alb && var.waf.association.alb_arn != null ? 1 : 0
 
   resource_arn = var.waf.association.alb_arn
-  web_acl_arn  = var.waf.web_acl_arn
+  web_acl_arn  = var.waf.association.web_acl_arn
 }
 
 #--------------------------------------------------------------------

@@ -27,7 +27,6 @@ variable "waf" {
     cloudwatch_metrics_enabled = optional(bool, true)
     sampled_requests_enabled   = optional(bool, true)
     additional_tags            = optional(map(string))
-    web_acl_arn                = optional(string)
 
     # Managed Rule Groups
     managed_rule_groups = optional(list(object({
@@ -66,6 +65,7 @@ variable "waf" {
     association = optional(object({
       associate_alb = optional(bool, false)
       alb_arn       = optional(string)
+      web_acl_arn   = optional(string)
     }))
 
     # Logging
