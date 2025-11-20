@@ -32,7 +32,7 @@ variable "rule_group" {
     name             = string
     description      = optional(string)
     capacity         = number
-    rule_group_files = optional(list(string), [])
+    rule_group_files = optional(list(string))
     rules = list(object({
       name                  = string
       priority              = number
