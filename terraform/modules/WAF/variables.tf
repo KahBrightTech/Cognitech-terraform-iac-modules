@@ -38,6 +38,14 @@ variable "waf" {
       override_action = optional(string, "none")
     })))
 
+    # Rule Group References (for custom rule groups)
+    rule_group_references = optional(list(object({
+      name            = string
+      priority        = number
+      arn             = string
+      override_action = optional(string, "none")
+    })))
+
     # Custom Rules
     custom_rules = optional(list(object({
       name                  = string

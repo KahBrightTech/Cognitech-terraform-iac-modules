@@ -8,14 +8,10 @@ data "aws_region" "current" {}
 # Locals
 #--------------------------------------------------------------------
 locals {
-
-  # Process JSON rule files
   json_rules = length(var.waf.rule_files) > 0 ? flatten([
     for file_path in var.waf.rule_files :
     jsondecode(file(file_path)).rules
   ]) : []
-
-  # Merge custom rules with JSON rules
   all_custom_rules = concat(var.waf.custom_rules, local.json_rules)
 }
 
@@ -71,6 +67,39 @@ resource "aws_wafv2_web_acl" "main" {
               name = excluded_rule.value
             }
           }
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name                = rule.value.name
+        sampled_requests_enabled   = true
+      }
+    }
+  }
+
+  # Rule Group References
+  dynamic "rule" {
+    for_each = var.waf.rule_group_references
+    content {
+      name     = rule.value.name
+      priority = rule.value.priority
+
+      override_action {
+        dynamic "none" {
+          for_each = rule.value.override_action == "none" ? [1] : []
+          content {}
+        }
+
+        dynamic "count" {
+          for_each = rule.value.override_action == "count" ? [1] : []
+          content {}
+        }
+      }
+
+      statement {
+        rule_group_reference_statement {
+          arn = rule.value.arn
         }
       }
 
