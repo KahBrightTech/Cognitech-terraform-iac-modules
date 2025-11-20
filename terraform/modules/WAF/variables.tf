@@ -98,13 +98,13 @@ variable "waf" {
       positional_constraint = optional(string)
       search_string         = optional(string)
       text_transformation   = optional(string, "NONE")
-    })), [])
+    })))
 
     # Association
     association = optional(object({
       associate_alb = optional(bool, false)
-      alb_arn       = optional(string, null)
-    }), {})
+      alb_arn       = optional(string)
+    }))
 
     # Logging
     logging = optional(object({
@@ -112,7 +112,7 @@ variable "waf" {
       log_destination_arn = optional(string, null)
       create_log_group    = optional(bool, false)
       log_retention_days  = optional(number, 30)
-      redacted_fields     = optional(list(string), [])
+      redacted_fields     = optional(list(string))
       logging_filter = optional(object({
         default_behavior = string
         filters = list(object({
@@ -124,11 +124,11 @@ variable "waf" {
             label_name = optional(string)
           }))
         }))
-      }), null)
-    }), {})
+      }))
+    }))
 
     # JSON Rule Files
-    rule_files = optional(list(string), [])
+    rule_files = optional(list(string))
   })
 
   validation {
