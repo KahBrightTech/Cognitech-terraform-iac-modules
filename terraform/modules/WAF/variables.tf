@@ -64,7 +64,7 @@ variable "waf" {
     # Association
     association = optional(object({
       associate_alb = optional(bool, false)
-      alb_arn       = optional(string)
+      alb_arns      = optional(list(string))
       web_acl_arn   = optional(string)
     }))
 

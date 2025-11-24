@@ -49,6 +49,22 @@
       "positional_constraint": null,
       "search_string": null,
       "text_transformation": null
+    },
+    {
+      "name": "AWSManagedKnownBadInputs",
+      "priority": 15,
+      "action": "block",
+      "statement_type": "managed_rule_group",
+      "vendor_name": "AWS",
+      "managed_rule_group_name": "AWSManagedRulesKnownBadInputsRuleSet",
+      "ip_set_arn": null,
+      "country_codes": null,
+      "rate_limit": null,
+      "aggregate_key_type": null,
+      "field_to_match": null,
+      "positional_constraint": null,
+      "search_string": null,
+      "text_transformation": null
     }
   ]
 }
