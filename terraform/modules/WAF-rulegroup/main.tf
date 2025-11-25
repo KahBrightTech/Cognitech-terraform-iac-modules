@@ -16,12 +16,28 @@ locals {
   rule_group = var.rule_group != null ? merge(
     var.rule_group,
     {
-      rules = length(local.json_rules) > 0 ? local.json_rules : coalesce(var.rule_group.rules, [])
+      rules = length(local.json_rules) > 0 ? [
+        for rule in local.json_rules : {
+          name                  = rule.name
+          priority              = rule.priority
+          action                = rule.action
+          statement_type        = rule.statement_type
+          ip_set_arn            = try(rule.ip_set_arn, null)
+          country_codes         = try(rule.country_codes, null)
+          rate_limit            = try(rule.rate_limit, null)
+          aggregate_key_type    = try(rule.aggregate_key_type, null)
+          field_to_match        = try(rule.field_to_match, null)
+          header_name           = try(rule.header_name, null)
+          positional_constraint = try(rule.positional_constraint, null)
+          search_string         = try(rule.search_string, null)
+          text_transformation   = try(rule.text_transformation, "NONE")
+          comparison_operator   = try(rule.comparison_operator, null)
+          size                  = try(rule.size, null)
+        }
+      ] : coalesce(var.rule_group.rules, [])
     }
   ) : null
-}
-
-#--------------------------------------------------------------------
+} #--------------------------------------------------------------------
 # Rule Groups
 #--------------------------------------------------------------------
 resource "aws_wafv2_rule_group" "rule_group" {
