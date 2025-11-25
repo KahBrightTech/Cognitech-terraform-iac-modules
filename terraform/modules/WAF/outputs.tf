@@ -74,11 +74,11 @@ output "waf_summary" {
     web_acl_capacity    = aws_wafv2_web_acl.main[0].capacity
     scope               = aws_wafv2_web_acl.main[0].scope
     default_action      = var.waf.default_action
-    managed_rules_count = length(try(var.waf.managed_rule_groups, []))
-    custom_rules_count  = length(try(var.waf.custom_rules, []))
+    managed_rules_count = length(coalesce(var.waf.managed_rule_groups, []))
+    custom_rules_count  = length(coalesce(var.waf.custom_rules, []))
     json_rules_count    = length(local.json_rules)
     total_custom_rules  = length(local.all_custom_rules)
-    json_files_loaded   = length(try(var.waf.rule_files, []))
+    json_files_loaded   = length(coalesce(var.waf.rule_files, []))
     logging_enabled     = try(var.waf.logging.enabled, false)
     alb_associated      = try(var.waf.association.associate_alb, false) && try(var.waf.association.alb_arns, null) != null
   } : null
