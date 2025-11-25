@@ -8,13 +8,17 @@ data "aws_region" "current" {}
 # Locals
 #--------------------------------------------------------------------
 locals {
-  json_rule_group = var.rule_group != null && length(var.rule_group.rule_group_files) > 0 ? (
-    flatten([
-      for file_path in var.rule_group.rule_group_files :
-      jsondecode(file(file_path)).rule_group
-    ])[0]
+  json_rules = var.rule_group != null && var.rule_group.rule_group_files != null && length(var.rule_group.rule_group_files) > 0 ? flatten([
+    for file_path in var.rule_group.rule_group_files :
+    jsondecode(file(file_path)).rules
+  ]) : []
+
+  rule_group = var.rule_group != null ? merge(
+    var.rule_group,
+    {
+      rules = length(local.json_rules) > 0 ? local.json_rules : coalesce(var.rule_group.rules, [])
+    }
   ) : null
-  rule_group = var.rule_group != null ? var.rule_group : local.json_rule_group
 }
 
 #--------------------------------------------------------------------
