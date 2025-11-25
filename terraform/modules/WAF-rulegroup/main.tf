@@ -11,7 +11,7 @@ locals {
   json_rule_group = var.rule_group != null && length(var.rule_group.rule_group_files) > 0 ? (
     flatten([
       for file_path in var.rule_group.rule_group_files :
-      jsondecode(file(file_path)).rule_groups
+      jsondecode(file(file_path)).rule_group
     ])[0]
   ) : null
   rule_group = var.rule_group != null ? var.rule_group : local.json_rule_group
