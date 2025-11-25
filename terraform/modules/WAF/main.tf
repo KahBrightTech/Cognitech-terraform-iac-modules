@@ -183,6 +183,13 @@ resource "aws_wafv2_web_acl" "main" {
             }
           }
         }
+
+        dynamic "ip_set_reference_statement" {
+          for_each = rule.value.ip_set_arn != null ? [1] : []
+          content {
+            arn = rule.value.ip_set_arn
+          }
+        }
       }
 
       visibility_config {

@@ -59,6 +59,7 @@ variable "waf" {
       positional_constraint = optional(string)
       search_string         = optional(string)
       text_transformation   = optional(string, "NONE")
+      ip_set_arn            = optional(string)
     })))
 
     # Association
