@@ -18,14 +18,32 @@ variable "common" {
 variable "waf" {
   description = "Complete WAF configuration object"
   type = object({
+    # Basic WAF Configuration
+    create_waf                 = optional(bool, true)
     name                       = optional(string, null)
     description                = optional(string, "WAF Web ACL for application protection")
     scope                      = optional(string, "REGIONAL")
     default_action             = optional(string, "allow")
     cloudwatch_metrics_enabled = optional(bool, true)
-    rule_file                  = optional(string)
-    ip_set_arns                = optional(list(string))
     sampled_requests_enabled   = optional(bool, true)
+    additional_tags            = optional(map(string))
+
+    # Managed Rule Groups
+    managed_rule_groups = optional(list(object({
+      name            = string
+      priority        = number
+      vendor_name     = optional(string, "AWS")
+      exclude_rules   = optional(list(string))
+      override_action = optional(string, "none")
+    })))
+
+    # Rule Group References (for custom rule groups)
+    rule_group_references = optional(list(object({
+      name            = string
+      priority        = number
+      arn             = string
+      override_action = optional(string, "none")
+    })))
 
     # Custom Rules
     custom_rules = optional(list(object({
@@ -44,14 +62,6 @@ variable "waf" {
       ip_set_arn            = optional(string)
     })))
 
-    # Rule Group References (for custom rule groups)
-    rule_group_references = optional(list(object({
-      name            = string
-      priority        = number
-      arn             = string
-      override_action = optional(string, "none")
-    })))
-
     # Association
     association = optional(object({
       associate_alb = optional(bool, false)
@@ -62,8 +72,8 @@ variable "waf" {
     # Logging
     logging = optional(object({
       enabled             = optional(bool, false)
-      log_destination_arn = optional(string)
-      create_log_group    = optional(bool)
+      log_destination_arn = optional(string, null)
+      create_log_group    = optional(bool, false)
       log_retention_days  = optional(number, 30)
       redacted_fields     = optional(list(string))
       logging_filter = optional(object({
@@ -79,6 +89,9 @@ variable "waf" {
         }))
       }))
     }))
+
+    # JSON Rule Files
+    rule_files = optional(list(string))
   })
 
   validation {
