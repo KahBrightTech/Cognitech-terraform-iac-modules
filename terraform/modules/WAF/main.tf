@@ -8,11 +8,11 @@ data "aws_region" "current" {}
 # Locals
 #--------------------------------------------------------------------
 locals {
-  json_rules = length(var.waf.rule_files) > 0 ? flatten([
-    for file_path in var.waf.rule_files :
+  json_rules = length(coalesce(var.waf.rule_files, [])) > 0 ? flatten([
+    for file_path in coalesce(var.waf.rule_files, []) :
     jsondecode(file(file_path)).rules
   ]) : []
-  all_custom_rules = concat(var.waf.custom_rules, local.json_rules)
+  all_custom_rules = concat(coalesce(var.waf.custom_rules, []), local.json_rules)
 }
 
 #--------------------------------------------------------------------
@@ -39,7 +39,7 @@ resource "aws_wafv2_web_acl" "main" {
 
   # Managed Rule Groups
   dynamic "rule" {
-    for_each = var.waf.managed_rule_groups
+    for_each = coalesce(var.waf.managed_rule_groups, [])
     content {
       name     = rule.value.name
       priority = rule.value.priority
@@ -83,7 +83,7 @@ resource "aws_wafv2_web_acl" "main" {
 
   # Rule Group References
   dynamic "rule" {
-    for_each = var.waf.rule_group_references
+    for_each = coalesce(var.waf.rule_group_references, [])
     content {
       name     = rule.value.name
       priority = rule.value.priority
@@ -209,7 +209,7 @@ resource "aws_wafv2_web_acl" "main" {
 # WAF Association with ALB/CloudFront
 #--------------------------------------------------------------------
 resource "aws_wafv2_web_acl_association" "main" {
-  for_each = var.waf.association.associate_alb && var.waf.association.alb_arns != null ? toset(var.waf.association.alb_arns) : []
+  for_each = try(var.waf.association.associate_alb, false) && try(var.waf.association.alb_arns, null) != null ? toset(var.waf.association.alb_arns) : []
 
   resource_arn = each.value
   web_acl_arn  = aws_wafv2_web_acl.main[0].arn
@@ -219,13 +219,13 @@ resource "aws_wafv2_web_acl_association" "main" {
 # WAF Logging Configuration
 #--------------------------------------------------------------------
 resource "aws_wafv2_web_acl_logging_configuration" "main" {
-  count = var.waf.logging.enabled && var.waf.create_waf ? 1 : 0
+  count = try(var.waf.logging.enabled, false) && var.waf.create_waf ? 1 : 0
 
   resource_arn            = aws_wafv2_web_acl.main[0].arn
   log_destination_configs = [var.waf.logging.log_destination_arn]
 
   dynamic "redacted_fields" {
-    for_each = var.waf.logging.redacted_fields
+    for_each = try(var.waf.logging.redacted_fields, [])
     content {
       dynamic "uri_path" {
         for_each = redacted_fields.value == "uri_path" ? [1] : []
@@ -285,10 +285,10 @@ resource "aws_wafv2_web_acl_logging_configuration" "main" {
 # CloudWatch Log Group for WAF (Optional)
 #--------------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "waf_log_group" {
-  count = var.waf.logging.create_log_group ? 1 : 0
+  count = try(var.waf.logging.create_log_group, false) ? 1 : 0
 
   name              = "/aws/wafv2/${var.waf.name}"
-  retention_in_days = var.waf.logging.log_retention_days
+  retention_in_days = try(var.waf.logging.log_retention_days, 30)
 
   tags = merge(var.common.tags, var.waf.additional_tags, {
     Name = "/aws/wafv2/${var.waf.name}"
