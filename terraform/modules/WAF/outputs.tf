@@ -41,7 +41,7 @@ output "web_acl_tags" {
 #--------------------------------------------------------------------
 output "web_acl_association_id" {
   description = "The ID of the WAF Web ACL association"
-  value       = var.waf.association.associate_alb && var.waf.association.alb_arns != null ? [for k, v in aws_wafv2_web_acl_association.main : v.id] : []
+  value       = try(var.waf.association.associate_alb, false) && try(var.waf.association.alb_arns, null) != null ? [for k, v in aws_wafv2_web_acl_association.main : v.id] : []
 }
 
 #--------------------------------------------------------------------
@@ -49,17 +49,17 @@ output "web_acl_association_id" {
 #--------------------------------------------------------------------
 output "logging_configuration_id" {
   description = "The ID of the WAF logging configuration"
-  value       = var.waf.logging.enabled && var.waf.create_waf ? aws_wafv2_web_acl_logging_configuration.main[0].id : null
+  value       = try(var.waf.logging.enabled, false) && var.waf.create_waf ? aws_wafv2_web_acl_logging_configuration.main[0].id : null
 }
 
 output "log_group_name" {
   description = "The name of the CloudWatch log group"
-  value       = var.waf.logging.create_log_group ? aws_cloudwatch_log_group.waf_log_group[0].name : null
+  value       = try(var.waf.logging.create_log_group, false) ? aws_cloudwatch_log_group.waf_log_group[0].name : null
 }
 
 output "log_group_arn" {
   description = "The ARN of the CloudWatch log group"
-  value       = var.waf.logging.create_log_group ? aws_cloudwatch_log_group.waf_log_group[0].arn : null
+  value       = try(var.waf.logging.create_log_group, false) ? aws_cloudwatch_log_group.waf_log_group[0].arn : null
 }
 
 #--------------------------------------------------------------------
@@ -74,13 +74,13 @@ output "waf_summary" {
     web_acl_capacity    = aws_wafv2_web_acl.main[0].capacity
     scope               = aws_wafv2_web_acl.main[0].scope
     default_action      = var.waf.default_action
-    managed_rules_count = length(var.waf.managed_rule_groups)
-    custom_rules_count  = length(var.waf.custom_rules)
+    managed_rules_count = length(try(var.waf.managed_rule_groups, []))
+    custom_rules_count  = length(try(var.waf.custom_rules, []))
     json_rules_count    = length(local.json_rules)
     total_custom_rules  = length(local.all_custom_rules)
-    json_files_loaded   = length(var.waf.rule_files)
-    logging_enabled     = var.waf.logging.enabled
-    alb_associated      = var.waf.association.associate_alb && var.waf.association.alb_arns != null
+    json_files_loaded   = length(try(var.waf.rule_files, []))
+    logging_enabled     = try(var.waf.logging.enabled, false)
+    alb_associated      = try(var.waf.association.associate_alb, false) && try(var.waf.association.alb_arns, null) != null
   } : null
 }
 

@@ -209,7 +209,7 @@ resource "aws_wafv2_web_acl" "main" {
 # WAF Association with ALB/CloudFront
 #--------------------------------------------------------------------
 resource "aws_wafv2_web_acl_association" "main" {
-  for_each = try(var.waf.association.associate_alb, false) && try(var.waf.association.alb_arns, null) != null ? toset(var.waf.association.alb_arns) : []
+  for_each = try(var.waf.association.associate_alb, false) && try(var.waf.association.alb_arns, null) != null ? toset(var.waf.association.alb_arns) : toset([])
 
   resource_arn = each.value
   web_acl_arn  = aws_wafv2_web_acl.main[0].arn
