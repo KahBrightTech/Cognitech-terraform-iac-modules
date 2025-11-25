@@ -41,7 +41,7 @@ output "web_acl_tags" {
 #--------------------------------------------------------------------
 output "web_acl_association_id" {
   description = "The ID of the WAF Web ACL association"
-  value       = var.waf.association.associate_alb && var.waf.association.alb_arn != null ? aws_wafv2_web_acl_association.main[0].id : null
+  value       = var.waf.association.associate_alb && var.waf.association.alb_arns != null ? [for k, v in aws_wafv2_web_acl_association.main : v.id] : []
 }
 
 #--------------------------------------------------------------------
@@ -80,7 +80,7 @@ output "waf_summary" {
     total_custom_rules  = length(local.all_custom_rules)
     json_files_loaded   = length(var.waf.rule_files)
     logging_enabled     = var.waf.logging.enabled
-    alb_associated      = var.waf.association.associate_alb && var.waf.association.alb_arn != null
+    alb_associated      = var.waf.association.associate_alb && var.waf.association.alb_arns != null
   } : null
 }
 

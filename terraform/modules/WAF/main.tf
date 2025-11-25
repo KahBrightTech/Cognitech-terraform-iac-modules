@@ -61,10 +61,13 @@ resource "aws_wafv2_web_acl" "main" {
           name        = rule.value.name
           vendor_name = rule.value.vendor_name
 
-          dynamic "excluded_rule" {
-            for_each = rule.value.exclude_rules
+          dynamic "rule_action_override" {
+            for_each = rule.value.exclude_rules != null ? rule.value.exclude_rules : []
             content {
-              name = excluded_rule.value
+              action_to_use {
+                count {}
+              }
+              name = rule_action_override.value
             }
           }
         }
@@ -209,7 +212,7 @@ resource "aws_wafv2_web_acl_association" "main" {
   for_each = var.waf.association.associate_alb && var.waf.association.alb_arns != null ? toset(var.waf.association.alb_arns) : []
 
   resource_arn = each.value
-  web_acl_arn  = var.waf.association.web_acl_arn
+  web_acl_arn  = aws_wafv2_web_acl.main[0].arn
 }
 
 #--------------------------------------------------------------------
