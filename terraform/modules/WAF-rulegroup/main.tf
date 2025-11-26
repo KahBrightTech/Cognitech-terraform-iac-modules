@@ -8,7 +8,7 @@ data "aws_region" "current" {}
 # Locals
 #--------------------------------------------------------------------
 locals {
-  rule_group_files = jsondecode(file(var.rule_group.rule_group_files))
+  rule_group_files = jsondecode(file(var.rule_group.rule_group_file))
 }
 
 #--------------------------------------------------------------------

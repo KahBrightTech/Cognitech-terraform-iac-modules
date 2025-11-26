@@ -29,10 +29,10 @@ variable "scope" {
 variable "rule_group" {
   description = "WAF rule group configuration"
   type = object({
-    name             = string
-    description      = optional(string)
-    capacity         = number
-    rule_group_files = optional(list(string))
+    name            = string
+    description     = optional(string)
+    capacity        = number
+    rule_group_file = optional(string)
     rules = list(object({
       name                  = string
       priority              = number
