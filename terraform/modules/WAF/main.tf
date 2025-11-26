@@ -175,20 +175,6 @@ resource "aws_wafv2_web_acl" "main" {
           }
         }
       }
-      dynamic "override_action" {
-        for_each = rule.value.override_action != null ? [1] : []
-        content {
-          dynamic "none" {
-            for_each = rule.value.override_action == "none" ? [1] : []
-            content {}
-          }
-
-          dynamic "count" {
-            for_each = rule.value.override_action == "count" ? [1] : []
-            content {}
-          }
-        }
-      }
 
       statement {
         dynamic "geo_match_statement" {
@@ -201,7 +187,7 @@ resource "aws_wafv2_web_acl" "main" {
         dynamic "ip_set_reference_statement" {
           for_each = rule.value.statement_type == "ip_set" ? [1] : []
           content {
-            arn = var.waf.ip_set_arns
+            arn = var.waf.custom_rules.ip_set_arn
           }
         }
 
@@ -260,9 +246,9 @@ resource "aws_wafv2_web_acl" "main" {
       }
 
       visibility_config {
-        cloudwatch_metrics_enabled = var.waf.custom_rules.cloudwatch_metrics_enabled
+        cloudwatch_metrics_enabled = var.waf.cloudwatch_metrics_enabled
         metric_name                = "${var.waf.name}-${rule.value.name}"
-        sampled_requests_enabled   = var.waf.custom_rules.sampled_requests_enabled
+        sampled_requests_enabled   = var.waf.sampled_requests_enabled
       }
     }
   }

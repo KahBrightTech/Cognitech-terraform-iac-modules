@@ -24,7 +24,6 @@ variable "waf" {
     default_action             = optional(string, "allow")
     cloudwatch_metrics_enabled = optional(bool, true)
     rule_file                  = optional(string)
-    ip_set_arns                = optional(list(string))
     sampled_requests_enabled   = optional(bool, true)
 
     # Custom Rules
