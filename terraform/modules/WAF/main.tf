@@ -328,12 +328,12 @@ resource "aws_wafv2_web_acl_association" "main" {
 #--------------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "waf_log_group" {
   count             = var.waf.logging != null && var.waf.logging.create_log_group ? 1 : 0
-  name              = "/aws/wafv2/${var.waf.name}"
+  name              = "aws-waf-logs-${var.waf.name}" # Log group has to follow this naming convention
   retention_in_days = var.waf.logging.log_retention_days
   tags = merge(
     var.common.tags,
     {
-      Name = "/aws/wafv2/${var.waf.name}"
+      Name = "aws-waf-logs-${var.waf.name}"
     }
   )
 }
