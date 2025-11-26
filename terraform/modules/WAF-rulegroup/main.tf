@@ -17,10 +17,10 @@ locals {
 resource "aws_wafv2_rule_group" "rule_group" {
   count = var.rule_group != null ? 1 : 0
 
-  name        = "${var.common.account_name_abr}-${var.common.region_prefix}-${local.rule_group.name}-rulegroup"
-  description = local.rule_group.description != null ? local.rule_group.description : "WAF Rule Group - ${local.rule_group.name}"
+  name        = "${var.common.account_name_abr}-${var.common.region_prefix}-${var.rule_group.name}-rulegroup"
+  description = var.rule_group.description != null ? var.rule_group.description : "WAF Rule Group - ${var.rule_group.name}"
   scope       = var.scope
-  capacity    = local.rule_group.capacity
+  capacity    = var.rule_group.capacity
 
   # Rule_group_files Rules
   dynamic "rule" {
@@ -419,13 +419,13 @@ resource "aws_wafv2_rule_group" "rule_group" {
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = local.rule_group.name
+    metric_name                = var.rule_group.name
     sampled_requests_enabled   = true
   }
 
   tags = merge(var.common.tags,
     {
-      Name = local.rule_group.name
+      Name = var.rule_group.name
     }
   )
 }
