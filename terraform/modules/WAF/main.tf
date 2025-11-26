@@ -142,9 +142,9 @@ resource "aws_wafv2_web_acl" "main" {
       }
 
       visibility_config {
-        cloudwatch_metrics_enabled = rule.value.cloudwatch_metrics_enabled
-        metric_name                = rule.value.metric_name
-        sampled_requests_enabled   = rule.value.sampled_requests_enabled
+        cloudwatch_metrics_enabled = var.waf.cloudwatch_metrics_enabled
+        metric_name                = var.waf.name
+        sampled_requests_enabled   = var.waf.sampled_requests_enabled
       }
     }
   }
@@ -260,9 +260,9 @@ resource "aws_wafv2_web_acl" "main" {
       }
 
       visibility_config {
-        cloudwatch_metrics_enabled = rule.value.cloudwatch_metrics_enabled
-        metric_name                = rule.value.metric_name
-        sampled_requests_enabled   = rule.value.sampled_requests_enabled
+        cloudwatch_metrics_enabled = var.waf.custom_rules.cloudwatch_metrics_enabled
+        metric_name                = "${var.waf.name}-${rule.value.name}"
+        sampled_requests_enabled   = var.waf.custom_rules.sampled_requests_enabled
       }
     }
   }
