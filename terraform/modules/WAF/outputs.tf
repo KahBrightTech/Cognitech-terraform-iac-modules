@@ -3,37 +3,37 @@
 #--------------------------------------------------------------------
 output "web_acl_id" {
   description = "The ID of the WAF Web ACL"
-  value       = var.waf.create_waf ? aws_wafv2_web_acl.main[0].id : null
+  value       = aws_wafv2_web_acl.main.id
 }
 
 output "web_acl_arn" {
   description = "The ARN of the WAF Web ACL"
-  value       = var.waf.create_waf ? aws_wafv2_web_acl.main[0].arn : null
+  value       = aws_wafv2_web_acl.main.arn
 }
 
 output "web_acl_name" {
   description = "The name of the WAF Web ACL"
-  value       = var.waf.create_waf ? aws_wafv2_web_acl.main[0].name : null
+  value       = aws_wafv2_web_acl.main.name
 }
 
 output "web_acl_capacity" {
   description = "The capacity of the WAF Web ACL"
-  value       = var.waf.create_waf ? aws_wafv2_web_acl.main[0].capacity : null
+  value       = aws_wafv2_web_acl.main.capacity
 }
 
 output "web_acl_description" {
   description = "The description of the WAF Web ACL"
-  value       = var.waf.create_waf ? aws_wafv2_web_acl.main[0].description : null
+  value       = aws_wafv2_web_acl.main.description
 }
 
 output "web_acl_scope" {
   description = "The scope of the WAF Web ACL"
-  value       = var.waf.create_waf ? aws_wafv2_web_acl.main[0].scope : null
+  value       = aws_wafv2_web_acl.main.scope
 }
 
 output "web_acl_tags" {
   description = "The tags applied to the WAF Web ACL"
-  value       = var.waf.create_waf ? aws_wafv2_web_acl.main[0].tags_all : {}
+  value       = aws_wafv2_web_acl.main.tags_all
 }
 
 #--------------------------------------------------------------------
@@ -41,7 +41,7 @@ output "web_acl_tags" {
 #--------------------------------------------------------------------
 output "web_acl_association_id" {
   description = "The ID of the WAF Web ACL association"
-  value       = try(var.waf.association.associate_alb, false) && try(var.waf.association.alb_arns, null) != null ? [for k, v in aws_wafv2_web_acl_association.main : v.id] : []
+  value       = var.waf.association != null && var.waf.association.associate_alb && var.waf.association.alb_arns != null ? [for k, v in aws_wafv2_web_acl_association.main : v.id] : []
 }
 
 #--------------------------------------------------------------------
@@ -49,17 +49,17 @@ output "web_acl_association_id" {
 #--------------------------------------------------------------------
 output "logging_configuration_id" {
   description = "The ID of the WAF logging configuration"
-  value       = try(var.waf.logging.enabled, false) && var.waf.create_waf ? aws_wafv2_web_acl_logging_configuration.main[0].id : null
+  value       = var.waf.logging != null && var.waf.logging.enabled ? aws_wafv2_web_acl_logging_configuration.main[0].id : null
 }
 
 output "log_group_name" {
   description = "The name of the CloudWatch log group"
-  value       = try(var.waf.logging.create_log_group, false) ? aws_cloudwatch_log_group.waf_log_group[0].name : null
+  value       = var.waf.logging != null && var.waf.logging.create_log_group ? aws_cloudwatch_log_group.waf_log_group[0].name : null
 }
 
 output "log_group_arn" {
   description = "The ARN of the CloudWatch log group"
-  value       = try(var.waf.logging.create_log_group, false) ? aws_cloudwatch_log_group.waf_log_group[0].arn : null
+  value       = var.waf.logging != null && var.waf.logging.create_log_group ? aws_cloudwatch_log_group.waf_log_group[0].arn : null
 }
 
 #--------------------------------------------------------------------
@@ -67,19 +67,20 @@ output "log_group_arn" {
 #--------------------------------------------------------------------
 output "waf_summary" {
   description = "Summary of the WAF configuration"
-  value = var.waf.create_waf ? {
-    web_acl_id          = aws_wafv2_web_acl.main[0].id
-    web_acl_arn         = aws_wafv2_web_acl.main[0].arn
-    web_acl_name        = aws_wafv2_web_acl.main[0].name
-    web_acl_capacity    = aws_wafv2_web_acl.main[0].capacity
-    scope               = aws_wafv2_web_acl.main[0].scope
-    default_action      = var.waf.default_action
-    managed_rules_count = length(coalesce(var.waf.managed_rule_groups, []))
-    custom_rules_count  = length(coalesce(var.waf.custom_rules, []))
-    json_files_loaded   = length(coalesce(var.waf.rule_files, []))
-    logging_enabled     = try(var.waf.logging.enabled, false)
-    alb_associated      = try(var.waf.association.associate_alb, false) && try(var.waf.association.alb_arns, null) != null
-  } : null
+  value = {
+    web_acl_id             = aws_wafv2_web_acl.main.id
+    web_acl_arn            = aws_wafv2_web_acl.main.arn
+    web_acl_name           = aws_wafv2_web_acl.main.name
+    web_acl_capacity       = aws_wafv2_web_acl.main.capacity
+    scope                  = aws_wafv2_web_acl.main.scope
+    default_action         = var.waf.default_action
+    rule_group_refs_count  = var.waf.rule_group_references != null ? length(var.waf.rule_group_references) : 0
+    custom_rules_count     = var.waf.custom_rules != null ? length(var.waf.custom_rules) : 0
+    json_file_loaded       = var.waf.rule_file != null ? 1 : 0
+    logging_enabled        = var.waf.logging != null ? var.waf.logging.enabled : false
+    alb_associated         = var.waf.association != null && var.waf.association.associate_alb && var.waf.association.alb_arns != null
+    alb_associations_count = var.waf.association != null && var.waf.association.associate_alb && var.waf.association.alb_arns != null ? length(var.waf.association.alb_arns) : 0
+  }
 }
 
 #--------------------------------------------------------------------
@@ -87,12 +88,12 @@ output "waf_summary" {
 #--------------------------------------------------------------------
 output "waf_web_acl_id" {
   description = "The ID of the WAF Web ACL (deprecated - use web_acl_id instead)"
-  value       = var.waf.create_waf ? aws_wafv2_web_acl.main[0].id : null
+  value       = aws_wafv2_web_acl.main.id
 }
 
 output "waf_web_acl_arn" {
   description = "The ARN of the WAF Web ACL (deprecated - use web_acl_arn instead)"
-  value       = var.waf.create_waf ? aws_wafv2_web_acl.main[0].arn : null
+  value       = aws_wafv2_web_acl.main.arn
 }
 
 
