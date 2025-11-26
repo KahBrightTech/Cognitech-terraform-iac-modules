@@ -318,7 +318,7 @@ resource "aws_wafv2_web_acl" "main" {
 # WAF Association with ALB/CloudFront
 #--------------------------------------------------------------------
 resource "aws_wafv2_web_acl_association" "main" {
-  count        = var.waf.association != null && var.waf.association.associate_alb ? length(var.waf.association.alb_arns) : 0
+  count        = try(length(var.waf.association.alb_arns), 0)
   resource_arn = var.waf.association.alb_arns[count.index]
   web_acl_arn  = aws_wafv2_web_acl.main.arn
 }
