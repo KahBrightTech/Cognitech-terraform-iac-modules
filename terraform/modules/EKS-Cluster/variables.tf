@@ -15,6 +15,6 @@ variable "eks_cluster" {
     name       = string
     role_arn   = string
     subnet_ids = list(string)
-    version    = optional(string, "1.29")
+    version    = optional(string, "1.32")
   })
 }
