@@ -1,34 +1,14 @@
-#--------------------------------------------------------------------
-# IAM Policy outputs
-#--------------------------------------------------------------------
-output "iam_policy_id" {
-  description = "The ID of the IAM policy created for the role"
-  value       = aws_iam_policy.policy.id
-}
-output "iam_policy_arn" {
-  description = "The ARN of the IAM policy created for the role"
-  value       = aws_iam_policy.policy.arn
+output "eks_cluster_id" {
+  description = "EKS Cluster name."
+  value       = aws_eks_cluster.eks_cluster.id
 }
 
-output "aws_iam_policy_name" {
-  description = "The name of the IAM policy created for the role"
-  value       = aws_iam_policy.policy.name
+output "eks_cluster_endpoint" {
+  description = "EKS Cluster endpoint."
+  value       = aws_eks_cluster.eks_cluster.endpoint
 }
 
-#--------------------------------------------------------------------
-# IAM Role outputs
-#--------------------------------------------------------------------
-output "iam_role_id" {
-  description = "The ID of the IAM role created"
-  value       = aws_iam_role.role.id
-}
-
-output "iam_role_arn" {
-  description = "The ARN of the IAM role created"
-  value       = aws_iam_role.role.arn
-}
-
-output "aws_iam_role_name" {
-  description = "The name of the IAM role created"
-  value       = aws_iam_role.role.name
+output "eks_cluster_arn" {
+  description = "EKS Cluster ARN."
+  value       = aws_eks_cluster.eks_cluster.arn
 }

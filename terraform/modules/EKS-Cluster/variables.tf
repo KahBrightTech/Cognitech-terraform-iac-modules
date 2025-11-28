@@ -9,25 +9,12 @@ variable "common" {
   })
 }
 
-variable "iam_role" {
-  description = "IAM Role configuration"
+variable "eks_cluster" {
+  description = "EKS cluster configuration object."
   type = object({
-    name                      = string
-    description               = optional(string)
-    path                      = optional(string, "/")
-    assume_role_policy        = string
-    custom_assume_role_policy = optional(bool, true)
-    force_detach_policies     = optional(bool, false)
-    managed_policy_arns       = optional(list(string))
-    max_session_duration      = optional(number, 3600)
-    permissions_boundary      = optional(string)
-    policy = optional(object({
-      name          = string
-      description   = optional(string)
-      policy        = string
-      path          = optional(string, "/")
-      custom_policy = optional(bool, true)
-    }))
+    name       = string
+    role_arn   = string
+    subnet_ids = list(string)
+    version    = optional(string, "1.29")
   })
-  default = null
 }
