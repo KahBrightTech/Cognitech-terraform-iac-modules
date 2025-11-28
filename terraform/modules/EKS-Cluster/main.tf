@@ -16,6 +16,9 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 
   version = var.eks_cluster.version
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-eks-cluster"
+  })
 }
 
 
