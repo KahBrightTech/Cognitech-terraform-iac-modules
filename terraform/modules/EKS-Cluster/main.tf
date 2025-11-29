@@ -35,14 +35,14 @@ resource "aws_iam_openid_connect_provider" "eks_oidc" {
 #--------------------------------------------------------------------
 
 resource "tls_private_key" "key" {
-  count     = var.eks_cluster.key_pair.is_this_ec2_node_group ? 1 : 0
+  count     = var.eks_cluster.is_this_ec2_node_group ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
 
 resource "aws_key_pair" "generated_key" {
-  count      = var.eks_cluster.key_pair.is_this_ec2_node_group ? 1 : 0
+  count      = var.eks_cluster.is_this_ec2_node_group ? 1 : 0
   key_name   = var.eks_cluster.key_pair.name
   public_key = tls_private_key.key[0].public_key_openssh
   tags = merge(var.common.tags,
@@ -54,7 +54,7 @@ resource "aws_key_pair" "generated_key" {
 
 
 resource "aws_secretsmanager_secret" "private_key_secret" {
-  count                          = var.eks_cluster.key_pair.is_this_ec2_node_group && var.eks_cluster.key_pair.create_secret ? 1 : 0
+  count                          = var.eks_cluster.is_this_ec2_node_group && var.eks_cluster.key_pair.create_secret ? 1 : 0
   name_prefix                    = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.key_pair.secret_name}"
   description                    = var.eks_cluster.key_pair.secret_description
   recovery_window_in_days        = 7
@@ -70,7 +70,7 @@ resource "aws_secretsmanager_secret" "private_key_secret" {
 
 
 resource "aws_secretsmanager_secret_version" "private_key_secret_version" {
-  count         = var.eks_cluster.key_pair.is_this_ec2_node_group && var.eks_cluster.key_pair.create_secret ? 1 : 0
+  count         = var.eks_cluster.is_this_ec2_node_group && var.eks_cluster.key_pair.key_pair.create_secret ? 1 : 0
   secret_id     = aws_secretsmanager_secret.private_key_secret[0].id
   secret_string = tls_private_key.key[0].private_key_pem
 }
