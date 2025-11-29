@@ -8,7 +8,7 @@ data "aws_region" "current" {}
 # EKS Cluster
 #--------------------------------------------------------------------
 resource "aws_eks_cluster" "eks_cluster" {
-  name     = var.eks_cluster.name
+  name     = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-eks-cluster"
   role_arn = var.eks_cluster.role_arn
 
   vpc_config {
