@@ -26,7 +26,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 #--------------------------------------------------------------------
 resource "aws_iam_openid_connect_provider" "eks_oidc" {
   client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = var.eks_cluster.oidc_thumbprint
+  thumbprint_list = [var.eks_cluster.oidc_thumbprint]
   url             = aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
 }
 
