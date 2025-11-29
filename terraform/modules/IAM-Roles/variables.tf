@@ -22,9 +22,9 @@ variable "iam_role" {
     max_session_duration      = optional(number, 3600)
     permissions_boundary      = optional(string)
     policy = optional(object({
-      name          = string
+      name          = optional(string)
       description   = optional(string)
-      policy        = string
+      policy        = optional(string)
       path          = optional(string, "/")
       custom_policy = optional(bool, true)
     }))
