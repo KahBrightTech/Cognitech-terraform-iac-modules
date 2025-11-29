@@ -24,6 +24,7 @@ locals {
 #--------------------------------------------------------------------
 
 resource "aws_iam_policy" "policy" {
+  count       = var.iam_role.create_custom_policy ? 1 : 0
   name        = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.policy.name}-policy"
   description = var.iam_role.policy.description
   path        = var.iam_role.policy.path
@@ -73,7 +74,7 @@ resource "aws_iam_role" "role" {
   max_session_duration  = var.iam_role.max_session_duration
   permissions_boundary  = var.iam_role.permissions_boundary
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.policy.name}-role"
+    "Name" = var.iam_role.create_custom_policy ? "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.policy.name}-role" : "${var.common.account_name}-${var.common.region_prefix}-role"
   })
 }
 
@@ -82,8 +83,9 @@ resource "aws_iam_role" "role" {
 #Attach IAM Policy to Role
 #--------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
+  count      = var.iam_role.create_custom_policy ? 1 : 0
   role       = aws_iam_role.role.name
-  policy_arn = aws_iam_policy.policy.arn
+  policy_arn = aws_iam_policy.policy[0].arn
 }
 
 #--------------------------------------------------------------------

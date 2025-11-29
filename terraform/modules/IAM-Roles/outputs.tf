@@ -3,16 +3,16 @@
 #--------------------------------------------------------------------
 output "iam_policy_id" {
   description = "The ID of the IAM policy created for the role"
-  value       = aws_iam_policy.policy.id
+  value       = length(aws_iam_policy.policy) > 0 ? aws_iam_policy.policy[0].id : null
 }
 output "iam_policy_arn" {
   description = "The ARN of the IAM policy created for the role"
-  value       = aws_iam_policy.policy.arn
+  value       = length(aws_iam_policy.policy) > 0 ? aws_iam_policy.policy[0].arn : null
 }
 
 output "aws_iam_policy_name" {
   description = "The name of the IAM policy created for the role"
-  value       = aws_iam_policy.policy.name
+  value       = length(aws_iam_policy.policy) > 0 ? aws_iam_policy.policy[0].name : null
 }
 
 #--------------------------------------------------------------------
