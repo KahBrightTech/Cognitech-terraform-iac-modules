@@ -26,7 +26,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 #--------------------------------------------------------------------
 resource "aws_iam_openid_connect_provider" "eks_oidc" {
   client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = var.eks_cluster.oidc_thumbprints
+  thumbprint_list = var.eks_cluster.oidc_thumbprint
   url             = aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
 }
 
@@ -70,7 +70,7 @@ resource "aws_secretsmanager_secret" "private_key_secret" {
 
 
 resource "aws_secretsmanager_secret_version" "private_key_secret_version" {
-  count         = var.eks_cluster.is_this_ec2_node_group && var.eks_cluster.key_pair.key_pair.create_secret ? 1 : 0
+  count         = var.eks_cluster.is_this_ec2_node_group && var.eks_cluster.key_pair.create_secret ? 1 : 0
   secret_id     = aws_secretsmanager_secret.private_key_secret[0].id
   secret_string = tls_private_key.key[0].private_key_pem
 }
