@@ -3,6 +3,16 @@
 #--------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+data "aws_ami" "launch_template" {
+  most_recent        = true
+  include_deprecated = true
+  owners             = local.ami_owners
+
+  filter {
+    name   = "name"
+    values = ["${local.ami}"]
+  }
+}
 #--------------------------------------------------------------------
 # Locals
 #--------------------------------------------------------------------
@@ -57,17 +67,6 @@ resource "aws_eks_node_group" "eks_node_group" {
   }
 }
 
-
-data "aws_ami" "launch_template" {
-  most_recent        = true
-  include_deprecated = true
-  owners             = local.ami_owners
-
-  filter {
-    name   = "name"
-    values = ["${local.ami}"]
-  }
-}
 #--------------------------------------------------------------------
 # Create Launch Template
 #--------------------------------------------------------------------
