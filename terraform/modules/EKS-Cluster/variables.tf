@@ -16,7 +16,7 @@ variable "eks_cluster" {
     role_arn               = string
     subnet_ids             = list(string)
     version                = optional(string, "1.32")
-    oidc_thumbprint        = optional(string)
+    oidc_thumbprint        = optional(string, "06b25927c42a721631c1efd9431e648fa62e1e39")
     is_this_ec2_node_group = optional(bool, false)
     key_pair = object({
       name               = optional(string)
