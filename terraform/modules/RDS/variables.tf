@@ -1,0 +1,74 @@
+variable "common" {
+  description = "Common variables used by all resources"
+  type = object({
+    global        = bool
+    tags          = map(string)
+    account_name  = string
+    region_prefix = string
+  })
+}
+
+variable "rds_instance" {
+  description = "RDS instance configuration"
+  type = object({
+    name                  = string
+    engine                = string                  # e.g., "mysql", "postgres", "mariadb", "oracle-se2", "sqlserver-ex"
+    engine_version        = string                  # e.g., "8.0.35" for MySQL, "15.4" for PostgreSQL
+    instance_class        = string                  # e.g., "db.t3.micro", "db.t3.small", "db.m5.large"
+    allocated_storage     = number                  # Initial storage in GB
+    max_allocated_storage = optional(number)        # Maximum storage for autoscaling
+    storage_type          = optional(string, "gp3") # "gp2", "gp3", "io1", "io2"
+    storage_encrypted     = optional(bool, true)
+    kms_key_id            = optional(string) # KMS key for storage encryption
+    iops                  = optional(number) # Required for io1/io2 storage types
+
+    database_name   = optional(string) # Initial database name
+    master_username = string           # Master username
+    port            = optional(number) # Database port (default depends on engine)
+
+    subnet_ids             = list(string) # List of subnet IDs for DB subnet group
+    vpc_security_group_ids = list(string) # List of VPC security group IDs
+    publicly_accessible    = optional(bool, false)
+
+    multi_az             = optional(bool, false)
+    availability_zone    = optional(string) # Specific AZ (only if multi_az is false)
+    parameter_group_name = optional(string) # DB parameter group name (if not creating custom one)
+    option_group_name    = optional(string) # DB option group name
+
+    # Custom Parameter Group configuration
+    create_parameter_group = optional(bool, false)
+    parameter_group_family = optional(string) # e.g., "postgres15", "mysql8.0", "mariadb10.11"
+    parameters = optional(list(object({
+      name         = string
+      value        = string
+      apply_method = optional(string, "immediate") # "immediate" or "pending-reboot"
+    })))
+
+    backup_retention_period    = optional(number, 7) # Days to retain backups (0-35)
+    backup_window              = optional(string)    # Preferred backup window (UTC)
+    maintenance_window         = optional(string)    # Preferred maintenance window (UTC)
+    auto_minor_version_upgrade = optional(bool, true)
+
+    deletion_protection   = optional(bool, true)
+    skip_final_snapshot   = optional(bool, false)
+    copy_tags_to_snapshot = optional(bool, true)
+
+    enabled_cloudwatch_logs_exports       = optional(list(string), []) # e.g., ["error", "general", "slowquery"]
+    monitoring_interval                   = optional(number, 0)        # 0, 1, 5, 10, 15, 30, 60 seconds
+    monitoring_role_arn                   = optional(string)           # IAM role for enhanced monitoring
+    performance_insights_enabled          = optional(bool, false)
+    performance_insights_kms_key_id       = optional(string)
+    performance_insights_retention_period = optional(number, 7) # 7 or 731 days
+
+    apply_immediately = optional(bool, false)
+
+    # Secrets Manager configuration
+    secrets_kms_key_id          = optional(string)     # KMS key for secrets encryption
+    secret_recovery_window_days = optional(number, 30) # 7-30 days
+
+    # Read Replica configuration
+    create_read_replica    = optional(bool, false)
+    replica_instance_class = optional(string) # If different from primary
+  })
+  default = null
+}
