@@ -28,6 +28,10 @@ locals {
     AL2    = { pattern = "amzn2-ami-kernel-5.10-hvm-*-x86_64-gp2", owners = ["amazon"] }
     AL2023 = { pattern = "al2023-ami-2023.*-kernel-6.1-x86_64", owners = ["amazon"] }
 
+    # EKS Optimized AMIs
+    EKSAL2    = { pattern = "amazon-eks-node-*", owners = ["amazon"] }
+    EKSAL2023 = { pattern = "amazon-eks-node-al2023-x86_64-standard-*", owners = ["amazon"] }
+
     # Red Hat Enterprise Linux AMIs
     RHEL9  = { pattern = "RHEL-9.6.0_HVM_*-x86_64-*-Hourly2-GP3", owners = ["amazon"] }
     RHEL10 = { pattern = "RHEL-10.0.0_HVM_*-x86_64-*-Hourly2-GP3", owners = ["amazon"] }

@@ -30,18 +30,8 @@ variable "eks_node_group" {
     force_update_version      = optional(bool, false)
     capacity_type             = optional(string, "ON_DEMAND")
     launch_template = optional(object({
-      name                    = optional(string)
-      custom_ami              = optional(string)
-      instance_type           = optional(string)
-      key_name                = optional(string)
-      vpc_security_group_ids  = optional(list(string))
-      user_data               = optional(string)
-      launch_template_version = optional(string, "$Latest")
-      ami_config = object({
-        os_release_date = optional(string)
-      })
-      launch_template_id      = optional(string)
-      launch_template_version = optional(string)
+      id      = string
+      version = optional(string, "$Latest")
     }))
   })
 }
