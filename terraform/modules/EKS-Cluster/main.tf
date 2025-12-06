@@ -41,10 +41,10 @@ resource "aws_iam_openid_connect_provider" "eks_oidc" {
 }
 
 #--------------------------------------------------------------------
-# EKS Add-ons (Required for System Pods)
+# EKS Networking Add-ons (No nodes required)
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "vpc_cni" {
-  count                       = var.eks_cluster.enable_addons ? 1 : 0
+  count                       = var.eks_cluster.enable_networking_addons ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "vpc-cni"
   resolve_conflicts_on_update = "PRESERVE"
@@ -55,7 +55,7 @@ resource "aws_eks_addon" "vpc_cni" {
 }
 
 resource "aws_eks_addon" "kube_proxy" {
-  count                       = var.eks_cluster.enable_addons ? 1 : 0
+  count                       = var.eks_cluster.enable_networking_addons ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "kube-proxy"
   resolve_conflicts_on_update = "PRESERVE"
@@ -65,8 +65,12 @@ resource "aws_eks_addon" "kube_proxy" {
   })
 }
 
+#--------------------------------------------------------------------
+# EKS Application Add-ons (Requires nodes to be available)
+#--------------------------------------------------------------------
+
 resource "aws_eks_addon" "coredns" {
-  count                       = var.eks_cluster.enable_addons ? 1 : 0
+  count                       = var.eks_cluster.enable_application_addons ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "coredns"
   resolve_conflicts_on_update = "PRESERVE"
@@ -77,7 +81,7 @@ resource "aws_eks_addon" "coredns" {
 }
 
 resource "aws_eks_addon" "metrics_server" {
-  count                       = var.eks_cluster.enable_addons ? 1 : 0
+  count                       = var.eks_cluster.enable_application_addons ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "metrics-server"
   resolve_conflicts_on_update = "PRESERVE"
