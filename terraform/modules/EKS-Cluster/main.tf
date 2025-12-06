@@ -66,6 +66,17 @@ resource "aws_eks_addon" "coredns" {
   })
 }
 
+resource "aws_eks_addon" "metrics_server" {
+  count                       = var.eks_cluster.enable_addons ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "metrics-server"
+  resolve_conflicts_on_update = "PRESERVE"
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-metrics-server-addon"
+  })
+}
+
 #--------------------------------------------------------------------
 # Key Pair Resource
 #--------------------------------------------------------------------
