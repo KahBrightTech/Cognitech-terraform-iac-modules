@@ -12,13 +12,19 @@ variable "common" {
 variable "eks_cluster" {
   description = "EKS cluster configuration object."
   type = object({
-    name                   = string
-    role_arn               = string
-    subnet_ids             = list(string)
-    version                = optional(string, "1.32")
-    oidc_thumbprint        = optional(string)
-    is_this_ec2_node_group = optional(bool, false)
-    enable_addons          = optional(bool, true)
+    name                                        = string
+    role_arn                                    = string
+    subnet_ids                                  = list(string)
+    version                                     = optional(string, "1.32")
+    oidc_thumbprint                             = optional(string)
+    is_this_ec2_node_group                      = optional(bool, false)
+    enable_addons                               = optional(bool, true)
+    endpoint_private_access                     = optional(bool, false)
+    endpoint_public_access                      = optional(bool, true)
+    public_access_cidrs                         = optional(list(string), ["0.0.0.0/0"])
+    authentication_mode                         = optional(string, "API_AND_CONFIG_MAP")
+    bootstrap_cluster_creator_admin_permissions = optional(bool, true)
+    enabled_cluster_log_types                   = optional(list(string), [])
     key_pair = object({
       name               = optional(string)
       name_prefix        = optional(string)

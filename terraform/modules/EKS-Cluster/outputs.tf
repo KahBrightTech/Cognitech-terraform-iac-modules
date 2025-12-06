@@ -18,6 +18,31 @@ output "eks_cluster_arn" {
   value       = aws_eks_cluster.eks_cluster.arn
 }
 
+output "eks_cluster_security_group_id" {
+  description = "The cluster security group ID created by EKS."
+  value       = aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id
+}
+
+output "eks_cluster_oidc_issuer_url" {
+  description = "The URL of the OpenID Connect identity provider."
+  value       = aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer
+}
+
+output "eks_cluster_platform_version" {
+  description = "The platform version for the cluster."
+  value       = aws_eks_cluster.eks_cluster.platform_version
+}
+
+output "eks_cluster_status" {
+  description = "The status of the EKS cluster."
+  value       = aws_eks_cluster.eks_cluster.status
+}
+
+output "oidc_provider_arn" {
+  description = "ARN of the OIDC Provider for EKS."
+  value       = aws_iam_openid_connect_provider.eks_oidc.arn
+}
+
 
 output "name" {
   description = "The name of the generated key pair"

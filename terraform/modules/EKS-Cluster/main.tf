@@ -12,8 +12,18 @@ resource "aws_eks_cluster" "eks_cluster" {
   role_arn = var.eks_cluster.role_arn
 
   vpc_config {
-    subnet_ids = var.eks_cluster.subnet_ids
+    subnet_ids              = var.eks_cluster.subnet_ids
+    endpoint_private_access = var.eks_cluster.endpoint_private_access
+    endpoint_public_access  = var.eks_cluster.endpoint_public_access
+    public_access_cidrs     = var.eks_cluster.public_access_cidrs
   }
+
+  access_config {
+    authentication_mode                         = var.eks_cluster.authentication_mode
+    bootstrap_cluster_creator_admin_permissions = var.eks_cluster.bootstrap_cluster_creator_admin_permissions
+  }
+
+  enabled_cluster_log_types = var.eks_cluster.enabled_cluster_log_types
 
   version = var.eks_cluster.version
   tags = merge(var.common.tags, {
