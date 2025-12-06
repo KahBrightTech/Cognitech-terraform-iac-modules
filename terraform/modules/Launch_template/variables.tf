@@ -28,7 +28,9 @@ variable "launch_template" {
     #   delete_on_termination       = optional(bool)
     #   associate_public_ip_address = optional(bool)
     # })))
-    user_data = optional(string)
+    user_data        = optional(string)
+    volume_size      = optional(number)
+    root_device_name = optional(string) # e.g., "/dev/xvda" for Linux, "/dev/sda1" for some Linux, "xvda" for Windows
   })
   default = null
 }

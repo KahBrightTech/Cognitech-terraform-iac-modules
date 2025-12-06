@@ -71,6 +71,20 @@ resource "aws_launch_template" "main" {
   # }
   vpc_security_group_ids = var.launch_template.vpc_security_group_ids
   user_data              = var.launch_template.user_data != null ? base64encode(var.launch_template.user_data) : null
+
+  dynamic "block_device_mappings" {
+    for_each = var.launch_template.volume_size != null ? [1] : []
+    content {
+      device_name = var.launch_template.root_device_name
+      ebs {
+        volume_size           = var.launch_template.volume_size
+        volume_type           = "gp3"
+        delete_on_termination = true
+        encrypted             = true
+      }
+    }
+  }
+
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.launch_template.name}-lt"
   })
