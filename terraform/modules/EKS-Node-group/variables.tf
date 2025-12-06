@@ -23,7 +23,7 @@ variable "eks_node_group" {
     ec2_ssh_key               = string
     source_security_group_ids = list(string)
     ami_type                  = optional(string)
-    disk_size                 = optional(number, 20)
+    disk_size                 = optional(number)
     labels                    = optional(map(string), {})
     tags                      = optional(map(string), {})
     version                   = optional(string)
