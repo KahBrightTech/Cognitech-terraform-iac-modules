@@ -31,6 +31,42 @@ resource "aws_iam_openid_connect_provider" "eks_oidc" {
 }
 
 #--------------------------------------------------------------------
+# EKS Add-ons (Required for System Pods)
+#--------------------------------------------------------------------
+resource "aws_eks_addon" "vpc_cni" {
+  count                       = var.eks_cluster.enable_addons ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "vpc-cni"
+  resolve_conflicts_on_update = "PRESERVE"
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-vpc-cni-addon"
+  })
+}
+
+resource "aws_eks_addon" "kube_proxy" {
+  count                       = var.eks_cluster.enable_addons ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "kube-proxy"
+  resolve_conflicts_on_update = "PRESERVE"
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-kube-proxy-addon"
+  })
+}
+
+resource "aws_eks_addon" "coredns" {
+  count                       = var.eks_cluster.enable_addons ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "coredns"
+  resolve_conflicts_on_update = "PRESERVE"
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-coredns-addon"
+  })
+}
+
+#--------------------------------------------------------------------
 # Key Pair Resource
 #--------------------------------------------------------------------
 

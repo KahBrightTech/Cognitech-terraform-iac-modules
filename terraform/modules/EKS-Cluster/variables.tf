@@ -18,6 +18,7 @@ variable "eks_cluster" {
     version                = optional(string, "1.32")
     oidc_thumbprint        = optional(string)
     is_this_ec2_node_group = optional(bool, false)
+    enable_addons          = optional(bool, true)
     key_pair = object({
       name               = optional(string)
       name_prefix        = optional(string)
