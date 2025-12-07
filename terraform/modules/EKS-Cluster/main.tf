@@ -3,7 +3,10 @@
 #--------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
-
+data "aws_iam_roles" "admin_role" {
+  name_regex  = "AWSReservedSSO_AdministratorAccess_.*"
+  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+}
 #--------------------------------------------------------------------
 # EKS Cluster
 #--------------------------------------------------------------------
@@ -29,6 +32,25 @@ resource "aws_eks_cluster" "eks_cluster" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-eks-cluster"
   })
+}
+
+#--------------------------------------------------------------------
+# EKS Access Entry and Policy Association
+#--------------------------------------------------------------------
+resource "aws_eks_access_entry" "admin_role" {
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  principal_arn = data.aws_iam_roles.admin_role.arns[0]
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "admin_policy" {
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  principal_arn = aws_eks_access_entry.admin_role.principal_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
 }
 
 #--------------------------------------------------------------------
