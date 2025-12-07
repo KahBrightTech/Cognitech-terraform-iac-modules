@@ -3,10 +3,6 @@
 #--------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
-data "aws_iam_roles" "admin_role" {
-  name_regex  = "AWSReservedSSO_AdministratorAccess_.*"
-  path_prefix = "/aws-reserved/sso.amazonaws.com/"
-}
 #--------------------------------------------------------------------
 # EKS Cluster
 #--------------------------------------------------------------------
@@ -38,40 +34,25 @@ resource "aws_eks_cluster" "eks_cluster" {
 # EKS Access Entry and Policy Association
 #--------------------------------------------------------------------
 resource "aws_eks_access_entry" "admin_role" {
+  for_each = toset(var.eks_cluster.principal_arns)
+
   cluster_name  = aws_eks_cluster.eks_cluster.name
-  principal_arn = tolist(data.aws_iam_roles.admin_role.arns)[0]
+  principal_arn = each.value
   type          = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "admin_policy" {
+  for_each = toset(var.eks_cluster.principal_arns)
+
   cluster_name  = aws_eks_cluster.eks_cluster.name
-  principal_arn = aws_eks_access_entry.admin_role.principal_arn
+  principal_arn = each.value
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
     type = "cluster"
   }
-}
 
-#--------------------------------------------------------------------
-# ConfigMap Authentication (Legacy method - optional)
-#--------------------------------------------------------------------
-resource "kubernetes_config_map_v1_data" "aws_auth" {
-  count = var.eks_cluster.enable_configmap_auth ? 1 : 0
-
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = length(var.eks_cluster.configmap_roles) > 0 ? yamlencode(var.eks_cluster.configmap_roles) : yamlencode([])
-    mapUsers = length(var.eks_cluster.configmap_users) > 0 ? yamlencode(var.eks_cluster.configmap_users) : yamlencode([])
-  }
-
-  force = true
-
-  depends_on = [aws_eks_cluster.eks_cluster]
+  depends_on = [aws_eks_access_entry.admin_role]
 }
 
 #--------------------------------------------------------------------
