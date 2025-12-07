@@ -16,8 +16,8 @@ variable "eks_cluster" {
     role_arn   = string
     subnet_ids = list(string)
     access_entries = optional(map(object({
-      principal_arn = string
-      policy_arn    = string
+      principal_arns = list(string)
+      policy_arn     = string
     })), {})
     version                                     = optional(string, "1.32")
     oidc_thumbprint                             = optional(string)

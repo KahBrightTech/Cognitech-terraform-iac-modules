@@ -3,6 +3,20 @@
 #--------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+
+locals {
+  # Create a flat map: each principal gets its own entry
+  access_entries = flatten([
+    for group_name, config in var.eks_cluster.access_entries : [
+      for principal_arn in config.principal_arns : {
+        key           = "${group_name}-${principal_arn}"
+        principal_arn = principal_arn
+        policy_arn    = config.policy_arn
+      }
+    ]
+  ])
+  access_entries_map = { for entry in local.access_entries : entry.key => entry }
+}
 #--------------------------------------------------------------------
 # EKS Cluster
 #--------------------------------------------------------------------
@@ -34,7 +48,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 # EKS Access Entry and Policy Association
 #--------------------------------------------------------------------
 resource "aws_eks_access_entry" "access_entry" {
-  for_each = var.eks_cluster.access_entries
+  for_each = local.access_entries_map
 
   cluster_name  = aws_eks_cluster.eks_cluster.name
   principal_arn = each.value.principal_arn
@@ -42,7 +56,7 @@ resource "aws_eks_access_entry" "access_entry" {
 }
 
 resource "aws_eks_access_policy_association" "access_policy" {
-  for_each = var.eks_cluster.access_entries
+  for_each = local.access_entries_map
 
   cluster_name  = aws_eks_cluster.eks_cluster.name
   principal_arn = each.value.principal_arn
