@@ -54,6 +54,27 @@ resource "aws_eks_access_policy_association" "admin_policy" {
 }
 
 #--------------------------------------------------------------------
+# ConfigMap Authentication (Legacy method - optional)
+#--------------------------------------------------------------------
+resource "kubernetes_config_map_v1_data" "aws_auth" {
+  count = var.eks_cluster.enable_configmap_auth ? 1 : 0
+
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = length(var.eks_cluster.configmap_roles) > 0 ? yamlencode(var.eks_cluster.configmap_roles) : yamlencode([])
+    mapUsers = length(var.eks_cluster.configmap_users) > 0 ? yamlencode(var.eks_cluster.configmap_users) : yamlencode([])
+  }
+
+  force = true
+
+  depends_on = [aws_eks_cluster.eks_cluster]
+}
+
+#--------------------------------------------------------------------
 # OIDC Provider for EKS Cluster
 #--------------------------------------------------------------------
 resource "aws_iam_openid_connect_provider" "eks_oidc" {

@@ -26,6 +26,17 @@ variable "eks_cluster" {
     authentication_mode                         = optional(string, "API_AND_CONFIG_MAP")
     bootstrap_cluster_creator_admin_permissions = optional(bool, true)
     enabled_cluster_log_types                   = optional(list(string), [])
+    enable_configmap_auth                       = optional(bool, false)
+    configmap_roles = optional(list(object({
+      rolearn  = string
+      username = string
+      groups   = list(string)
+    })), [])
+    configmap_users = optional(list(object({
+      userarn  = string
+      username = string
+      groups   = list(string)
+    })), [])
     key_pair = object({
       name               = optional(string)
       name_prefix        = optional(string)

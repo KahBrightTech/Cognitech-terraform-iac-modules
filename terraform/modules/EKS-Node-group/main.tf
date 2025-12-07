@@ -27,7 +27,7 @@ resource "aws_eks_node_group" "eks_node_group" {
   }
 
   ami_type             = var.eks_node_group.ami_type
-  disk_size            = var.eks_node_group.disk_size
+  disk_size            = var.eks_node_group.launch_template != null ? null : var.eks_node_group.disk_size
   labels               = var.eks_node_group.labels
   tags                 = var.eks_node_group.tags
   version              = var.eks_node_group.version
