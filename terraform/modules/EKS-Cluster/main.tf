@@ -33,26 +33,26 @@ resource "aws_eks_cluster" "eks_cluster" {
 #--------------------------------------------------------------------
 # EKS Access Entry and Policy Association
 #--------------------------------------------------------------------
-resource "aws_eks_access_entry" "admin_role" {
-  for_each = toset(var.eks_cluster.principal_arns)
+resource "aws_eks_access_entry" "access_entry" {
+  for_each = var.eks_cluster.access_entries
 
   cluster_name  = aws_eks_cluster.eks_cluster.name
-  principal_arn = each.value
+  principal_arn = each.value.principal_arn
   type          = "STANDARD"
 }
 
-resource "aws_eks_access_policy_association" "admin_policy" {
-  for_each = toset(var.eks_cluster.principal_arns)
+resource "aws_eks_access_policy_association" "access_policy" {
+  for_each = var.eks_cluster.access_entries
 
   cluster_name  = aws_eks_cluster.eks_cluster.name
-  principal_arn = each.value
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = each.value.principal_arn
+  policy_arn    = each.value.policy_arn
 
   access_scope {
     type = "cluster"
   }
 
-  depends_on = [aws_eks_access_entry.admin_role]
+  depends_on = [aws_eks_access_entry.access_entry]
 }
 
 #--------------------------------------------------------------------
