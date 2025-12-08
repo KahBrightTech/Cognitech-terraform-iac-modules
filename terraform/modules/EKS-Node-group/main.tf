@@ -64,7 +64,7 @@ resource "aws_autoscaling_group_tag" "nodes_group" {
 
   tag {
     key                 = "Name"
-    value               = var.eks_node_group.ec2_instance_name
+    value               = "${var.eks_node_group.ec2_instance_name}-${each.value}"
     propagate_at_launch = true
   }
 }
