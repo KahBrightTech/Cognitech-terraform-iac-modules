@@ -30,6 +30,7 @@ variable "eks_node_group" {
     version                   = optional(string)
     force_update_version      = optional(bool, false)
     capacity_type             = optional(string, "ON_DEMAND")
+    ec2_instance_name         = optional(string, "eks_node_group")
     launch_template = optional(object({
       id      = string
       version = optional(string, "$Latest")
