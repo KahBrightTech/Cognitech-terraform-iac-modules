@@ -70,13 +70,7 @@ resource "aws_launch_template" "main" {
   #   delete_on_termination       = var.launch_template.network_interfaces.delete_on_termination
   # }
   vpc_security_group_ids = var.launch_template.vpc_security_group_ids
-
-  dynamic "user_data" {
-    for_each = var.launch_template.user_data == null ? [] : [1]
-    content {
-      user_data = base64encode(var.launch_template.user_data)
-    }
-  }
+  user_data              = try(base64encode(var.launch_template.user_data), null)
 
   dynamic "block_device_mappings" {
     for_each = var.launch_template.volume_size != null ? [1] : []
