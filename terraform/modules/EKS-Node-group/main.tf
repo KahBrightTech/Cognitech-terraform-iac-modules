@@ -29,10 +29,15 @@ resource "aws_eks_node_group" "eks_node_group" {
     }
   }
 
-  ami_type             = var.eks_node_group.ami_type
-  disk_size            = var.eks_node_group.launch_template != null ? null : var.eks_node_group.disk_size
-  labels               = var.eks_node_group.labels
-  tags                 = var.eks_node_group.tags
+  ami_type  = var.eks_node_group.ami_type
+  disk_size = var.eks_node_group.launch_template != null ? null : var.eks_node_group.disk_size
+  labels    = var.eks_node_group.labels
+  tags = merge(
+    var.eks_node_group.tags,
+    {
+      Name = var.eks_node_group.ec2_instance_name
+    }
+  )
   version              = var.eks_node_group.version
   force_update_version = var.eks_node_group.force_update_version
   capacity_type        = var.eks_node_group.capacity_type
@@ -49,23 +54,3 @@ resource "aws_eks_node_group" "eks_node_group" {
     create_before_destroy = true
   }
 }
-
-#--------------------------------------------------------------------
-# Autoscaling Group Tags
-#--------------------------------------------------------------------
-resource "aws_autoscaling_group_tag" "nodes_group" {
-  for_each = toset(
-    [for asg in flatten(
-      [for resources in aws_eks_node_group.eks_node_group.resources : resources.autoscaling_groups]
-    ) : asg.name]
-  )
-
-  autoscaling_group_name = each.value
-
-  tag {
-    key                 = "Name"
-    value               = "${var.eks_node_group.ec2_instance_name}-${each.value}"
-    propagate_at_launch = true
-  }
-}
-
