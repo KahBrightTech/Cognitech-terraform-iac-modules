@@ -20,8 +20,9 @@ variable "eks_node_group" {
     max_size                  = number
     min_size                  = number
     instance_types            = list(string)
-    ec2_ssh_key               = string
-    source_security_group_ids = list(string)
+    enable_remote_access      = optional(bool, false)
+    ec2_ssh_key               = optional(string, "")
+    source_security_group_ids = optional(list(string), [])
     ami_type                  = optional(string)
     disk_size                 = optional(number)
     labels                    = optional(map(string), {})
