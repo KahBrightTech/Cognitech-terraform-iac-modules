@@ -38,6 +38,11 @@ output "eks_cluster_status" {
   value       = aws_eks_cluster.eks_cluster.status
 }
 
+output "eks_cluster_service_ipv4_cidr" {
+  description = "The CIDR block for Kubernetes service IP addresses."
+  value       = try(aws_eks_cluster.eks_cluster.kubernetes_network_config[0].service_ipv4_cidr, null)
+}
+
 output "oidc_provider_arn" {
   description = "ARN of the OIDC Provider for EKS."
   value       = aws_iam_openid_connect_provider.eks_oidc.arn
