@@ -22,8 +22,8 @@ resource "aws_eks_node_group" "eks_node_group" {
   instance_types = var.eks_node_group.instance_types
 
   remote_access {
-    ec2_ssh_key               = var.eks_node_group.ec2_ssh_key
-    source_security_group_ids = var.eks_node_group.source_security_group_ids
+    ec2_ssh_key               = var.eks_node_group.launch_template != null ? null : var.eks_node_group.ec2_ssh_key
+    source_security_group_ids = var.eks_node_group.launch_template != null ? null : var.eks_node_group.source_security_group_ids
   }
 
   ami_type             = var.eks_node_group.ami_type
