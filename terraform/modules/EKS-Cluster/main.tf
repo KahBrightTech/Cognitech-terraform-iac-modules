@@ -36,11 +36,8 @@ resource "aws_eks_cluster" "eks_cluster" {
     bootstrap_cluster_creator_admin_permissions = var.eks_cluster.bootstrap_cluster_creator_admin_permissions
   }
 
-  dynamic "kubernetes_network_config" {
-    for_each = var.eks_cluster.service_ipv4_cidr != null ? [1] : []
-    content {
-      service_ipv4_cidr = var.eks_cluster.service_ipv4_cidr
-    }
+  kubernetes_network_config {
+    service_ipv4_cidr = var.eks_cluster.service_ipv4_cidr
   }
 
   enabled_cluster_log_types = var.eks_cluster.enabled_cluster_log_types
