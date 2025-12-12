@@ -191,7 +191,7 @@ module "security_group" {
 
 module "security_group_rules" {
   source   = "../Security-group-rules"
-  for_each = var.eks_cluster.security_group_rules != null ? { for item in var.eks_cluster.security_group_rules : item.key => item } : {}
+  for_each = var.eks_cluster.security_group_rules != null ? { for item in var.eks_cluster.security_group_rules : item.sg_key => item } : {}
   common   = var.common
   security_group = {
     security_group_id = each.value.sg_key != null ? module.security_group[each.value.sg_key].security_group_id : each.value.security_group_id
