@@ -59,3 +59,22 @@ output "secret_arn" {
   description = "The ARN of the created Secrets Manager secret (if created)"
   value       = length(aws_secretsmanager_secret.private_key_secret) > 0 ? aws_secretsmanager_secret.private_key_secret[0].arn : null
 }
+
+output "eks_sg_id" {
+  description = "Map of additional security group IDs created by the module"
+  value       = { for key, sg in module.security_group : key => sg.security_group_id }
+}
+
+output "eks_sg_arns" {
+  description = "Map of additional security group ARNs created by the module"
+  value       = { for key, sg in module.security_group : key => sg.security_group_arn }
+}
+
+output "all_cluster_security_group_ids" {
+  description = "List of all security group IDs attached to the EKS cluster (including additional ones)"
+  value = concat(
+    [aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id],
+    var.eks_cluster.additional_security_group_ids,
+    [for key in var.eks_cluster.additional_security_group_keys : module.security_group[key].security_group_id]
+  )
+}
