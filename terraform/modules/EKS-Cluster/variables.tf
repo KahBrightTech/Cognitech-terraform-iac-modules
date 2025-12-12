@@ -12,10 +12,11 @@ variable "common" {
 variable "eks_cluster" {
   description = "EKS cluster configuration object."
   type = object({
-    name                          = string
-    role_arn                      = string
-    subnet_ids                    = list(string)
-    additional_security_group_ids = optional(list(string), [])
+    name                           = string
+    role_arn                       = string
+    subnet_ids                     = list(string)
+    additional_security_group_ids  = optional(list(string), [])
+    additional_security_group_keys = optional(list(string), [])
     access_entries = optional(map(object({
       principal_arns = list(string)
       policy_arn     = string
