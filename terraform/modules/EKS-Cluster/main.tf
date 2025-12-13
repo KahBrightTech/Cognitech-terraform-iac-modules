@@ -209,15 +209,19 @@ module "security_group_rules" {
     security_group_id = each.value.sg_key != null ? module.security_group[each.value.sg_key].security_group_id : each.value.security_group_id
     egress_rules = each.value.egress_rules != null ? [
       for rule in each.value.egress_rules : merge(rule, {
-        target_sg_id = rule.target_sg_key != null ? module.security_group[rule.target_sg_key].security_group_id : (
-          rule.target_sg_id == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : rule.target_sg_id
+        target_sg_id = rule.target_sg_key == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : (
+          rule.target_sg_key != null ? module.security_group[rule.target_sg_key].security_group_id : (
+            rule.target_sg_id == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : rule.target_sg_id
+          )
         )
       })
     ] : null
     ingress_rules = each.value.ingress_rules != null ? [
       for rule in each.value.ingress_rules : merge(rule, {
-        source_sg_id = rule.source_sg_key != null ? module.security_group[rule.source_sg_key].security_group_id : (
-          rule.source_sg_id == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : rule.source_sg_id
+        source_sg_id = rule.source_sg_key == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : (
+          rule.source_sg_key != null ? module.security_group[rule.source_sg_key].security_group_id : (
+            rule.source_sg_id == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : rule.source_sg_id
+          )
         )
       })
     ] : null
