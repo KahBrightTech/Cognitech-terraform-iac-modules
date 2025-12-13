@@ -26,6 +26,7 @@ variable "eks_cluster" {
     is_this_ec2_node_group                      = optional(bool, false)
     enable_networking_addons                    = optional(bool, true)
     enable_application_addons                   = optional(bool, false)
+    cloudwatch_observability_role_arn           = optional(string, null)
     endpoint_private_access                     = optional(bool, false)
     endpoint_public_access                      = optional(bool, true)
     public_access_cidrs                         = optional(list(string), ["0.0.0.0/0"])

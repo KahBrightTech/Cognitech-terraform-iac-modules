@@ -137,6 +137,18 @@ resource "aws_eks_addon" "metrics_server" {
   })
 }
 
+resource "aws_eks_addon" "cloudwatch_observability" {
+  count                       = var.eks_cluster.enable_application_addons && var.eks_cluster.cloudwatch_observability_role_arn != null ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "amazon-cloudwatch-observability"
+  resolve_conflicts_on_update = "PRESERVE"
+  service_account_role_arn    = var.eks_cluster.cloudwatch_observability_role_arn
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-cloudwatch-observability-addon"
+  })
+}
+
 #--------------------------------------------------------------------
 # Key Pair Resource
 #--------------------------------------------------------------------
