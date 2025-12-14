@@ -4,6 +4,36 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+data "aws_eks_addon_version" "vpc_cni" {
+  addon_name         = "vpc-cni"
+  kubernetes_version = var.eks_cluster.version
+  most_recent        = true
+}
+
+data "aws_eks_addon_version" "kube_proxy" {
+  addon_name         = "kube-proxy"
+  kubernetes_version = var.eks_cluster.version
+  most_recent        = true
+}
+
+data "aws_eks_addon_version" "coredns" {
+  addon_name         = "coredns"
+  kubernetes_version = var.eks_cluster.version
+  most_recent        = true
+}
+
+data "aws_eks_addon_version" "metrics_server" {
+  addon_name         = "metrics-server"
+  kubernetes_version = var.eks_cluster.version
+  most_recent        = true
+}
+
+data "aws_eks_addon_version" "cloudwatch_observability" {
+  addon_name         = "amazon-cloudwatch-observability"
+  kubernetes_version = var.eks_cluster.version
+  most_recent        = true
+}
+
 locals {
   # Create a flat map: each principal gets its own entry
   access_entries = flatten([
@@ -93,6 +123,7 @@ resource "aws_eks_addon" "vpc_cni" {
   count                       = var.eks_cluster.enable_networking_addons ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "vpc-cni"
+  addon_version               = data.aws_eks_addon_version.vpc_cni.version
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = merge(var.common.tags, {
@@ -104,6 +135,7 @@ resource "aws_eks_addon" "kube_proxy" {
   count                       = var.eks_cluster.enable_networking_addons ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "kube-proxy"
+  addon_version               = data.aws_eks_addon_version.kube_proxy.version
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = merge(var.common.tags, {
@@ -119,6 +151,7 @@ resource "aws_eks_addon" "coredns" {
   count                       = var.eks_cluster.enable_application_addons ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "coredns"
+  addon_version               = data.aws_eks_addon_version.coredns.version
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = merge(var.common.tags, {
@@ -130,6 +163,7 @@ resource "aws_eks_addon" "metrics_server" {
   count                       = var.eks_cluster.enable_application_addons ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "metrics-server"
+  addon_version               = data.aws_eks_addon_version.metrics_server.version
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = merge(var.common.tags, {
@@ -141,6 +175,7 @@ resource "aws_eks_addon" "cloudwatch_observability" {
   count                       = var.eks_cluster.enable_application_addons && var.eks_cluster.cloudwatch_observability_role_arn != null ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "amazon-cloudwatch-observability"
+  addon_version               = data.aws_eks_addon_version.cloudwatch_observability.version
   resolve_conflicts_on_update = "PRESERVE"
   service_account_role_arn    = var.eks_cluster.cloudwatch_observability_role_arn
 
