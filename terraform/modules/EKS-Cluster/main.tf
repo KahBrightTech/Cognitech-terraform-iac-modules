@@ -34,6 +34,18 @@ data "aws_eks_addon_version" "cloudwatch_observability" {
   most_recent        = true
 }
 
+data "aws_eks_addon_version" "secrets_manager_csi_driver" {
+  addon_name         = "aws-secrets-manager-csi-driver-provider"
+  kubernetes_version = var.eks_cluster.version
+  most_recent        = true
+}
+
+data "aws_eks_addon_version" "privateca_issuer" {
+  addon_name         = "aws-privateca-issuer"
+  kubernetes_version = var.eks_cluster.version
+  most_recent        = true
+}
+
 locals {
   # Create a flat map: each principal gets its own entry
   access_entries = flatten([
@@ -181,6 +193,30 @@ resource "aws_eks_addon" "cloudwatch_observability" {
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-cloudwatch-observability-addon"
+  })
+}
+
+resource "aws_eks_addon" "secrets_manager_csi_driver" {
+  count                       = var.eks_cluster.enable_application_addons ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "aws-secrets-manager-csi-driver-provider"
+  addon_version               = data.aws_eks_addon_version.secrets_manager_csi_driver.version
+  resolve_conflicts_on_update = "PRESERVE"
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-secrets-manager-csi-driver-addon"
+  })
+}
+
+resource "aws_eks_addon" "privateca_issuer" {
+  count                       = var.eks_cluster.enable_application_addons ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "aws-privateca-issuer"
+  addon_version               = data.aws_eks_addon_version.privateca_issuer.version
+  resolve_conflicts_on_update = "PRESERVE"
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-privateca-issuer-addon"
   })
 }
 
