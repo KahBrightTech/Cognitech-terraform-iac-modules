@@ -26,6 +26,7 @@ variable "eks_cluster" {
     is_this_ec2_node_group                      = optional(bool, false)
     enable_networking_addons                    = optional(bool, true)
     enable_application_addons                   = optional(bool, false)
+    enable_cloudwatch_observability             = optional(bool, false)
     enable_secrets_manager_csi_driver           = optional(bool, false)
     enable_privateca_issuer                     = optional(bool, false)
     vpc_cni_version                             = optional(string, null)
@@ -33,9 +34,9 @@ variable "eks_cluster" {
     coredns_version                             = optional(string, null)
     metrics_server_version                      = optional(string, null)
     cloudwatch_observability_version            = optional(string, null)
+    cloudwatch_observability_role_arn           = optional(string, null)
     secrets_manager_csi_driver_version          = optional(string, null)
     privateca_issuer_version                    = optional(string, null)
-    cloudwatch_observability_role_arn           = optional(string, null)
     endpoint_private_access                     = optional(bool, false)
     endpoint_public_access                      = optional(bool, true)
     public_access_cidrs                         = optional(list(string), ["0.0.0.0/0"])
@@ -107,4 +108,11 @@ variable "eks_cluster" {
       })))
     })))
   })
+
+  validation {
+    condition = !var.eks_cluster.enable_cloudwatch_observability || (
+      var.eks_cluster.enable_cloudwatch_observability && var.eks_cluster.cloudwatch_observability_role_arn != null
+    )
+    error_message = "cloudwatch_observability_role_arn must be provided when enable_cloudwatch_observability is true. The CloudWatch Observability addon requires a service account role ARN."
+  }
 }
