@@ -157,7 +157,7 @@ resource "aws_eks_addon" "cloudwatch_observability" {
 resource "aws_eks_addon" "secrets_manager_csi_driver" {
   count                       = var.eks_cluster.enable_secrets_manager_csi_driver ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
-  addon_name                  = "aws-secrets-manager-csi-driver-provider"
+  addon_name                  = "aws-secrets-store-csi-driver-provider"
   addon_version               = var.eks_cluster.secrets_manager_csi_driver_version
   resolve_conflicts_on_update = "PRESERVE"
 
