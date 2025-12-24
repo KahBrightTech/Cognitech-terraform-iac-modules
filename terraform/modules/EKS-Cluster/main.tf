@@ -344,7 +344,10 @@ resource "aws_iam_role" "eks_sa_role" {
 # Custom Policy Attachment to EKS Service Account Role
 #--------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "eks_sa_role_attachment" {
-  for_each   = var.eks_cluster.service_accounts != null && var.eks_cluster.service_accounts.iam_role.create_custom_policy ? 1 : 0
+  for_each = var.eks_cluster.service_accounts != null ? {
+    for sa in var.eks_cluster.service_accounts : sa.key => sa
+    if sa.iam_role != null && try(sa.iam_role.create_custom_policy, false)
+  } : {}
   role       = aws_iam_role.eks_sa_role[each.key].name
   policy_arn = aws_iam_policy.policy[each.key].arn
 }
@@ -353,8 +356,17 @@ resource "aws_iam_role_policy_attachment" "eks_sa_role_attachment" {
 # Attach managed policies to Role (if provided)
 #--------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "managed_policy_attachment" {
-  for_each   = var.eks_cluster.service_accoounts != null && var.eks_cluster.service_accounts.managed_policy_arns != null ? toset(each.value.managed_policy_arns) : {}
-  role       = aws_iam_role.eks_sa_role.name
+  for_each = var.eks_cluster.service_accounts != null ? merge([
+    for sa in var.eks_cluster.service_accounts :
+    sa.key != null && sa.iam_role != null && length(try(sa.iam_role.managed_policy_arns, [])) > 0 ?
+    { for policy_arn in sa.iam_role.managed_policy_arns :
+      "${sa.key}-${replace(policy_arn, ":", "_")}" => {
+        sa_key     = sa.key
+        policy_arn = policy_arn
+      }
+    } : {}
+  ]...) : {}
+  role       = aws_iam_role.eks_sa_role[each.value.sa_key].name
   policy_arn = each.value.policy_arn
 }
 
