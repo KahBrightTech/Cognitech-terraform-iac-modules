@@ -48,6 +48,11 @@ output "oidc_provider_arn" {
   value       = aws_iam_openid_connect_provider.eks_oidc.arn
 }
 
+output "oidc_provider_url" {
+  description = "URL of the OIDC Provider for EKS."
+  value       = aws_iam_openid_connect_provider.eks_oidc.url
+}
+
 output "cloudwatch_observability_addon_arn" {
   description = "ARN of the CloudWatch Observability addon."
   value       = try(aws_eks_addon.cloudwatch_observability[0].arn, null)

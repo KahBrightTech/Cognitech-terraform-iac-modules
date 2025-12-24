@@ -1,8 +1,18 @@
-#-------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Data
 #--------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+
+data "aws_iam_roles" "admin_role" {
+  name_regex  = "AWSReservedSSO_AdministratorAccess_.*"
+  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+}
+
+data "aws_iam_roles" "network_role" {
+  name_regex  = "AWSReservedSSO_NetworkAdministrator_.*"
+  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+}
 
 locals {
   # Create a flat map: each principal gets its own entry
@@ -16,6 +26,8 @@ locals {
     ]
   ])
   access_entries_map = { for entry in local.access_entries : entry.key => entry }
+  admin_role_arn     = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
+  network_role_arn   = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -223,6 +235,9 @@ resource "aws_secretsmanager_secret_version" "private_key_secret_version" {
   secret_string = tls_private_key.key[0].private_key_pem
 }
 
+#--------------------------------------------------------------------
+# Security Group for EKS Cluster
+#--------------------------------------------------------------------
 module "security_group" {
   for_each       = var.eks_cluster.security_groups != null ? { for item in var.eks_cluster.security_groups : item.key => item } : {}
   source         = "../Security-group"
@@ -230,6 +245,9 @@ module "security_group" {
   security_group = each.value
 }
 
+#--------------------------------------------------------------------
+# Security Group Rules for EKS Cluster
+#--------------------------------------------------------------------
 module "security_group_rules" {
   source   = "../Security-group-rules"
   for_each = var.eks_cluster.security_group_rules != null ? { for item in var.eks_cluster.security_group_rules : item.sg_key => item } : {}
@@ -256,4 +274,113 @@ module "security_group_rules" {
     ] : null
   }
   depends_on = [module.security_group]
+}
+
+#--------------------------------------------------------------------
+# IAM Policy - Creates IAM policy for the specified EKS IAM role
+#--------------------------------------------------------------------
+resource "aws_iam_policy" "policy" {
+  for_each = var.eks_cluster.service_accounts != null ? {
+    for item in var.eks_cluster.service_accounts : item.key => item
+    if try(item.create_custom_policy, false)
+  } : {}
+
+  name        = "${var.common.account_name}-${var.common.region_prefix}-${each.value.policy.name}-policy"
+  description = each.value.policy.description
+  path        = each.value.policy.path
+  policy = each.value.policy.custom_policy ? jsonencode(jsondecode(replace(
+    replace(
+      replace(
+        replace(
+          replace(
+            file(each.value.policy.policy),
+            "[[account_number]]", data.aws_caller_identity.current.account_id,
+          ),
+          "[[account_name_abr]]", var.common.account_name_abr
+        ),
+        "[[region]]", data.aws_region.current.name
+      ),
+      "[[admin_role]]", local.admin_role_arn
+    ),
+    "[[network_role]]", local.network_role_arn
+  ))) : jsonencode(jsondecode(file(each.value.policy.policy)))
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.policy.name}-policy"
+  })
+}
+
+#--------------------------------------------------------------------
+# IRSA Service Account and IAM Role
+#--------------------------------------------------------------------
+resource "aws_iam_role" "eks_sa_role" {
+  for_each = var.eks_cluster.service_accounts != null ? { for item in var.eks_cluster.service_accounts : item.key => item } : {}
+  name     = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}-sa-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.eks_oidc.oidc_provider_arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${aws_iam_openid_connect_provider.eks_oidc.oidc_provider_url}:sub" = "system:serviceaccount:${coalesce(each.value.namespace, "default")}:${each.value.name}"
+          "${aws_iam_openid_connect_provider.eks_oidc.oidc_provider_url}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}-sa-role"
+  })
+}
+
+#--------------------------------------------------------------------
+# Custom Policy Attachment to EKS Service Account Role
+#--------------------------------------------------------------------
+resource "aws_iam_role_policy_attachment" "eks_sa_role_attachment" {
+  for_each = var.eks_cluster.service_accounts != null ? {
+    for item in var.eks_cluster.service_accounts : item.key => item
+    if try(item.create_custom_policy, false)
+  } : {}
+
+  role       = aws_iam_role.eks_sa_role[each.key].name
+  policy_arn = aws_iam_policy.policy[each.key].arn
+}
+
+#--------------------------------------------------------------------
+# Attach managed policies to Role (if provided)
+#--------------------------------------------------------------------
+resource "aws_iam_role_policy_attachment" "managed_policy_attachment" {
+  for_each = var.eks_cluster.service_accounts != null ? merge([
+    for sa_key, sa in var.eks_cluster.service_accounts : {
+      for policy_arn in coalesce(sa.managed_policy_arns, []) :
+      "${sa_key}-${policy_arn}" => {
+        sa_key     = sa_key
+        policy_arn = policy_arn
+      }
+    }
+  ]...) : {}
+
+  role       = aws_iam_role.eks_sa_role[each.value.sa_key].name
+  policy_arn = each.value.policy_arn
+}
+
+#--------------------------------------------------------------------
+# Kubernetes Service Account
+#--------------------------------------------------------------------
+resource "kubernetes_service_account" "irsa" {
+  for_each = var.eks_cluster.service_accounts != null ? { for item in var.eks_cluster.service_accounts : item.key => item } : {}
+
+  metadata {
+    name      = each.value.name
+    namespace = coalesce(each.value.namespace, "default")
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.eks_sa_role[each.key].arn
+    }
+  }
 }
