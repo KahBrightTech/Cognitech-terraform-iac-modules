@@ -280,16 +280,19 @@ module "security_group_rules" {
 # IAM Policy - Creates IAM policy for the specified EKS IAM role
 #--------------------------------------------------------------------
 resource "aws_iam_policy" "policy" {
-  for_each    = var.eks_cluster.service_accounts != null && var.eks_cluster.service_accounts.iam_role.create_custom_policy ? 1 : 0
-  name        = "${var.common.account_name}-${var.common.region_prefix}-${each.value.policy.name}-policy"
-  description = each.value.policy.description
-  path        = each.value.policy.path
-  policy = each.value.policy.custom_policy ? jsonencode(jsondecode(replace(
+  for_each = var.eks_cluster.service_accounts != null ? {
+    for sa in var.eks_cluster.service_accounts : sa.key => sa
+    if sa.iam_role != null && try(sa.iam_role.create_custom_policy, false)
+  } : {}
+  name        = "${var.common.account_name}-${var.common.region_prefix}-${each.value.iam_role.policy.name}-policy"
+  description = each.value.iam_role.policy.description
+  path        = each.value.iam_role.policy.path
+  policy = each.value.iam_role.policy.custom_policy ? jsonencode(jsondecode(replace(
     replace(
       replace(
         replace(
           replace(
-            file(each.value.policy.policy),
+            file(each.value.iam_role.policy.policy),
             "[[account_number]]", data.aws_caller_identity.current.account_id,
           ),
           "[[account_name_abr]]", var.common.account_name_abr
@@ -299,10 +302,10 @@ resource "aws_iam_policy" "policy" {
       "[[admin_role]]", local.admin_role_arn
     ),
     "[[network_role]]", local.network_role_arn
-  ))) : jsonencode(jsondecode(file(each.value.policy.policy)))
+  ))) : jsonencode(jsondecode(file(each.value.iam_role.policy.policy)))
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.policy.name}-policy"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.iam_role.policy.name}-policy"
   })
 }
 
@@ -310,20 +313,23 @@ resource "aws_iam_policy" "policy" {
 # IRSA Service Account and IAM Role
 #--------------------------------------------------------------------
 resource "aws_iam_role" "eks_sa_role" {
-  for_each = var.eks_cluster.service_accounts.iam_role != null ? { for item in var.eks_cluster.service_accounts.iam_role : item.key => item } : {}
-  name     = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}-sa-role"
+  for_each = var.eks_cluster.service_accounts != null ? {
+    for sa in var.eks_cluster.service_accounts : sa.key => sa
+    if sa.iam_role != null
+  } : {}
+  name = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}-sa-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
       Effect = "Allow"
       Principal = {
-        Federated = aws_iam_openid_connect_provider.eks_oidc.oidc_provider_arn
+        Federated = aws_iam_openid_connect_provider.eks_oidc.arn
       }
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
-          "${aws_iam_openid_connect_provider.eks_oidc.oidc_provider_url}:sub" = "system:serviceaccount:${coalesce(var.eks_cluster.service_accounts[each.key].namespace, "default")}:${var.eks_cluster.service_accounts[each.key].name}"
-          "${aws_iam_openid_connect_provider.eks_oidc.oidc_provider_url}:aud" = "sts.amazonaws.com"
+          "${aws_iam_openid_connect_provider.eks_oidc.url}:sub" = "system:serviceaccount:${coalesce(each.value.namespace, "default")}:${each.value.name}"
+          "${aws_iam_openid_connect_provider.eks_oidc.url}:aud" = "sts.amazonaws.com"
         }
       }
     }]
