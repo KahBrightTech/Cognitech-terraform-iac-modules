@@ -119,7 +119,6 @@ variable "eks_cluster" {
         name_prefix               = optional(string)
         description               = optional(string)
         path                      = optional(string, "/")
-        assume_role_policy        = string
         custom_assume_role_policy = optional(bool, true)
         force_detach_policies     = optional(bool, false)
         managed_policy_arns       = optional(list(string))
