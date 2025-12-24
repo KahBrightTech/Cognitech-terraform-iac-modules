@@ -280,11 +280,7 @@ module "security_group_rules" {
 # IAM Policy - Creates IAM policy for the specified EKS IAM role
 #--------------------------------------------------------------------
 resource "aws_iam_policy" "policy" {
-  for_each = var.eks_cluster.service_accounts != null ? {
-    for item in var.eks_cluster.service_accounts : item.key => item
-    if try(item.create_custom_policy, false)
-  } : {}
-
+  for_each    = var.eks_cluster.service_accounts != null && var.eks_cluster.service_accounts.iam_role.create_custom_policy ? 1 : 0
   name        = "${var.common.account_name}-${var.common.region_prefix}-${each.value.policy.name}-policy"
   description = each.value.policy.description
   path        = each.value.policy.path
@@ -314,9 +310,8 @@ resource "aws_iam_policy" "policy" {
 # IRSA Service Account and IAM Role
 #--------------------------------------------------------------------
 resource "aws_iam_role" "eks_sa_role" {
-  for_each = var.eks_cluster.service_accounts != null ? { for item in var.eks_cluster.service_accounts : item.key => item } : {}
+  for_each = var.eks_cluster.service_accounts.iam_role != null ? { for item in var.eks_cluster.service_accounts.iam_role : item.key => item } : {}
   name     = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}-sa-role"
-
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -327,7 +322,7 @@ resource "aws_iam_role" "eks_sa_role" {
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
-          "${aws_iam_openid_connect_provider.eks_oidc.oidc_provider_url}:sub" = "system:serviceaccount:${coalesce(each.value.namespace, "default")}:${each.value.name}"
+          "${aws_iam_openid_connect_provider.eks_oidc.oidc_provider_url}:sub" = "system:serviceaccount:${coalesce(var.eks_cluster.service_accounts[each.key].namespace, "default")}:${var.eks_cluster.service_accounts[each.key].name}"
           "${aws_iam_openid_connect_provider.eks_oidc.oidc_provider_url}:aud" = "sts.amazonaws.com"
         }
       }
@@ -343,11 +338,7 @@ resource "aws_iam_role" "eks_sa_role" {
 # Custom Policy Attachment to EKS Service Account Role
 #--------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "eks_sa_role_attachment" {
-  for_each = var.eks_cluster.service_accounts != null ? {
-    for item in var.eks_cluster.service_accounts : item.key => item
-    if try(item.create_custom_policy, false)
-  } : {}
-
+  for_each   = var.eks_cluster.service_accounts != null && var.eks_cluster.service_accounts.iam_role.create_custom_policy ? 1 : 0
   role       = aws_iam_role.eks_sa_role[each.key].name
   policy_arn = aws_iam_policy.policy[each.key].arn
 }
@@ -356,17 +347,8 @@ resource "aws_iam_role_policy_attachment" "eks_sa_role_attachment" {
 # Attach managed policies to Role (if provided)
 #--------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "managed_policy_attachment" {
-  for_each = var.eks_cluster.service_accounts != null ? merge([
-    for sa_key, sa in var.eks_cluster.service_accounts : {
-      for policy_arn in coalesce(sa.managed_policy_arns, []) :
-      "${sa_key}-${policy_arn}" => {
-        sa_key     = sa_key
-        policy_arn = policy_arn
-      }
-    }
-  ]...) : {}
-
-  role       = aws_iam_role.eks_sa_role[each.value.sa_key].name
+  for_each   = var.eks_cluster.service_accoounts != null && var.eks_cluster.service_accounts.managed_policy_arns != null ? toset(each.value.managed_policy_arns) : {}
+  role       = aws_iam_role.eks_sa_role.name
   policy_arn = each.value.policy_arn
 }
 
