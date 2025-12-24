@@ -358,8 +358,8 @@ resource "aws_iam_role_policy_attachment" "eks_sa_role_attachment" {
 resource "aws_iam_role_policy_attachment" "managed_policy_attachment" {
   for_each = var.eks_cluster.service_accounts != null ? merge([
     for sa in var.eks_cluster.service_accounts :
-    sa.key != null && sa.iam_role != null && length(try(sa.iam_role.managed_policy_arns, [])) > 0 ?
-    { for policy_arn in sa.iam_role.managed_policy_arns :
+    sa.key != null && sa.iam_role != null && length(coalesce(sa.iam_role.managed_policy_arns, [])) > 0 ?
+    { for policy_arn in coalesce(sa.iam_role.managed_policy_arns, []) :
       "${sa.key}-${replace(policy_arn, ":", "_")}" => {
         sa_key     = sa.key
         policy_arn = policy_arn
