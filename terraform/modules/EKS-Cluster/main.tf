@@ -359,7 +359,7 @@ resource "kubernetes_service_account" "irsa" {
   for_each = var.eks_cluster.service_accounts != null ? { for item in var.eks_cluster.service_accounts : item.key => item } : {}
 
   metadata {
-    name      = each.value.name
+    name      = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}-sa-role"
     namespace = coalesce(each.value.namespace, "default")
     annotations = {
       "eks.amazonaws.com/role-arn" = aws_iam_role.eks_sa_role[each.key].arn
