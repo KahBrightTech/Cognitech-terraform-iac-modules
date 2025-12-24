@@ -125,7 +125,6 @@ variable "eks_cluster" {
         max_session_duration      = optional(number, 3600)
         permissions_boundary      = optional(string)
         attach_policies           = optional(list(string), [])
-        create_role               = bool
         automount_token           = optional(bool, true)
         create_custom_policy      = optional(bool, true)
         policy = optional(object({
