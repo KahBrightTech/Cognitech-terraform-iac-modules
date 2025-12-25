@@ -28,6 +28,7 @@ variable "eks_cluster" {
     enable_application_addons                   = optional(bool, false)
     enable_cloudwatch_observability             = optional(bool, false)
     enable_secrets_manager_csi_driver           = optional(bool, false)
+    enable_secrets_rotation                     = optional(bool, false)
     enable_privateca_issuer                     = optional(bool, false)
     vpc_cni_version                             = optional(string, null)
     kube_proxy_version                          = optional(string, null)

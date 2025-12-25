@@ -172,15 +172,36 @@ resource "aws_eks_addon" "secrets_manager_csi_driver" {
   addon_name                  = "aws-secrets-store-csi-driver-provider"
   addon_version               = var.eks_cluster.secrets_manager_csi_driver_version
   resolve_conflicts_on_update = "PRESERVE"
-  # Enable rotation and set polling interval
-  configuration_values = jsonencode({
-    rotationPollInterval = "120s" # Check for updates every 2 minutes
-    enableSecretRotation = true
-  })
-
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-secrets-manager-csi-driver-addon"
   })
+}
+resource "null_resource" "enable_rotation" {
+  count = var.eks_cluster.enable_secrets_manager_csi_driver && var.eks_cluster.enable_secrets_rotation ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws eks update-kubeconfig --name ${aws_eks_cluster.eks_cluster.name} --region ${var.common.region}
+      
+      kubectl patch daemonset csi-secrets-store-secrets-store-csi-driver \
+        -n kube-system \
+        --type=json \
+        -p='[
+          {
+            "op": "add",
+            "path": "/spec/template/spec/containers/0/args/-",
+            "value": "--enable-secret-rotation=true"
+          },
+          {
+            "op": "add",
+            "path": "/spec/template/spec/containers/0/args/-",
+            "value": "--rotation-poll-interval=120s"
+          }
+        ]'
+    EOT
+  }
+
+  depends_on = [aws_eks_addon.secrets_manager_csi_driver]
 }
 
 resource "aws_eks_addon" "privateca_issuer" {
