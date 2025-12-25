@@ -9,7 +9,7 @@ data "aws_region" "current" {}
 #--------------------------------------------------------------------
 resource "kubernetes_service_account" "irsa" {
   metadata {
-    name      = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_service_account.name}-sa"
+    name      = "${var.eks_service_account.name}-sa"
     namespace = coalesce(var.eks_service_account.namespace, "default")
     annotations = {
       "eks.amazonaws.com/role-arn" = var.eks_service_account.role_arn
