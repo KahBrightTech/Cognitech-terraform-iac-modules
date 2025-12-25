@@ -181,7 +181,7 @@ resource "null_resource" "enable_rotation" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      aws eks update-kubeconfig --name ${aws_eks_cluster.eks_cluster.name} --region ${var.common.region}
+      aws eks update-kubeconfig --name ${aws_eks_cluster.eks_cluster.name} --region ${data.aws_region.current.name}
       
       kubectl patch daemonset csi-secrets-store-secrets-store-csi-driver \
         -n kube-system \
