@@ -108,34 +108,6 @@ variable "eks_cluster" {
         source_sg_key  = optional(string)
       })))
     })))
-    service_accounts = optional(list(object({
-      key       = string
-      name      = optional(string)
-      namespace = optional(string, "default")
-      role_arn  = optional(string)
-      iam_role = optional(object({
-        key                       = optional(string)
-        name                      = optional(string)
-        name_prefix               = optional(string)
-        description               = optional(string)
-        path                      = optional(string, "/")
-        custom_assume_role_policy = optional(bool, true)
-        force_detach_policies     = optional(bool, false)
-        managed_policy_arns       = optional(list(string))
-        max_session_duration      = optional(number, 3600)
-        permissions_boundary      = optional(string)
-        attach_policies           = optional(list(string), [])
-        automount_token           = optional(bool, true)
-        create_custom_policy      = optional(bool, true)
-        policy = optional(object({
-          name          = optional(string)
-          description   = optional(string)
-          policy        = optional(string)
-          path          = optional(string, "/")
-          custom_policy = optional(bool, true)
-        }))
-      }))
-    })))
   })
 
   validation {
