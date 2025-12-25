@@ -84,6 +84,10 @@ resource "aws_launch_template" "main" {
       }
     }
   }
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes        = [latest_version]
+  }
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.launch_template.name}-lt"
