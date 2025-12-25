@@ -172,6 +172,11 @@ resource "aws_eks_addon" "secrets_manager_csi_driver" {
   addon_name                  = "aws-secrets-store-csi-driver-provider"
   addon_version               = var.eks_cluster.secrets_manager_csi_driver_version
   resolve_conflicts_on_update = "PRESERVE"
+  # Enable rotation and set polling interval
+  configuration_values = jsonencode({
+    rotationPollInterval = "120s" # Check for updates every 2 minutes
+    enableSecretRotation = true
+  })
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-secrets-manager-csi-driver-addon"
