@@ -52,5 +52,6 @@ resource "aws_eks_node_group" "eks_node_group" {
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes        = [launch_template[0].version]
   }
 }
