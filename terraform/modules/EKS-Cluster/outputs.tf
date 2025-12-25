@@ -1,4 +1,8 @@
 
+output "eks" {
+  description = "All eks cluster attributes."
+  value       = aws_eks_cluster.eks_cluster
+}
 output "eks_cluster_certificate_authority_data" {
   description = "The certificate authority data for the EKS cluster."
   value       = aws_eks_cluster.eks_cluster.certificate_authority[0].data
