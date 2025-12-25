@@ -58,8 +58,11 @@ locals {
 }
 resource "aws_launch_template" "main" {
   name = var.launch_template.name
-  iam_instance_profile {
-    name = var.launch_template.instance_profile
+  dynamic "iam_instance_profile" {
+    for_each = var.launch_template.instance_profile != null && var.launch_template.instance_profile != "" ? [1] : []
+    content {
+      name = var.launch_template.instance_profile
+    }
   }
   image_id      = data.aws_ami.launch_template.id
   instance_type = var.launch_template.instance_type
@@ -86,7 +89,7 @@ resource "aws_launch_template" "main" {
   }
   lifecycle {
     create_before_destroy = true
-    ignore_changes        = [latest_version]
+    ignore_changes        = [latest_version, image_id, iam_instance_profile]
   }
 
   tags = merge(var.common.tags, {
