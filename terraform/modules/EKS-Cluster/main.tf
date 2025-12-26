@@ -130,7 +130,7 @@ resource "aws_eks_addon" "kube_proxy" {
 #--------------------------------------------------------------------
 
 resource "aws_eks_addon" "coredns" {
-  count                       = var.eks_cluster.enable_application_addons ? 1 : 0
+  count                       = var.eks_cluster.creat_ec2_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "coredns"
   addon_version               = var.eks_cluster.coredns_version
@@ -139,10 +139,13 @@ resource "aws_eks_addon" "coredns" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-coredns-addon"
   })
+  depends_on = [
+    module.eks_node_group
+  ]
 }
 
 resource "aws_eks_addon" "metrics_server" {
-  count                       = var.eks_cluster.enable_application_addons ? 1 : 0
+  count                       = var.eks_cluster.creat_ec2_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "metrics-server"
   addon_version               = var.eks_cluster.metrics_server_version
@@ -151,10 +154,13 @@ resource "aws_eks_addon" "metrics_server" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-metrics-server-addon"
   })
+  depends_on = [
+    module.eks_node_group
+  ]
 }
 
 resource "aws_eks_addon" "cloudwatch_observability" {
-  count                       = var.eks_cluster.enable_cloudwatch_observability ? 1 : 0
+  count                       = var.eks_cluster.creat_ec2_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "amazon-cloudwatch-observability"
   addon_version               = var.eks_cluster.cloudwatch_observability_version
@@ -164,10 +170,13 @@ resource "aws_eks_addon" "cloudwatch_observability" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-cloudwatch-observability-addon"
   })
+  depends_on = [
+    module.eks_node_group
+  ]
 }
 
 resource "aws_eks_addon" "secrets_manager_csi_driver" {
-  count                       = var.eks_cluster.enable_secrets_manager_csi_driver ? 1 : 0
+  count                       = var.eks_cluster.enable_secrets_manager_csi_driver && var.eks_cluster.creat_ec2_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "aws-secrets-store-csi-driver-provider"
   addon_version               = var.eks_cluster.secrets_manager_csi_driver_version
@@ -175,6 +184,9 @@ resource "aws_eks_addon" "secrets_manager_csi_driver" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-secrets-manager-csi-driver-addon"
   })
+  depends_on = [
+    module.eks_node_group
+  ]
 }
 
 # resource "helm_release" "secrets_store_csi_driver" {
@@ -324,3 +336,15 @@ module "security_group_rules" {
   depends_on = [module.security_group]
 }
 
+module "eks_node_group" {
+  source         = "../EKS-Node-group"
+  for_each       = var.eks_cluster.creat_ec2_node_group && var.eks_cluster.eks_node_groups != null ? { for item in var.eks_cluster.eks_node_groups : item.key => item } : {}
+  common         = var.common
+  eks_node_group = each.value
+
+  depends_on = [
+    aws_eks_cluster.eks_cluster,
+    module.security_group,
+    module.security_group_rules
+  ]
+}

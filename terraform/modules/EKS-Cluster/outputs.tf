@@ -101,3 +101,33 @@ output "all_cluster_security_group_ids" {
     [for key in var.eks_cluster.additional_security_group_keys : module.security_group[key].security_group_id]
   )
 }
+
+output "node_group_ids" {
+  description = "Map of EKS Node Group IDs"
+  value       = { for k, v in module.eks_node_group : k => v.node_group_id }
+}
+
+output "node_group_arns" {
+  description = "Map of EKS Node Group ARNs"
+  value       = { for k, v in module.eks_node_group : k => v.node_group_arn }
+}
+
+output "node_group_statuses" {
+  description = "Map of EKS Node Group statuses"
+  value       = { for k, v in module.eks_node_group : k => v.node_group_status }
+}
+
+output "node_group_resources" {
+  description = "Map of EKS Node Group resources"
+  value       = { for k, v in module.eks_node_group : k => v.node_group_resources }
+}
+
+output "node_group_scaling_configs" {
+  description = "Map of EKS Node Group scaling configs"
+  value       = { for k, v in module.eks_node_group : k => v.node_group_scaling_config }
+}
+
+output "node_group_versions" {
+  description = "Map of EKS Node Group Kubernetes versions"
+  value       = { for k, v in module.eks_node_group : k => v.node_group_version }
+}

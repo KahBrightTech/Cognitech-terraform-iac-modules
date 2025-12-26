@@ -15,8 +15,9 @@ variable "eks_cluster" {
     name                           = string
     role_arn                       = string
     subnet_ids                     = list(string)
-    additional_security_group_ids  = optional(list(string), [])
-    additional_security_group_keys = optional(list(string), [])
+    additional_security_group_ids  = optional(list(string))
+    additional_security_group_keys = optional(list(string))
+    creat_ec2_node_group           = optional(bool, true)
     access_entries = optional(map(object({
       principal_arns = list(string)
       policy_arn     = string
@@ -112,6 +113,33 @@ variable "eks_cluster" {
         source_sg_id   = optional(string)
         source_sg_key  = optional(string)
       })))
+    })))
+    eks_node_groups = optional(map(object({
+      key                       = string
+      cluster_name              = string
+      node_group_name           = optional(string)
+      node_role_arn             = optional(string)
+      subnet_key                = optional(string)
+      subnet_ids                = optional(list(string))
+      desired_size              = number
+      max_size                  = number
+      min_size                  = number
+      instance_types            = list(string)
+      enable_remote_access      = optional(bool, false)
+      ec2_ssh_key               = optional(string, "")
+      source_security_group_ids = optional(list(string), [])
+      ami_type                  = optional(string)
+      disk_size                 = optional(number)
+      labels                    = optional(map(string), {})
+      tags                      = optional(map(string), {})
+      version                   = optional(string)
+      force_update_version      = optional(bool, false)
+      capacity_type             = optional(string, "ON_DEMAND")
+      ec2_instance_name         = optional(string, "eks_node_group")
+      launch_template = optional(object({
+        id      = string
+        version = optional(string, "$Latest")
+      }))
     })))
   })
 

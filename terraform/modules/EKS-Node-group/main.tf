@@ -55,3 +55,4 @@ resource "aws_eks_node_group" "eks_node_group" {
     ignore_changes        = [launch_template[0].version]
   }
 }
+
