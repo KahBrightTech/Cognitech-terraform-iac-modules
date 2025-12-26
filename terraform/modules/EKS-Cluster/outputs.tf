@@ -55,28 +55,15 @@ output "oidc_provider_arn" {
   description = "ARN of the OIDC Provider for EKS."
   value       = aws_iam_openid_connect_provider.eks_oidc.arn
 }
-
 output "oidc_provider_url" {
   description = "URL of the OIDC Provider for EKS."
   value       = aws_iam_openid_connect_provider.eks_oidc.url
 }
 
-output "cloudwatch_observability_addon_arn" {
-  description = "ARN of the CloudWatch Observability addon."
-  value       = try(aws_eks_addon.cloudwatch_observability[0].arn, null)
-}
-
-output "cloudwatch_observability_addon_version" {
-  description = "Version of the CloudWatch Observability addon."
-  value       = try(aws_eks_addon.cloudwatch_observability[0].addon_version, null)
-}
-
-
 output "name" {
   description = "The name of the generated key pair"
   value       = length(aws_key_pair.generated_key) > 0 ? aws_key_pair.generated_key[0].key_name : null
 }
-
 
 output "secret_arn" {
   description = "The ARN of the created Secrets Manager secret (if created)"

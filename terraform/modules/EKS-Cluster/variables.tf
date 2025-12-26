@@ -22,13 +22,10 @@ variable "eks_cluster" {
       principal_arns = list(string)
       policy_arn     = string
     })), {})
-    version                           = optional(string, "1.32")
-    oidc_thumbprint                   = optional(string)
-    is_this_ec2_node_group            = optional(bool, false)
-    enable_networking_addons          = optional(bool, true)
-    enable_application_addons         = optional(bool, false)
-    enable_cloudwatch_observability   = optional(bool, false)
-    enable_secrets_manager_csi_driver = optional(bool, false)
+    version                  = optional(string, "1.32")
+    oidc_thumbprint          = optional(string)
+    is_this_ec2_node_group   = optional(bool, false)
+    enable_networking_addons = optional(bool, true)
     # enable_helm_secrets_store_csi_driver        = optional(bool, false)
     # helm_secrets_store_csi_driver_version       = optional(string, "1.5.5")
     # helm_aws_provider_version                   = optional(string, "2.1.1")
@@ -114,55 +111,7 @@ variable "eks_cluster" {
         source_sg_key  = optional(string)
       })))
     })))
-    launch_template = optional(list(object({
-      key              = string
-      name             = string
-      instance_profile = optional(string)
-      custom_ami       = optional(string)
-      ami_config = object({
-        os_release_date  = optional(string)
-        os_base_packages = optional(string)
-      })
-      instance_type               = optional(string)
-      key_name                    = optional(string)
-      associate_public_ip_address = optional(bool)
-      vpc_security_group_ids      = optional(list(string))
-      tags                        = optional(map(string))
-      user_data                   = optional(string)
-      volume_size                 = optional(number)
-      root_device_name            = optional(string)
-    })))
-    eks_node_groups = optional(list(object({
-      key                       = string
-      cluster_name              = optional(string)
-      cluster_key               = optional(string)
-      node_group_name           = optional(string)
-      node_role_arn             = optional(string)
-      node_role_key             = optional(string)
-      subnet_key                = optional(string)
-      subnet_ids                = optional(list(string))
-      desired_size              = number
-      max_size                  = number
-      min_size                  = number
-      instance_types            = list(string)
-      enable_remote_access      = optional(bool, false)
-      ec2_ssh_key               = optional(string, "")
-      source_security_group_ids = optional(list(string), [])
-      ami_type                  = optional(string)
-      disk_size                 = optional(number)
-      labels                    = optional(map(string), {})
-      tags                      = optional(map(string), {})
-      version                   = optional(string)
-      force_update_version      = optional(bool, false)
-      capacity_type             = optional(string, "ON_DEMAND")
-      ec2_instance_name         = optional(string, "eks_node_group")
-      launch_template = optional(object({
-        id      = string
-        version = optional(string, "$Latest")
-      }))
-    })))
   })
-
   validation {
     condition = !var.eks_cluster.enable_cloudwatch_observability || (
       var.eks_cluster.enable_cloudwatch_observability && var.eks_cluster.cloudwatch_observability_role_arn != null
