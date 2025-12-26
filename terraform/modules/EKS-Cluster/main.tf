@@ -345,6 +345,20 @@ module "eks_node_group" {
   depends_on = [
     aws_eks_cluster.eks_cluster,
     module.security_group,
+    module.security_group_rules,
+    module.launch_template
+  ]
+}
+
+module "launch_template" {
+  source          = "../EKS-Launch-template"
+  for_each        = var.eks_cluster.create_ec2_node_group && var.eks_cluster.launch_template != null ? { for item in var.eks_cluster.launch_template : item.key => item } : {}
+  common          = var.common
+  launch_template = each.value
+
+  depends_on = [
+    aws_eks_cluster.eks_cluster,
+    module.security_group,
     module.security_group_rules
   ]
 }

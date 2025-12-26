@@ -114,11 +114,31 @@ variable "eks_cluster" {
         source_sg_key  = optional(string)
       })))
     })))
+    launch_template = optional(list(object({
+      key              = string
+      name             = string
+      instance_profile = optional(string)
+      custom_ami       = optional(string)
+      ami_config = object({
+        os_release_date  = optional(string)
+        os_base_packages = optional(string)
+      })
+      instance_type               = optional(string)
+      key_name                    = optional(string)
+      associate_public_ip_address = optional(bool)
+      vpc_security_group_ids      = optional(list(string))
+      tags                        = optional(map(string))
+      user_data                   = optional(string)
+      volume_size                 = optional(number)
+      root_device_name            = optional(string)
+    })))
     eks_node_groups = optional(list(object({
       key                       = string
-      cluster_name              = string
+      cluster_name              = optional(string)
+      cluster_key               = optional(string)
       node_group_name           = optional(string)
       node_role_arn             = optional(string)
+      node_role_key             = optional(string)
       subnet_key                = optional(string)
       subnet_ids                = optional(list(string))
       desired_size              = number
