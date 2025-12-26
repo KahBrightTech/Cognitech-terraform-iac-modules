@@ -28,6 +28,7 @@ variable "eks_cluster" {
     enable_application_addons       = optional(bool, false)
     enable_cloudwatch_observability = optional(bool, false)
     # enable_secrets_manager_csi_driver           = optional(bool, false)
+    enable_helm_secrets_store_csi_driver        = optional(bool, false)
     helm_secrets_store_csi_driver_version       = optional(string, "1.5.5")
     helm_aws_provider_version                   = optional(string, "2.1.1")
     helm_enableSecretRotation                   = optional(bool, true)

@@ -178,6 +178,7 @@ resource "aws_eks_addon" "cloudwatch_observability" {
 # }
 
 resource "helm_release" "secrets_store_csi_driver" {
+  count      = var.eks_cluster.enable_helm_secrets_store_csi_driver ? 1 : 0
   name       = "csi-secrets-store"
   namespace  = "kube-system"
   repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
@@ -201,6 +202,7 @@ resource "helm_release" "secrets_store_csi_driver" {
 }
 
 resource "helm_release" "secrets_store_aws_provider" {
+  count     = var.eks_cluster.enable_helm_secrets_store_csi_driver ? 1 : 0
   name      = "secrets-provider-aws"
   namespace = "kube-system"
 
