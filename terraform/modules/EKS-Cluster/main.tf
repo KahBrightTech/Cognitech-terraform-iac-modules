@@ -210,6 +210,15 @@ resource "helm_release" "secrets_store_aws_provider" {
   chart      = "secrets-store-csi-driver-provider-aws"
   version    = var.eks_cluster.helm_aws_provider_version
 
+  values = [
+    yamlencode({
+      serviceAccount = {
+        create = false
+        name   = "secrets-store-csi-driver"
+      }
+    })
+  ]
+
   depends_on = [
     helm_release.secrets_store_csi_driver,
     aws_eks_cluster.eks_cluster
