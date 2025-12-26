@@ -361,7 +361,7 @@ module "eks_node_group" {
 }
 
 module "launch_template" {
-  source          = "../Launch-template"
+  source          = "../Launch_template"
   for_each        = var.eks_cluster.create_ec2_node_group && var.eks_cluster.launch_template != null ? { for item in var.eks_cluster.launch_template : item.key => item } : {}
   common          = var.common
   launch_template = each.value
