@@ -193,6 +193,11 @@ resource "helm_release" "secrets_store_csi_driver" {
       rotationPollInterval = var.eks_cluster.helm_rotationPollInterval
     })
   ]
+  depends_on = [
+    aws_eks_cluster.eks_cluster,
+    aws_eks_addon.vpc_cni,
+    aws_eks_addon.kube_proxy
+  ]
 }
 
 resource "helm_release" "secrets_store_aws_provider" {
@@ -204,7 +209,8 @@ resource "helm_release" "secrets_store_aws_provider" {
   version    = var.eks_cluster.helm_aws_provider_version
 
   depends_on = [
-    helm_release.secrets_store_csi_driver
+    helm_release.secrets_store_csi_driver,
+    aws_eks_cluster.eks_cluster
   ]
 }
 
