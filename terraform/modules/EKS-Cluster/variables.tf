@@ -17,7 +17,7 @@ variable "eks_cluster" {
     subnet_ids                     = list(string)
     additional_security_group_ids  = optional(list(string))
     additional_security_group_keys = optional(list(string))
-    creat_ec2_node_group           = optional(bool, true)
+    create_ec2_node_group          = optional(bool, true)
     access_entries = optional(map(object({
       principal_arns = list(string)
       policy_arn     = string
