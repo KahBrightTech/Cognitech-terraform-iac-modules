@@ -12,14 +12,14 @@ variable "common" {
 variable "eks_node_group" {
   description = "EKS node group configuration object."
   type = object({
-    cluster_name              = string
+    cluster_name              = optional(string)
     node_group_name           = string
-    node_role_arn             = string
-    subnet_ids                = list(string)
+    node_role_arn             = optional(string)
+    subnet_ids                = optional(list(string))
     desired_size              = number
     max_size                  = number
     min_size                  = number
-    instance_types            = list(string)
+    instance_types            = optional(list(string), [])
     enable_remote_access      = optional(bool, false)
     ec2_ssh_key               = optional(string, "")
     source_security_group_ids = optional(list(string), [])
