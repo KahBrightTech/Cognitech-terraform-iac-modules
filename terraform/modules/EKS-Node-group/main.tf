@@ -8,10 +8,10 @@ data "aws_region" "current" {}
 # EKS Node Group
 #--------------------------------------------------------------------
 resource "aws_eks_node_group" "eks_node_group" {
-  cluster_name    = var.eks_node_group.cluster_name
+  cluster_name    = var.eks_node_group.cluster_key != null ? var.eks_node_group.cluster_key : var.eks_node_group.cluster_name
   node_group_name = var.eks_node_group.node_group_name
-  node_role_arn   = var.eks_node_group.node_role_arn
-  subnet_ids      = var.eks_node_group.subnet_ids
+  node_role_arn   = var.eks_node_group.node_role_key != null ? var.eks_node_group.node_role_key : var.eks_node_group.node_role_arn
+  subnet_ids      = var.eks_node_group.subnet_keys != null ? var.eks_node_group.subnet_keys : var.eks_node_group.subnet_ids
 
   scaling_config {
     desired_size = var.eks_node_group.desired_size

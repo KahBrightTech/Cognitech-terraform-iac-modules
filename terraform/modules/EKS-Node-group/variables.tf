@@ -13,9 +13,12 @@ variable "eks_node_group" {
   description = "EKS node group configuration object."
   type = object({
     cluster_name              = optional(string)
+    cluster_key               = optional(string)
     node_group_name           = string
     node_role_arn             = optional(string)
+    node_role_key             = optional(string)
     subnet_ids                = optional(list(string))
+    subnet_keys               = optional(list(string))
     desired_size              = number
     max_size                  = number
     min_size                  = number
