@@ -337,10 +337,20 @@ module "security_group_rules" {
 }
 
 module "eks_node_group" {
-  source         = "../EKS-Node-group"
-  for_each       = var.eks_cluster.create_ec2_node_group && var.eks_cluster.eks_node_groups != null ? { for item in var.eks_cluster.eks_node_groups : item.key => item } : {}
-  common         = var.common
-  eks_node_group = each.value
+  source   = "../EKS-Node-group"
+  for_each = var.eks_cluster.create_ec2_node_group && var.eks_cluster.eks_node_groups != null ? { for item in var.eks_cluster.eks_node_groups : item.key => item } : {}
+  common   = var.common
+  eks_node_group = merge(
+    each.value.launch_template != null ? {
+      launch_template = {
+        id      = module.launch_template[each.value.key].launch_template_id
+        version = module.launch_template[each.value.key].launch_template_version
+      }
+    } : {},
+    {
+      cluster_key = var.eks_cluster.create_ec2_node_group ? aws_eks_cluster.eks_cluster.name : null
+    }
+  )
 
   depends_on = [
     aws_eks_cluster.eks_cluster,
