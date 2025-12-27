@@ -112,10 +112,5 @@ variable "eks_cluster" {
       })))
     })))
   })
-  validation {
-    condition = !var.eks_cluster.enable_cloudwatch_observability || (
-      var.eks_cluster.enable_cloudwatch_observability && var.eks_cluster.cloudwatch_observability_role_arn != null
-    )
-    error_message = "cloudwatch_observability_role_arn must be provided when enable_cloudwatch_observability is true. The CloudWatch Observability addon requires a service account role ARN."
-  }
+  default = null
 }
