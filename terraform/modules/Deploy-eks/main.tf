@@ -282,6 +282,20 @@ module "launch_template" {
       vpc_security_group_ids = each.value.vpc_security_group_keys != null ? [
         for sg_key in each.value.vpc_security_group_keys : module.security_group[sg_key].security_group_id
       ] : each.value.vpc_security_group_ids
+    },
+    {
+      user_data = each.value.user_data == null ? base64encode(yamlencode({
+        apiVersion = "node.eks.aws/v1alpha1"
+        kind       = "NodeConfig"
+        spec = {
+          cluster = {
+            name                 = aws_eks_cluster.eks_cluster.id
+            apiServerEndpoint    = aws_eks_cluster.eks_cluster.endpoint
+            certificateAuthority = aws_eks_cluster.eks_cluster.certificate_authority[0].data
+            cidr                 = aws_eks_cluster.eks_cluster.kubernetes_network_config[0].service_ipv4_cidr
+          }
+        }
+      })) : each.value.user_data
     }
   )
   depends_on = [aws_eks_cluster.eks_cluster]
