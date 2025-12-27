@@ -284,6 +284,7 @@ module "launch_template" {
       ] : each.value.vpc_security_group_ids
     }
   )
+  depends_on = [aws_eks_cluster.eks_cluster]
 }
 
 
