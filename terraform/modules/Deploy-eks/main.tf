@@ -315,7 +315,7 @@ module "eks_node_group" {
   eks_node_group = merge(
     each.value,
     {
-      cluster_name = aws_eks_cluster.eks_cluster.eks_cluster_name
+      cluster_name = each.value.cluster_key != null ? module.eks[each.value.cluster_key].eks_cluster_name : aws_eks_cluster.eks_cluster.name
     },
     {
       source_security_group_ids = each.value.source_security_group_keys != null ? [

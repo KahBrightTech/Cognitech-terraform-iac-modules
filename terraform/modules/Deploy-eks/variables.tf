@@ -131,6 +131,7 @@ variable "eks" {
     })))
     eks_node_groups = optional(list(object({
       key                        = optional(string)
+      cluster_key                = optional(string)
       cluster_name               = optional(string)
       node_group_name            = string
       node_role_arn              = optional(string)
