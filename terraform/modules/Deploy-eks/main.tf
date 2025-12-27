@@ -149,7 +149,7 @@ resource "aws_eks_addon" "metrics_server" {
 }
 
 resource "aws_eks_addon" "cloudwatch_observability" {
-  count                       = var.eks.addon_names == "amazon-cloudwatch-observability" && var.eks.create_cw_role ? 1 : 0
+  count                       = var.eks.addon_names == "amazon-cloudwatch-observability" && var.eks.create_cloudwatch_role ? 1 : 0
   cluster_name                = var.eks.cluster_name
   addon_name                  = "amazon-cloudwatch-observability"
   addon_version               = var.eks.cloudwatch_observability_version
