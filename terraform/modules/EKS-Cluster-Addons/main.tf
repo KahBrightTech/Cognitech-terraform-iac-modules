@@ -14,7 +14,7 @@ resource "aws_eks_addon" "coredns" {
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_cluster.name}-coredns-addon"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.name}-coredns-addon"
   })
 }
 
