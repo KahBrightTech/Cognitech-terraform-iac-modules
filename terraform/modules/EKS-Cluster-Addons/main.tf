@@ -14,7 +14,7 @@ resource "aws_eks_addon" "coredns" {
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.name}-coredns-addon"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.cluster_key}-coredns-addon"
   })
 }
 
@@ -25,7 +25,7 @@ resource "aws_eks_addon" "metrics_server" {
   resolve_conflicts_on_update = "PRESERVE"
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.cluster_name}-metrics-server-addon"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.cluster_key}-metrics-server-addon"
   })
 }
 
@@ -38,7 +38,7 @@ resource "aws_eks_addon" "cloudwatch_observability" {
   service_account_role_arn    = var.eks_addons.create_cw_role && var.eks_addons.cloudwatch_observability_role_arn != null ? var.eks_addons.cloudwatch_observability_role_arn : null
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.cluster_name}-cloudwatch-observability-addon"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.cluster_key}-cloudwatch-observability-addon"
   })
 }
 
@@ -48,6 +48,6 @@ resource "aws_eks_addon" "secrets_manager_csi_driver" {
   addon_version               = var.eks_addons.secrets_manager_csi_driver_version
   resolve_conflicts_on_update = "PRESERVE"
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.cluster_name}-secrets-manager-csi-driver-addon"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.cluster_key}-secrets-manager-csi-driver-addon"
   })
 }

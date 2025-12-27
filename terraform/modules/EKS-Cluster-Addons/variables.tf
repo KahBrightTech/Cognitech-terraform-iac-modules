@@ -13,6 +13,7 @@ variable "eks_addons" {
   description = "EKS cluster addons configuration object."
   type = object({
     cluster_name                       = string
+    cluster_key                        = optional(string)
     addon_names                        = optional(string)
     create_cw_role                     = optional(bool, false)
     cloudwatch_observability_role_arn  = optional(string)
