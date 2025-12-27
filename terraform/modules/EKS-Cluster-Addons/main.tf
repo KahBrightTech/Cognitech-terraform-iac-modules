@@ -30,12 +30,12 @@ resource "aws_eks_addon" "metrics_server" {
 }
 
 resource "aws_eks_addon" "cloudwatch_observability" {
-  count                       = contains(var.eks_addons.addon_names, "amazon-cloudwatch-observability") && var.eks_addons.create_cw_role ? 1 : 0
+  count                       = var.eks_addons.create_cw_role ? 1 : 0
   cluster_name                = var.eks_addons.cluster_name
   addon_name                  = "amazon-cloudwatch-observability"
   addon_version               = var.eks_addons.cloudwatch_observability_version
   resolve_conflicts_on_update = "PRESERVE"
-  service_account_role_arn    = var.eks_addons.create_cw_role && var.eks_addons.cloudwatch_observability_role_arn != null ? var.eks_addons.cloudwatch_observability_role_arn : null
+  service_account_role_arn    = var.eks_addons.cloudwatch_observability_role_arn
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks_addons.cluster_key}-cloudwatch-observability-addon"
