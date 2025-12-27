@@ -284,6 +284,9 @@ module "launch_template" {
       ] : each.value.vpc_security_group_ids
     },
     {
+      key_name = each.value.ec2_ssh_key != null ? module.aws_key_pair.generated_key[0].key_name : each.value.key_name
+    },
+    {
       user_data = each.value.user_data == null ? base64encode(yamlencode({
         apiVersion = "node.eks.aws/v1alpha1"
         kind       = "NodeConfig"
