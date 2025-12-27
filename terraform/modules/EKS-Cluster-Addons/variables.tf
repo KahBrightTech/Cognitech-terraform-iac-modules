@@ -13,7 +13,7 @@ variable "eks_addons" {
   description = "EKS cluster addons configuration object."
   type = object({
     cluster_name                       = string
-    addon_names                        = optional(list(string), ["coredns", "metrics-server", "amazon-cloudwatch-observability", "aws-secrets-store-csi-driver-provider"])
+    addon_names                        = optional(string)
     create_cw_role                     = optional(bool, false)
     cloudwatch_observability_role_arn  = optional(string)
     coredns_version                    = optional(string)
