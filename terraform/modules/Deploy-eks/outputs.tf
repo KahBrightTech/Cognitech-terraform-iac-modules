@@ -134,7 +134,6 @@ output "eks_addon_coredns" {
     addon_name    = try(aws_eks_addon.coredns[0].addon_name, null)
     addon_version = try(aws_eks_addon.coredns[0].addon_version, null)
     arn           = try(aws_eks_addon.coredns[0].arn, null)
-    status        = try(aws_eks_addon.coredns[0].status, null)
   } : null
 }
 
@@ -144,18 +143,16 @@ output "eks_addon_metrics_server" {
     addon_name    = try(aws_eks_addon.metrics_server[0].addon_name, null)
     addon_version = try(aws_eks_addon.metrics_server[0].addon_version, null)
     arn           = try(aws_eks_addon.metrics_server[0].arn, null)
-    status        = try(aws_eks_addon.metrics_server[0].status, null)
   } : null
 }
 
 output "eks_addon_cloudwatch_observability" {
   description = "CloudWatch Observability addon details"
   value = var.eks.eks_addons != null && var.eks.eks_addons.enable_cloudwatch_observability && var.eks.create_node_group && (var.eks.eks_addons.cloudwatch_observability_role_arn != null || var.eks.eks_addons.cloudwatch_observability_role_key != null) ? {
-    addon_name               = try(aws_eks_addon.cloudwatch_observability[0].addon_name, null)
-    addon_version            = try(aws_eks_addon.cloudwatch_observability[0].addon_version, null)
-    arn                      = try(aws_eks_addon.cloudwatch_observability[0].arn, null)
-    status                   = try(aws_eks_addon.cloudwatch_observability[0].status, null)
-    service_account_role_arn = try(aws_eks_addon.cloudwatch_observability[0].service_account_role_arn, null)
+    addon_name    = try(aws_eks_addon.cloudwatch_observability[0].addon_name, null)
+    addon_version = try(aws_eks_addon.cloudwatch_observability[0].addon_version, null)
+    arn           = try(aws_eks_addon.cloudwatch_observability[0].arn, null)
+    status        = try(aws_eks_addon.cloudwatch_observability[0].status, null)
   } : null
 }
 
@@ -165,7 +162,6 @@ output "eks_addon_secrets_manager_csi_driver" {
     addon_name    = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_name, null)
     addon_version = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_version, null)
     arn           = try(aws_eks_addon.secrets_manager_csi_driver[0].arn, null)
-    status        = try(aws_eks_addon.secrets_manager_csi_driver[0].status, null)
   } : null
 }
 
@@ -175,7 +171,6 @@ output "eks_addon_privateca_issuer" {
     addon_name    = try(aws_eks_addon.privateca_issuer[0].addon_name, null)
     addon_version = try(aws_eks_addon.privateca_issuer[0].addon_version, null)
     arn           = try(aws_eks_addon.privateca_issuer[0].arn, null)
-    status        = try(aws_eks_addon.privateca_issuer[0].status, null)
   } : null
 }
 
