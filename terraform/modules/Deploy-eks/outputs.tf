@@ -116,7 +116,6 @@ output "eks_addon_vpc_cni" {
     addon_name    = try(aws_eks_addon.vpc_cni[0].addon_name, null)
     addon_version = try(aws_eks_addon.vpc_cni[0].addon_version, null)
     arn           = try(aws_eks_addon.vpc_cni[0].arn, null)
-    status        = try(aws_eks_addon.vpc_cni[0].status, null)
   } : null
 }
 
