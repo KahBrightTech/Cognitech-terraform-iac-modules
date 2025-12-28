@@ -27,14 +27,6 @@ locals {
   access_entries_map = { for entry in local.access_entries : entry.key => entry }
   admin_role_arn     = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
   network_role_arn   = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
-  enabled_addons = var.eks.eks_addons != null ? {
-    for addon in var.eks.eks_addons :
-    addon.name => addon
-    if(
-      (addon.requires_nodes ? var.eks.create_node_group : true) &&
-      (addon.requires_cloudwatch_role ? var.eks.create_cloudwatch_role : true)
-    )
-  } : {}
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -108,94 +100,95 @@ resource "aws_iam_openid_connect_provider" "eks_oidc" {
 #--------------------------------------------------------------------
 # EKS Addons
 #--------------------------------------------------------------------
-resource "aws_eks_addon" "addons" {
-  for_each                    = local.enabled_addons
+resource "aws_eks_addon" "vpc_cni" {
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_vpc_cni ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
-  addon_name                  = each.value.name
-  addon_version               = each.value.version
+  addon_name                  = "vpc-cni"
+  addon_version               = var.eks.eks_addons.vpc_cni_version
   resolve_conflicts_on_update = "PRESERVE"
-  service_account_role_arn    = each.value.requires_cloudwatch_role ? var.eks.cloudwatch_role_arn : null
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-${each.key}-addon"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-vpc-cni-addon"
   })
-  depends_on = each.value.requires_nodes ? [module.eks_node_group] : []
 }
-# resource "aws_eks_addon" "vpc_cni" {
-#   for_each                    = var.eks.eks_addons != null && var.eks.addon_name == "vpc-cni" ? 1 : 0
-#   cluster_name                = aws_eks_cluster.eks_cluster.name
-#   addon_name                  = "vpc-cni"
-#   addon_version               = var.eks.eks_addons.vpc_cni_version
-#   resolve_conflicts_on_update = "PRESERVE"
 
-#   tags = merge(var.common.tags, {
-#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-vpc-cni-addon"
-#   })
-# }
+resource "aws_eks_addon" "kube_proxy" {
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_kube_proxy ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "kube-proxy"
+  addon_version               = var.eks.eks_addons.kube_proxy_version
+  resolve_conflicts_on_update = "PRESERVE"
 
-# resource "aws_eks_addon" "kube_proxy" {
-#   for_each                    = var.eks.eks_addons != null && var.eks.addon_name == "kube-proxy" ? 1 : 0
-#   cluster_name                = aws_eks_cluster.eks_cluster.name
-#   addon_name                  = "kube-proxy"
-#   addon_version               = var.eks.eks_addons.kube_proxy_version
-#   resolve_conflicts_on_update = "PRESERVE"
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-kube-proxy-addon"
+  })
+}
 
-#   tags = merge(var.common.tags, {
-#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-kube-proxy-addon"
-#   })
-# }
+resource "aws_eks_addon" "coredns" {
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_coredns && var.eks.create_node_group ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "coredns"
+  addon_version               = var.eks.eks_addons.coredns_version
+  resolve_conflicts_on_update = "PRESERVE"
 
-# resource "aws_eks_addon" "coredns" {
-#   for_each                    = var.eks.eks_addons != null && var.eks.create_node_group && var.eks.addon_name == "coredns" ? 1 : 0
-#   cluster_name                = var.eks.cluster_name
-#   addon_name                  = "coredns"
-#   addon_version               = var.eks.eks_addons.coredns_version
-#   resolve_conflicts_on_update = "PRESERVE"
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-coredns-addon"
+  })
+  depends_on = [module.eks_node_group]
+}
 
-#   tags = merge(var.common.tags, {
-#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-coredns-addon"
-#   })
-#   depends_on = [module.eks_node_group]
-# }
+resource "aws_eks_addon" "metrics_server" {
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_metrics_server && var.eks.create_node_group ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "metrics-server"
+  addon_version               = var.eks.eks_addons.metrics_server_version
+  resolve_conflicts_on_update = "PRESERVE"
 
-# resource "aws_eks_addon" "metrics_server" {
-#   for_each                    = var.eks.eks_addons != null && var.eks.create_node_group && var.eks.addon_name == "metrics-server" ? 1 : 0
-#   cluster_name                = var.eks.cluster_name
-#   addon_name                  = "metrics-server"
-#   addon_version               = var.eks.eks_addons.metrics_server_version
-#   resolve_conflicts_on_update = "PRESERVE"
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-metrics-server-addon"
+  })
+  depends_on = [module.eks_node_group]
+}
 
-#   tags = merge(var.common.tags, {
-#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-metrics-server-addon"
-#   })
-#   depends_on = [module.eks_node_group]
-# }
+resource "aws_eks_addon" "cloudwatch_observability" {
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_cloudwatch_observability && var.eks.create_node_group && var.eks.eks_addons.create_cloudwatch_role ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "amazon-cloudwatch-observability"
+  addon_version               = var.eks.eks_addons.cloudwatch_observability_version
+  resolve_conflicts_on_update = "PRESERVE"
+  service_account_role_arn    = var.eks.eks_addons.cloudwatch_observability_role_arn
 
-# resource "aws_eks_addon" "cloudwatch_observability" {
-#   for_each                    = var.eks.eks_addons != null && var.eks.create_node_group && var.eks.addon_name == "amazon-cloudwatch-observability" && var.eks.eks_addons.create_cloudwatch_role ? 1 : 0
-#   cluster_name                = var.eks.cluster_name
-#   addon_name                  = "amazon-cloudwatch-observability"
-#   addon_version               = var.eks.eks_addons.cloudwatch_observability_version
-#   resolve_conflicts_on_update = "PRESERVE"
-#   service_account_role_arn    = var.eks.eks_addons.cloudwatch_observability_role_arn
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-cloudwatch-observability-addon"
+  })
+  depends_on = [module.eks_node_group]
+}
 
-#   tags = merge(var.common.tags, {
-#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-cloudwatch-observability-addon"
-#   })
-#   depends_on = [module.eks_node_group]
-# }
+resource "aws_eks_addon" "secrets_manager_csi_driver" {
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "secrets-store-csi-driver"
+  addon_version               = var.eks.eks_addons.secrets_manager_csi_driver_version
+  resolve_conflicts_on_update = "PRESERVE"
 
-# resource "aws_eks_addon" "secrets_manager_csi_driver" {
-#   for_each                    = var.eks.eks_addons != null && var.eks.create_node_group && var.eks.addon_name == "aws-secrets-store-csi-driver-provider" ? 1 : 0
-#   cluster_name                = var.eks.cluster_name
-#   addon_name                  = "aws-secrets-store-csi-driver-provider"
-#   addon_version               = var.eks.eks_addons.secrets_manager_csi_driver_version
-#   resolve_conflicts_on_update = "PRESERVE"
-#   tags = merge(var.common.tags, {
-#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-secrets-store-csi-driver-addon"
-#   })
-#   depends_on = [module.eks_node_group]
-# }
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-secrets-store-csi-driver-addon"
+  })
+  depends_on = [module.eks_node_group]
+}
+
+resource "aws_eks_addon" "privateca_issuer" {
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_privateca_issuer && var.eks.create_node_group ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "aws-privateca-issuer"
+  addon_version               = var.eks.eks_addons.privateca_issuer_version
+  resolve_conflicts_on_update = "PRESERVE"
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-privateca-issuer-addon"
+  })
+  depends_on = [module.eks_node_group]
+}
 resource "aws_eks_addon" "privateca_issuer" {
   for_each                    = var.eks.eks_addons != null && var.eks.create_node_group && var.eks.addon_name == "aws-privateca-issuer" ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name

@@ -37,9 +37,14 @@ variable "eks" {
     use_private_subnets    = optional(bool, false)
     vpc_name               = optional(string)
     create_node_group      = optional(bool, false)
-    eks_addons = optional(list(object({
-      addon_name                         = string
-      addon_version                      = optional(string)
+    eks_addons = optional(object({
+      enable_vpc_cni                     = optional(bool, false)
+      enable_kube_proxy                  = optional(bool, false)
+      enable_coredns                     = optional(bool, false)
+      enable_metrics_server              = optional(bool, false)
+      enable_cloudwatch_observability    = optional(bool, false)
+      enable_secrets_manager_csi_driver  = optional(bool, false)
+      enable_privateca_issuer            = optional(bool, false)
       vpc_cni_version                    = optional(string)
       kube_proxy_version                 = optional(string)
       coredns_version                    = optional(string)
@@ -50,7 +55,7 @@ variable "eks" {
       create_cloudwatch_role             = optional(bool, false)
       cloudwatch_observability_role_arn  = optional(string)
       cloudwatch_observability_role_key  = optional(string)
-    })))
+    }))
     key_pair = object({
       name               = optional(string)
       name_prefix        = optional(string)
