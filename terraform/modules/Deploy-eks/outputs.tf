@@ -155,14 +155,14 @@ output "eks_addon_cloudwatch_observability" {
   } : null
 }
 
-output "eks_addon_secrets_manager_csi_driver" {
-  description = "Secrets Manager CSI Driver addon details"
-  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? {
-    addon_name    = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_name, null)
-    addon_version = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_version, null)
-    arn           = try(aws_eks_addon.secrets_manager_csi_driver[0].arn, null)
-  } : null
-}
+# output "eks_addon_secrets_manager_csi_driver" {
+#   description = "Secrets Manager CSI Driver addon details"
+#   value = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? {
+#     addon_name    = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_name, null)
+#     addon_version = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_version, null)
+#     arn           = try(aws_eks_addon.secrets_manager_csi_driver[0].arn, null)
+#   } : null
+# }
 
 output "eks_addon_privateca_issuer" {
   description = "Private CA Issuer addon details"
