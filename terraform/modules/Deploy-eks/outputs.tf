@@ -227,9 +227,8 @@ output "security_groups" {
   description = "Map of security groups created for EKS"
   value = var.eks.security_groups != null ? {
     for k, v in module.security_group : k => {
-      security_group_id   = v.security_group_id
-      security_group_arn  = v.security_group_arn
-      security_group_name = v.security_group_name
+      security_group_id  = v.security_group_id
+      security_group_arn = v.security_group_arn
     }
   } : {}
 }
