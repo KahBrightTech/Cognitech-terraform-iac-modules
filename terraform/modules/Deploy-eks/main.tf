@@ -191,25 +191,25 @@ resource "aws_eks_addon" "privateca_issuer" {
   depends_on = [module.eks_node_group]
 }
 
-resource "helm_release" "secrets_store_csi_driver" {
-  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
-  name       = "csi-secrets-store"
-  namespace  = "kube-system"
-  repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
-  chart      = "secrets-store-csi-driver"
-  version    = var.eks.eks_addons.secrets_manager_csi_driver_version
+# resource "helm_release" "secrets_store_csi_driver" {
+#   count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
+#   name       = "csi-secrets-store"
+#   namespace  = "kube-system"
+#   repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
+#   chart      = "secrets-store-csi-driver"
+#   version    = var.eks.eks_addons.secrets_manager_csi_driver_version
 
-  values = [
-    yamlencode({
-      syncSecret = {
-        enabled = true
-      }
-      enableSecretRotation = var.eks.eks_addons.enableSecretRotation
-      rotationPollInterval = var.eks.eks_addons.rotationPollInterval
-    })
-  ]
-  depends_on = [module.eks_node_group]
-}
+#   values = [
+#     yamlencode({
+#       syncSecret = {
+#         enabled = true
+#       }
+#       enableSecretRotation = var.eks.eks_addons.enableSecretRotation
+#       rotationPollInterval = var.eks.eks_addons.rotationPollInterval
+#     })
+#   ]
+#   depends_on = [module.eks_node_group]
+# }
 
 resource "helm_release" "secrets_store_aws_provider" {
   count     = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
@@ -219,6 +219,10 @@ resource "helm_release" "secrets_store_aws_provider" {
   repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
   chart      = "secrets-store-csi-driver-provider-aws"
   version    = var.eks.eks_addons.secrets_manager_csi_driver_aws_provider_version
+
+  cleanup_on_fail = true
+  replace         = true
+  force_update    = true
 
   values = [
     yamlencode({
