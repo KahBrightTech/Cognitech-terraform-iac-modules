@@ -332,7 +332,7 @@ module "eks_node_group" {
     },
     {
       launch_template = each.value.launch_template_key != null ? {
-        id      = module.launch_template[each.value.launch_template_key].launch_template_id
+        id      = module.launch_template[each.value.launch_template_key].id
         version = each.value.launch_template_version
       } : each.value.launch_template
     }
