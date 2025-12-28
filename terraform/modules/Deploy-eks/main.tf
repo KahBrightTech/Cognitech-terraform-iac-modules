@@ -329,11 +329,6 @@ module "eks_node_group" {
     {
       cluster_name = each.value.cluster_key != null ? each.value.cluster_key : aws_eks_cluster.eks_cluster.name
     },
-    # {
-    #   source_security_group_ids = each.value.source_security_group_keys != null ? [
-    #     for sg_key in each.value.source_security_group_keys : module.security_group[sg_key].security_group_id
-    #   ] : each.value.source_security_group_ids
-    # },
     {
       launch_template = each.value.launch_template_key != null ? {
         id      = module.launch_template[each.value.launch_template_key].id
