@@ -240,10 +240,9 @@ output "launch_templates" {
   description = "Map of launch templates created for EKS node groups"
   value = var.eks.create_node_group && var.eks.launch_templates != null ? {
     for k, v in module.launch_template : k => {
-      launch_template_id             = v.launch_template_id
-      launch_template_arn            = v.launch_template_arn
-      launch_template_name           = v.launch_template_name
-      launch_template_latest_version = v.launch_template_latest_version
+      launch_template_id   = v.id
+      launch_template_arn  = v.arn
+      launch_template_name = v.name
     }
   } : {}
 }
