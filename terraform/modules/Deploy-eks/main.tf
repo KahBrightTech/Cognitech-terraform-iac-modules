@@ -190,18 +190,6 @@ resource "aws_eks_addon" "privateca_issuer" {
   })
   depends_on = [module.eks_node_group]
 }
-resource "aws_eks_addon" "privateca_issuer" {
-  for_each                    = var.eks.eks_addons != null && var.eks.create_node_group && var.eks.addon_name == "aws-privateca-issuer" ? 1 : 0
-  cluster_name                = aws_eks_cluster.eks_cluster.name
-  addon_name                  = "aws-privateca-issuer"
-  addon_version               = var.eks.eks_addons.privateca_issuer_version
-  resolve_conflicts_on_update = "PRESERVE"
-
-  tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-privateca-issuer-addon"
-  })
-  depends_on = [module.eks_node_group]
-}
 
 #--------------------------------------------------------------------
 # Key Pair Resource for EKS EC2 Node Group
