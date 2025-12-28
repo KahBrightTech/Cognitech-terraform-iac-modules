@@ -337,7 +337,7 @@ module "eks_node_group" {
     {
       launch_template = each.value.launch_template_key != null ? {
         id      = module.launch_template[each.value.launch_template_key].id
-        version = each.value.launch_template.version != null ? each.value.launch_template.version : "$Latest"
+        version = try(each.value.launch_template.version, "$Latest")
       } : each.value.launch_template
     }
   )
