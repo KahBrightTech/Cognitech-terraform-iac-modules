@@ -47,6 +47,12 @@ variable "eks" {
     use_private_subnets    = optional(bool, false)
     vpc_name               = optional(string)
     create_node_group      = optional(bool, false)
+    eks_addons = optional(list(object({
+      addon_name               = string
+      addon_version            = optional(string)
+      service_account_role_arn = optional(string)
+      service_account_role_key = optional(string)
+    })))
     key_pair = object({
       name               = optional(string)
       name_prefix        = optional(string)

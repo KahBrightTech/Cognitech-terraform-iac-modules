@@ -101,7 +101,7 @@ resource "aws_iam_openid_connect_provider" "eks_oidc" {
 # EKS Addons
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "vpc_cni" {
-  count                       = var.eks.addon_names == "vpc-cni" ? 1 : 0
+  for_each                    = var.eks.eks_addons != null && var.eks.addon_name == "vpc-cni" ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "vpc-cni"
   addon_version               = var.eks.vpc_cni_version
@@ -113,7 +113,7 @@ resource "aws_eks_addon" "vpc_cni" {
 }
 
 resource "aws_eks_addon" "kube_proxy" {
-  count                       = var.eks.addon_names == "kube-proxy" ? 1 : 0
+  for_each                    = var.eks.eks_addons != null && var.eks.addon_name == "kube-proxy" ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "kube-proxy"
   addon_version               = var.eks.kube_proxy_version
@@ -125,7 +125,7 @@ resource "aws_eks_addon" "kube_proxy" {
 }
 
 resource "aws_eks_addon" "coredns" {
-  count                       = var.eks.addon_names == "coredns" ? 1 : 0
+  for_each                    = var.eks.eks_addons != null && var.eks.addon_name == "coredns" ? 1 : 0
   cluster_name                = var.eks.cluster_name
   addon_name                  = "coredns"
   addon_version               = var.eks.coredns_version
@@ -137,7 +137,7 @@ resource "aws_eks_addon" "coredns" {
 }
 
 resource "aws_eks_addon" "metrics_server" {
-  count                       = var.eks.addon_names == "metrics-server" ? 1 : 0
+  for_each                    = var.eks.eks_addons != null && var.eks.addon_name == "metrics-server" ? 1 : 0
   cluster_name                = var.eks.cluster_name
   addon_name                  = "metrics-server"
   addon_version               = var.eks.metrics_server_version
@@ -149,7 +149,7 @@ resource "aws_eks_addon" "metrics_server" {
 }
 
 resource "aws_eks_addon" "cloudwatch_observability" {
-  count                       = var.eks.addon_names == "amazon-cloudwatch-observability" && var.eks.create_cloudwatch_role ? 1 : 0
+  for_each                    = var.eks.eks_addons != null && var.eks.addon_name == "amazon-cloudwatch-observability" && var.eks.create_cloudwatch_role ? 1 : 0
   cluster_name                = var.eks.cluster_name
   addon_name                  = "amazon-cloudwatch-observability"
   addon_version               = var.eks.cloudwatch_observability_version
@@ -162,7 +162,7 @@ resource "aws_eks_addon" "cloudwatch_observability" {
 }
 
 resource "aws_eks_addon" "secrets_manager_csi_driver" {
-  count                       = var.eks.addon_names == "aws-secrets-store-csi-driver-provider" ? 1 : 0
+  for_each                    = var.eks.eks_addons != null && var.eks.addon_name == "aws-secrets-store-csi-driver-provider" ? 1 : 0
   cluster_name                = var.eks.cluster_name
   addon_name                  = "aws-secrets-store-csi-driver-provider"
   addon_version               = var.eks.secrets_manager_csi_driver_version
@@ -172,7 +172,7 @@ resource "aws_eks_addon" "secrets_manager_csi_driver" {
   })
 }
 resource "aws_eks_addon" "privateca_issuer" {
-  count                       = var.eks.addon_names == "aws-privateca-issuer" ? 1 : 0
+  for_each                    = var.eks.eks_addons != null && var.eks.addon_name == "aws-privateca-issuer" ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "aws-privateca-issuer"
   addon_version               = var.eks.privateca_issuer_version

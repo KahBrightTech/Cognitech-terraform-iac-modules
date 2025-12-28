@@ -112,7 +112,7 @@ output "eks_access_policy_associations" {
 #--------------------------------------------------------------------
 output "eks_addon_vpc_cni" {
   description = "VPC CNI addon details"
-  value = var.eks.addon_names == "vpc-cni" ? {
+  value = var.eks.addon_name == "vpc-cni" ? {
     addon_name    = try(aws_eks_addon.vpc_cni[0].addon_name, null)
     addon_version = try(aws_eks_addon.vpc_cni[0].addon_version, null)
     arn           = try(aws_eks_addon.vpc_cni[0].arn, null)
@@ -122,7 +122,7 @@ output "eks_addon_vpc_cni" {
 
 output "eks_addon_kube_proxy" {
   description = "Kube-proxy addon details"
-  value = var.eks.addon_names == "kube-proxy" ? {
+  value = var.eks.addon_name == "kube-proxy" ? {
     addon_name    = try(aws_eks_addon.kube_proxy[0].addon_name, null)
     addon_version = try(aws_eks_addon.kube_proxy[0].addon_version, null)
     arn           = try(aws_eks_addon.kube_proxy[0].arn, null)
@@ -132,7 +132,7 @@ output "eks_addon_kube_proxy" {
 
 output "eks_addon_coredns" {
   description = "CoreDNS addon details"
-  value = var.eks.addon_names == "coredns" ? {
+  value = var.eks.addon_name == "coredns" ? {
     addon_name    = try(aws_eks_addon.coredns[0].addon_name, null)
     addon_version = try(aws_eks_addon.coredns[0].addon_version, null)
     arn           = try(aws_eks_addon.coredns[0].arn, null)
@@ -142,7 +142,7 @@ output "eks_addon_coredns" {
 
 output "eks_addon_metrics_server" {
   description = "Metrics Server addon details"
-  value = var.eks.addon_names == "metrics-server" ? {
+  value = var.eks.addon_name == "metrics-server" ? {
     addon_name    = try(aws_eks_addon.metrics_server[0].addon_name, null)
     addon_version = try(aws_eks_addon.metrics_server[0].addon_version, null)
     arn           = try(aws_eks_addon.metrics_server[0].arn, null)
@@ -152,7 +152,7 @@ output "eks_addon_metrics_server" {
 
 output "eks_addon_cloudwatch_observability" {
   description = "CloudWatch Observability addon details"
-  value = var.eks.addon_names == "amazon-cloudwatch-observability" && var.eks.create_cw_role ? {
+  value = var.eks.addon_name == "amazon-cloudwatch-observability" && var.eks.create_cloudwatch_role ? {
     addon_name    = try(aws_eks_addon.cloudwatch_observability[0].addon_name, null)
     addon_version = try(aws_eks_addon.cloudwatch_observability[0].addon_version, null)
     arn           = try(aws_eks_addon.cloudwatch_observability[0].arn, null)
@@ -162,7 +162,7 @@ output "eks_addon_cloudwatch_observability" {
 
 output "eks_addon_secrets_manager_csi_driver" {
   description = "Secrets Manager CSI Driver addon details"
-  value = var.eks.addon_names == "aws-secrets-store-csi-driver-provider" ? {
+  value = var.eks.addon_name == "aws-secrets-store-csi-driver-provider" ? {
     addon_name    = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_name, null)
     addon_version = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_version, null)
     arn           = try(aws_eks_addon.secrets_manager_csi_driver[0].arn, null)
@@ -172,7 +172,7 @@ output "eks_addon_secrets_manager_csi_driver" {
 
 output "eks_addon_privateca_issuer" {
   description = "Private CA Issuer addon details"
-  value = var.eks.addon_names == "aws-privateca-issuer" ? {
+  value = var.eks.addon_name == "aws-privateca-issuer" ? {
     addon_name    = try(aws_eks_addon.privateca_issuer[0].addon_name, null)
     addon_version = try(aws_eks_addon.privateca_issuer[0].addon_version, null)
     arn           = try(aws_eks_addon.privateca_issuer[0].arn, null)
