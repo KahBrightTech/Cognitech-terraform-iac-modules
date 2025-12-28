@@ -286,10 +286,14 @@ module "launch_template" {
   common   = var.common
   launch_template = merge(
     each.value,
+    each.value,
     {
-      vpc_security_group_ids = each.value.vpc_security_group_keys != null ? [
-        for sg_key in each.value.vpc_security_group_keys : module.security_group[sg_key].security_group_id
-      ] : each.value.vpc_security_group_ids
+      vpc_security_group_ids = concat(
+        each.value.vpc_security_group_keys != null ? [
+          for sg_key in each.value.vpc_security_group_keys : module.security_group[sg_key].security_group_id
+        ] : [],
+        each.value.vpc_security_group_ids != null ? each.value.vpc_security_group_ids : []
+      )
     },
     {
       key_name = each.value.ec2_ssh_key != null ? each.value.ec2_ssh_key : aws_key_pair.generated_key[0].key_name
