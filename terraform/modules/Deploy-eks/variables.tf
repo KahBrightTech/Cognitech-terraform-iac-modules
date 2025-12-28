@@ -20,13 +20,6 @@ variable "eks" {
     subnet_keys                                 = optional(list(string))
     additional_security_group_ids               = optional(list(string))
     additional_security_group_keys              = optional(list(string))
-    vpc_cni_version                             = optional(string)
-    kube_proxy_version                          = optional(string)
-    coredns_version                             = optional(string)
-    metrics_server_version                      = optional(string)
-    cloudwatch_observability_version            = optional(string)
-    secrets_manager_csi_driver_version          = optional(string)
-    privateca_issuer_version                    = optional(string)
     create_cloudwatch_role                      = optional(bool, false)
     cloudwatch_observability_role_arn           = optional(string)
     cloudwatch_observability_role_key           = optional(string)
@@ -48,10 +41,15 @@ variable "eks" {
     vpc_name               = optional(string)
     create_node_group      = optional(bool, false)
     eks_addons = optional(list(object({
-      addon_name               = string
-      addon_version            = optional(string)
-      service_account_role_arn = optional(string)
-      service_account_role_key = optional(string)
+      addon_name                         = string
+      addon_version                      = optional(string)
+      vpc_cni_version                    = optional(string)
+      kube_proxy_version                 = optional(string)
+      coredns_version                    = optional(string)
+      metrics_server_version             = optional(string)
+      cloudwatch_observability_version   = optional(string)
+      secrets_manager_csi_driver_version = optional(string)
+      privateca_issuer_version           = optional(string)
     })))
     key_pair = object({
       name               = optional(string)
