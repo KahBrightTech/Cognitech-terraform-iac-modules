@@ -112,16 +112,17 @@ output "eks_access_policy_associations" {
 #--------------------------------------------------------------------
 output "eks_addon_vpc_cni" {
   description = "VPC CNI addon details"
-  value = var.eks.addon_name == "vpc-cni" ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_vpc_cni ? {
     addon_name    = try(aws_eks_addon.vpc_cni[0].addon_name, null)
     addon_version = try(aws_eks_addon.vpc_cni[0].addon_version, null)
     arn           = try(aws_eks_addon.vpc_cni[0].arn, null)
+    status        = try(aws_eks_addon.vpc_cni[0].status, null)
   } : null
 }
 
 output "eks_addon_kube_proxy" {
   description = "Kube-proxy addon details"
-  value = var.eks.addon_name == "kube-proxy" ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_kube_proxy ? {
     addon_name    = try(aws_eks_addon.kube_proxy[0].addon_name, null)
     addon_version = try(aws_eks_addon.kube_proxy[0].addon_version, null)
     arn           = try(aws_eks_addon.kube_proxy[0].arn, null)
@@ -131,7 +132,7 @@ output "eks_addon_kube_proxy" {
 
 output "eks_addon_coredns" {
   description = "CoreDNS addon details"
-  value = var.eks.addon_name == "coredns" ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_coredns && var.eks.create_node_group ? {
     addon_name    = try(aws_eks_addon.coredns[0].addon_name, null)
     addon_version = try(aws_eks_addon.coredns[0].addon_version, null)
     arn           = try(aws_eks_addon.coredns[0].arn, null)
@@ -141,7 +142,7 @@ output "eks_addon_coredns" {
 
 output "eks_addon_metrics_server" {
   description = "Metrics Server addon details"
-  value = var.eks.addon_name == "metrics-server" ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_metrics_server && var.eks.create_node_group ? {
     addon_name    = try(aws_eks_addon.metrics_server[0].addon_name, null)
     addon_version = try(aws_eks_addon.metrics_server[0].addon_version, null)
     arn           = try(aws_eks_addon.metrics_server[0].arn, null)
@@ -151,17 +152,18 @@ output "eks_addon_metrics_server" {
 
 output "eks_addon_cloudwatch_observability" {
   description = "CloudWatch Observability addon details"
-  value = var.eks.addon_name == "amazon-cloudwatch-observability" && var.eks.create_cloudwatch_role ? {
-    addon_name    = try(aws_eks_addon.cloudwatch_observability[0].addon_name, null)
-    addon_version = try(aws_eks_addon.cloudwatch_observability[0].addon_version, null)
-    arn           = try(aws_eks_addon.cloudwatch_observability[0].arn, null)
-    status        = try(aws_eks_addon.cloudwatch_observability[0].status, null)
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_cloudwatch_observability && var.eks.create_node_group && (var.eks.eks_addons.cloudwatch_observability_role_arn != null || var.eks.eks_addons.cloudwatch_observability_role_key != null) ? {
+    addon_name               = try(aws_eks_addon.cloudwatch_observability[0].addon_name, null)
+    addon_version            = try(aws_eks_addon.cloudwatch_observability[0].addon_version, null)
+    arn                      = try(aws_eks_addon.cloudwatch_observability[0].arn, null)
+    status                   = try(aws_eks_addon.cloudwatch_observability[0].status, null)
+    service_account_role_arn = try(aws_eks_addon.cloudwatch_observability[0].service_account_role_arn, null)
   } : null
 }
 
 output "eks_addon_secrets_manager_csi_driver" {
   description = "Secrets Manager CSI Driver addon details"
-  value = var.eks.addon_name == "aws-secrets-store-csi-driver-provider" ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? {
     addon_name    = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_name, null)
     addon_version = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_version, null)
     arn           = try(aws_eks_addon.secrets_manager_csi_driver[0].arn, null)
@@ -171,7 +173,7 @@ output "eks_addon_secrets_manager_csi_driver" {
 
 output "eks_addon_privateca_issuer" {
   description = "Private CA Issuer addon details"
-  value = var.eks.addon_name == "aws-privateca-issuer" ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_privateca_issuer && var.eks.create_node_group ? {
     addon_name    = try(aws_eks_addon.privateca_issuer[0].addon_name, null)
     addon_version = try(aws_eks_addon.privateca_issuer[0].addon_version, null)
     arn           = try(aws_eks_addon.privateca_issuer[0].arn, null)
@@ -184,22 +186,22 @@ output "eks_addon_privateca_issuer" {
 #--------------------------------------------------------------------
 output "key_pair_id" {
   description = "The key pair ID"
-  value       = try(aws_key_pair.generated_key[0].id, null)
+  value       = var.eks.create_node_group ? try(aws_key_pair.generated_key[0].id, null) : null
 }
 
 output "key_pair_name" {
   description = "The key pair name"
-  value       = try(aws_key_pair.generated_key[0].key_name, null)
+  value       = var.eks.create_node_group ? try(aws_key_pair.generated_key[0].key_name, null) : null
 }
 
 output "key_pair_arn" {
   description = "The key pair ARN"
-  value       = try(aws_key_pair.generated_key[0].arn, null)
+  value       = var.eks.create_node_group ? try(aws_key_pair.generated_key[0].arn, null) : null
 }
 
 output "key_pair_fingerprint" {
   description = "The MD5 public key fingerprint"
-  value       = try(aws_key_pair.generated_key[0].fingerprint, null)
+  value       = var.eks.create_node_group ? try(aws_key_pair.generated_key[0].fingerprint, null) : null
 }
 
 #--------------------------------------------------------------------
@@ -207,22 +209,22 @@ output "key_pair_fingerprint" {
 #--------------------------------------------------------------------
 output "private_key_secret_id" {
   description = "The ID of the Secrets Manager secret storing the private key"
-  value       = try(aws_secretsmanager_secret.private_key_secret[0].id, null)
+  value       = var.eks.create_node_group ? try(aws_secretsmanager_secret.private_key_secret[0].id, null) : null
 }
 
 output "private_key_secret_arn" {
   description = "The ARN of the Secrets Manager secret storing the private key"
-  value       = try(aws_secretsmanager_secret.private_key_secret[0].arn, null)
+  value       = var.eks.create_node_group ? try(aws_secretsmanager_secret.private_key_secret[0].arn, null) : null
 }
 
 output "private_key_secret_name" {
   description = "The name of the Secrets Manager secret storing the private key"
-  value       = try(aws_secretsmanager_secret.private_key_secret[0].name, null)
+  value       = var.eks.create_node_group ? try(aws_secretsmanager_secret.private_key_secret[0].name, null) : null
 }
 
 output "private_key_secret_version_id" {
   description = "The version ID of the secret version"
-  value       = try(aws_secretsmanager_secret_version.private_key_secret_version[0].version_id, null)
+  value       = var.eks.create_node_group ? try(aws_secretsmanager_secret_version.private_key_secret_version[0].version_id, null) : null
   sensitive   = true
 }
 
@@ -231,13 +233,13 @@ output "private_key_secret_version_id" {
 #--------------------------------------------------------------------
 output "security_groups" {
   description = "Map of security groups created for EKS"
-  value = {
+  value = var.eks.security_groups != null ? {
     for k, v in module.security_group : k => {
       security_group_id   = v.security_group_id
       security_group_arn  = v.security_group_arn
       security_group_name = v.security_group_name
     }
-  }
+  } : {}
 }
 
 #--------------------------------------------------------------------
