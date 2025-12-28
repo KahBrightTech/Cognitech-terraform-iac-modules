@@ -165,18 +165,18 @@ resource "aws_eks_addon" "cloudwatch_observability" {
   depends_on = [module.eks_node_group]
 }
 
-resource "aws_eks_addon" "secrets_manager_csi_driver" {
-  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
-  cluster_name                = aws_eks_cluster.eks_cluster.name
-  addon_name                  = "secrets-store-csi-driver"
-  addon_version               = var.eks.eks_addons.secrets_manager_csi_driver_version
-  resolve_conflicts_on_update = "PRESERVE"
+# resource "aws_eks_addon" "secrets_manager_csi_driver" {
+#   count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
+#   cluster_name                = aws_eks_cluster.eks_cluster.name
+#   addon_name                  = "secrets-store-csi-driver"
+#   addon_version               = var.eks.eks_addons.secrets_manager_csi_driver_version
+#   resolve_conflicts_on_update = "PRESERVE"
 
-  tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-secrets-store-csi-driver-addon"
-  })
-  depends_on = [module.eks_node_group]
-}
+#   tags = merge(var.common.tags, {
+#     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-secrets-store-csi-driver-addon"
+#   })
+#   depends_on = [module.eks_node_group]
+# }
 
 resource "aws_eks_addon" "privateca_issuer" {
   count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_privateca_issuer && var.eks.create_node_group ? 1 : 0
@@ -188,6 +188,46 @@ resource "aws_eks_addon" "privateca_issuer" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-privateca-issuer-addon"
   })
+  depends_on = [module.eks_node_group]
+}
+
+resource "helm_release" "secrets_store_csi_driver" {
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
+  name       = "csi-secrets-store"
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
+  chart      = "secrets-store-csi-driver"
+  version    = var.eks.eks_addons.secrets_manager_csi_driver_version
+
+  values = [
+    yamlencode({
+      syncSecret = {
+        enabled = true
+      }
+      enableSecretRotation = var.eks.eks_addons.enableSecretRotation
+      rotationPollInterval = var.eks.eks_addons.rotationPollInterval
+    })
+  ]
+  depends_on = [module.eks_node_group]
+}
+
+resource "helm_release" "secrets_store_aws_provider" {
+  count     = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
+  name      = "secrets-provider-aws"
+  namespace = "kube-system"
+
+  repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
+  chart      = "secrets-store-csi-driver-provider-aws"
+  version    = var.eks.eks_addons.secrets_manager_csi_driver_aws_provider_version
+
+  values = [
+    yamlencode({
+      serviceAccount = {
+        create = false
+        name   = "secrets-store-csi-driver"
+      }
+    })
+  ]
   depends_on = [module.eks_node_group]
 }
 
