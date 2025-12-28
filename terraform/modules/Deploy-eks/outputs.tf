@@ -152,7 +152,6 @@ output "eks_addon_cloudwatch_observability" {
     addon_name    = try(aws_eks_addon.cloudwatch_observability[0].addon_name, null)
     addon_version = try(aws_eks_addon.cloudwatch_observability[0].addon_version, null)
     arn           = try(aws_eks_addon.cloudwatch_observability[0].arn, null)
-    status        = try(aws_eks_addon.cloudwatch_observability[0].status, null)
   } : null
 }
 
