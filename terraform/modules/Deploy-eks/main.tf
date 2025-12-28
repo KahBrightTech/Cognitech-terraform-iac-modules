@@ -226,12 +226,16 @@ resource "helm_release" "secrets_store_aws_provider" {
 
   values = [
     yamlencode({
-      serviceAccount = {
-        create = false
-        name   = "secrets-store-csi-driver"
+      secrets-store-csi-driver = {
+        syncSecret = {
+          enabled = true
+        }
+        enableSecretRotation = var.eks.eks_addons.enableSecretRotation
+        rotationPollInterval = var.eks.eks_addons.rotationPollInterval
       }
     })
   ]
+
   depends_on = [module.eks_node_group]
 }
 
