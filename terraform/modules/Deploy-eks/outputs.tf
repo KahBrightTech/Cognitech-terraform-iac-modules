@@ -254,12 +254,8 @@ output "eks_node_groups" {
   description = "Map of EKS node groups created"
   value = var.eks.create_node_group && var.eks.eks_node_groups != null ? {
     for k, v in module.eks_node_group : k => {
-      node_group_id        = v.node_group_id
-      node_group_arn       = v.node_group_arn
-      node_group_status    = v.node_group_status
-      node_group_name      = v.node_group_name
-      capacity_type        = v.capacity_type
-      node_group_resources = v.node_group_resources
+      node_group_id  = v.node_group_id
+      node_group_arn = v.node_group_arn
     }
   } : {}
 }
