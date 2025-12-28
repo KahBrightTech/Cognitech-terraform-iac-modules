@@ -52,7 +52,6 @@ variable "eks" {
       cloudwatch_observability_version   = optional(string)
       secrets_manager_csi_driver_version = optional(string)
       privateca_issuer_version           = optional(string)
-      create_cloudwatch_role             = optional(bool, false)
       cloudwatch_observability_role_arn  = optional(string)
       cloudwatch_observability_role_key  = optional(string)
     }))

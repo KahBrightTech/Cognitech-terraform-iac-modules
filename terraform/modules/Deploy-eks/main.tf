@@ -151,7 +151,8 @@ resource "aws_eks_addon" "metrics_server" {
 }
 
 resource "aws_eks_addon" "cloudwatch_observability" {
-  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_cloudwatch_observability && var.eks.create_node_group && var.eks.eks_addons.create_cloudwatch_role ? 1 : 0
+  count = var.eks.eks_addons != null && var.eks.eks_addons.enable_cloudwatch_observability && var.eks.create_node_group && (var.eks.eks_addons.cloudwatch_observability_role_arn != null ||
+  var.eks.eks_addons.cloudwatch_observability_role_key != null) ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "amazon-cloudwatch-observability"
   addon_version               = var.eks.eks_addons.cloudwatch_observability_version
