@@ -405,32 +405,6 @@ module "service_account" {
 }
 
 #--------------------------------------------------------------------
-# Generate temporary assume role policy for EKS service accounts
-#--------------------------------------------------------------------
-resource "local_file" "eks_sa_assume_role_policy" {
-  for_each = var.eks.create_service_accounts && var.eks.iam_roles != null ? { for item in var.eks.iam_roles : item.key => item } : {}
-  filename = "${path.module}/tmp/${each.key}-assume-role.json"
-  content = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "EKSServiceAccountAssumeRoleWithWebIdentity"
-        Effect = "Allow"
-        Principal = {
-          Federated = aws_iam_openid_connect_provider.eks_oidc.arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = {
-            "${aws_iam_openid_connect_provider.eks_oidc.url}:sub" = "system:serviceaccount:${each.value.service_account_namespace}:${each.value.service_account_name}"
-            "${aws_iam_openid_connect_provider.eks_oidc.url}:aud" = "sts.amazonaws.com"
-          }
-        }
-      }
-    ]
-  })
-}
-#--------------------------------------------------------------------
 # EKS Cluster IAM Roles for Service Accounts
 #--------------------------------------------------------------------
 module "iam_roles" {
@@ -440,8 +414,26 @@ module "iam_roles" {
   iam_role = merge(
     each.value,
     {
-      assume_role_policy = local_file.eks_sa_assume_role_policy[each.key].filename
+      assume_role_policy = each.value.assume_role_policy != null ? each.value.assume_role_policy : jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Sid    = "EKSServiceAccountAssumeRoleWithWebIdentity"
+            Effect = "Allow"
+            Principal = {
+              Federated = aws_iam_openid_connect_provider.eks_oidc.arn
+            }
+            Action = "sts:AssumeRoleWithWebIdentity"
+            Condition = {
+              StringEquals = {
+                "${aws_iam_openid_connect_provider.eks_oidc.url}:sub" = "system:serviceaccount:${each.value.service_account_namespace}:${each.value.service_account_name}"
+                "${aws_iam_openid_connect_provider.eks_oidc.url}:aud" = "sts.amazonaws.com"
+              }
+            }
+          }
+        ]
+      })
     }
   )
-  depends_on = [aws_eks_cluster.eks_cluster, local_file.eks_sa_assume_role_policy]
+  depends_on = [aws_eks_cluster.eks_cluster]
 }
