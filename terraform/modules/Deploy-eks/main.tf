@@ -409,12 +409,12 @@ module "service_account" {
 #--------------------------------------------------------------------
 module "iam_roles" {
   for_each = var.eks.create_service_accounts && var.eks.iam_roles != null ? { for item in var.eks.iam_roles : item.key => item } : {}
-  source   = "../IAM-Roles"
+  source   = "IAM-Roles"
   common   = var.common
   iam_role = merge(
     each.value,
     {
-      assume_role_policy = each.value.use_default_eks_assume_role_policy ? jsonencode({
+      assume_role_policy = each.value.assume_role_policy != null ? each.value.assume_role_policy : jsonencode({
         Version = "2012-10-17"
         Statement = [
           {
@@ -432,7 +432,7 @@ module "iam_roles" {
             }
           }
         ]
-      }) : each.value.assume_role_policy
+      })
     }
   )
   depends_on = [aws_eks_cluster.eks_cluster]
