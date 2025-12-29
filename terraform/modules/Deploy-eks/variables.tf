@@ -191,6 +191,8 @@ variable "eks" {
       max_session_duration      = optional(number, 3600)
       permissions_boundary      = optional(string)
       create_custom_policy      = optional(bool, true)
+      service_account_name      = optional(string)
+      service_account_namespace = optional(string)
       policy = optional(object({
         name          = optional(string)
         description   = optional(string)
