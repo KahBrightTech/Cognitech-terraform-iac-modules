@@ -12,6 +12,7 @@ variable "common" {
 variable "iam_role" {
   description = "IAM Role configuration"
   type = object({
+    key                       = string
     name                      = string
     description               = optional(string)
     path                      = optional(string, "/")
