@@ -307,3 +307,16 @@ output "eks_cluster_config" {
   }
   sensitive = true
 }
+
+#--------------------------------------------------------------------
+# EKS Service Account Outputs
+#--------------------------------------------------------------------
+output "eks_service_accounts" {
+  description = "Map of EKS service accounts created"
+  value = var.eks.create_service_accounts && var.eks.service_accounts != null ? {
+    for k, v in module.service_account : k => {
+      name      = v.service_account_name
+      namespace = v.service_account_namespace
+    }
+  } : {}
+}

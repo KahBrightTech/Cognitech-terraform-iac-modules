@@ -31,12 +31,13 @@ variable "eks" {
       principal_arns = optional(list(string))
       policy_arn     = optional(string)
     })), {})
-    version                = optional(string, "1.32")
-    oidc_thumbprint        = optional(string)
-    is_this_ec2_node_group = optional(bool, false)
-    use_private_subnets    = optional(bool, false)
-    vpc_name               = optional(string)
-    create_node_group      = optional(bool, false)
+    version                 = optional(string, "1.32")
+    oidc_thumbprint         = optional(string)
+    is_this_ec2_node_group  = optional(bool, false)
+    use_private_subnets     = optional(bool, false)
+    vpc_name                = optional(string)
+    create_node_group       = optional(bool, false)
+    create_service_accounts = optional(bool, false)
     eks_addons = optional(object({
       enable_vpc_cni                                  = optional(bool, false)
       enable_kube_proxy                               = optional(bool, false)
@@ -169,6 +170,33 @@ variable "eks" {
       launch_template = optional(object({
         id      = string
         version = optional(string, "$Latest")
+      }))
+    })))
+    service_accounts = optional(list(object({
+      key       = optional(string)
+      name      = string
+      namespace = optional(string, "default")
+      role_arn  = optional(string)
+      role_key  = optional(string)
+    })))
+    iam_roles = optional(list(object({
+      key                       = optional(string)
+      name                      = string
+      description               = optional(string)
+      path                      = optional(string, "/")
+      assume_role_policy        = string
+      custom_assume_role_policy = optional(bool, true)
+      force_detach_policies     = optional(bool, false)
+      managed_policy_arns       = optional(list(string))
+      max_session_duration      = optional(number, 3600)
+      permissions_boundary      = optional(string)
+      create_custom_policy      = optional(bool, true)
+      policy = optional(object({
+        name          = optional(string)
+        description   = optional(string)
+        policy        = optional(string)
+        path          = optional(string, "/")
+        custom_policy = optional(bool, true)
       }))
     })))
   })

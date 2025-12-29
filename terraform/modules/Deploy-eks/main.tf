@@ -386,3 +386,54 @@ module "eks_node_group" {
   )
   depends_on = [aws_eks_cluster.eks_cluster, module.launch_template]
 }
+
+
+#--------------------------------------------------------------------
+# EKS Service account
+#--------------------------------------------------------------------
+module "service_account" {
+  for_each = var.eks.create_service_accounts && var.eks.service_accounts != null ? { for item in var.eks.service_accounts : item.key => item } : {}
+  source   = "../EKS-Service-account"
+  common   = var.common
+  eks_service_account = merge(
+    each.value,
+    {
+      role_arn = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role.arn : each.value.role_arn
+    }
+  )
+  depends_on = [aws_eks_cluster.eks_cluster]
+}
+
+#--------------------------------------------------------------------
+# EKS Cluster IAM Roles for Service Accounts
+#--------------------------------------------------------------------
+module "iam_roles" {
+  for_each = var.eks.create_service_accounts && var.eks.iam_roles != null ? { for item in var.eks.iam_roles : item.key => item } : {}
+  source   = "../IAM-Roles"
+  common   = var.common
+  iam_role = merge(
+    each.value,
+    {
+      assume_role_policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Sid    = "EKSServiceAccountAssumeRoleWithWebIdentity"
+            Effect = "Allow"
+            Principal = {
+              Federated = aws_iam_openid_connect_provider.eks_oidc.arn
+            }
+            Action = "sts:AssumeRoleWithWebIdentity"
+            Condition = {
+              StringEquals = {
+                "${aws_iam_openid_connect_provider.eks_oidc.url}:sub" = "system:serviceaccount:${module.service_account[each.key].namespace}:${module.service_account[each.key].name}"
+                "${aws_iam_openid_connect_provider.eks_oidc.url}:aud" = "sts.amazonaws.com"
+              }
+            }
+          }
+        ]
+      })
+    }
+  )
+  depends_on = [aws_eks_cluster.eks_cluster]
+}
