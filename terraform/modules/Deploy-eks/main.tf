@@ -409,7 +409,7 @@ module "service_account" {
 #--------------------------------------------------------------------
 module "iam_roles" {
   for_each = var.eks.create_service_accounts && var.eks.iam_roles != null ? { for item in var.eks.iam_roles : item.key => item } : {}
-  source   = "IAM-Roles"
+  source   = "./IAM-Roles"
   common   = var.common
   iam_role = merge(
     each.value,
