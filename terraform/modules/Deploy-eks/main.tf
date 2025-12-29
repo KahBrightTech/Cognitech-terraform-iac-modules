@@ -398,7 +398,7 @@ module "service_account" {
   eks_service_account = merge(
     each.value,
     {
-      role_arn = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role.arn : each.value.role_arn
+      role_arn = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role.iam_role_arn : each.value.role_arn
     }
   )
   depends_on = [aws_eks_cluster.eks_cluster]
