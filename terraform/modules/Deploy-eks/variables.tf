@@ -184,7 +184,7 @@ variable "eks" {
       name                      = string
       description               = optional(string)
       path                      = optional(string, "/")
-      assume_role_policy        = string
+      assume_role_policy        = optional(string)
       custom_assume_role_policy = optional(bool, true)
       force_detach_policies     = optional(bool, false)
       managed_policy_arns       = optional(list(string))
