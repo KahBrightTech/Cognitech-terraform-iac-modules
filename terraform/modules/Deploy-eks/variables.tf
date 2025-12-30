@@ -61,6 +61,8 @@ variable "eks" {
       privateca_issuer_version                        = optional(string)
       cloudwatch_observability_role_arn               = optional(string)
       cloudwatch_observability_role_key               = optional(string)
+      ebs_csi_driver_role_arn                         = optional(string)
+      ebs_csi_driver_role_key                         = optional(string)
       enableSecretRotation                            = optional(bool, false)
       rotationPollInterval                            = optional(string)
     }))

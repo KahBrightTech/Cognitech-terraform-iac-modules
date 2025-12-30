@@ -166,13 +166,18 @@ resource "aws_eks_addon" "cloudwatch_observability" {
 }
 
 resource "aws_eks_addon" "ebs_csi_driver" {
-  count         = var.eks.eks_addons != null && var.eks.eks_addons.enable_ebs_csi_driver && var.eks.create_node_group ? 1 : 0
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  addon_name    = "aws-ebs-csi-driver"
-  addon_version = var.eks.eks_addons.ebs_csi_driver_version
+  count                    = var.eks.eks_addons != null && var.eks.eks_addons.enable_ebs_csi_driver && var.eks.create_node_group ? 1 : 0
+  cluster_name             = aws_eks_cluster.eks_cluster.name
+  addon_name               = "aws-ebs-csi-driver"
+  addon_version            = var.eks.eks_addons.ebs_csi_driver_version
+  service_account_role_arn = var.eks.eks_addons.ebs_csi_driver_role_key != null ? module.iam_roles[var.eks.eks_addons.ebs_csi_driver_role_key].iam_role_arn : var.eks.eks_addons.ebs_csi_driver_role_arn
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
+  depends_on = [
+    module.eks_node_group,
+    module.iam_roles
+  ]
 }
 resource "aws_eks_addon" "privateca_issuer" {
   count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_privateca_issuer && var.eks.create_node_group ? 1 : 0
