@@ -11,8 +11,8 @@ resource "kubernetes_service_account" "irsa" {
   metadata {
     name      = var.eks_service_account.name
     namespace = coalesce(var.eks_service_account.namespace, "default")
-    annotations = {
+    annotations = var.eks_service_account.role_arn != null && var.eks_service_account.role_arn != "" ? {
       "eks.amazonaws.com/role-arn" = var.eks_service_account.role_arn
-    }
+    } : {}
   }
 }
