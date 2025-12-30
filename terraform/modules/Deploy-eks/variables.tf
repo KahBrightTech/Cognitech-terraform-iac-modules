@@ -175,14 +175,14 @@ variable "eks" {
       }))
     })))
     service_accounts = optional(list(object({
-      key       = optional(string)
-      name      = string
-      namespace = optional(string, "default")
-      role_arn  = optional(string)
-      role_key  = optional(string)
+      enable_eks_pia = optional(bool, false)
+      key            = optional(string)
+      name           = string
+      namespace      = optional(string, "default")
+      role_arn       = optional(string)
+      role_key       = optional(string)
     })))
     eks_pia = optional(list(object({
-      enable_eks_pia            = optional(bool, false)
       service_account_keys      = optional(list(string), [])
       service_account_namespace = optional(string)
       role_arn                  = optional(string)
