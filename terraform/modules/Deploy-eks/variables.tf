@@ -189,6 +189,7 @@ variable "eks" {
     eks_pia = optional(list(object({
       key                       = optional(string)
       service_account_keys      = optional(list(string), [])
+      service_account_names     = optional(list(string), [])
       service_account_namespace = optional(string)
       role_arn                  = optional(string)
       role_key                  = optional(string)
