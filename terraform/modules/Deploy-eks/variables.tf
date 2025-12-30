@@ -38,6 +38,7 @@ variable "eks" {
     vpc_name                = optional(string)
     create_node_group       = optional(bool, false)
     create_service_accounts = optional(bool, false)
+    enable_eks_pia          = optional(bool, false)
     eks_addons = optional(object({
       enable_vpc_cni                                  = optional(bool, false)
       enable_kube_proxy                               = optional(bool, false)
@@ -175,12 +176,11 @@ variable "eks" {
       }))
     })))
     service_accounts = optional(list(object({
-      enable_eks_pia = optional(bool, false)
-      key            = optional(string)
-      name           = string
-      namespace      = optional(string, "default")
-      role_arn       = optional(string)
-      role_key       = optional(string)
+      key       = optional(string)
+      name      = string
+      namespace = optional(string, "default")
+      role_arn  = optional(string)
+      role_key  = optional(string)
     })))
     eks_pia = optional(list(object({
       key                       = optional(string)
