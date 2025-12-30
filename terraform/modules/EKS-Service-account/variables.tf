@@ -14,6 +14,6 @@ variable "eks_service_account" {
   type = object({
     name      = string
     namespace = optional(string, "default")
-    role_arn  = string
+    role_arn  = optional(string)
   })
 }

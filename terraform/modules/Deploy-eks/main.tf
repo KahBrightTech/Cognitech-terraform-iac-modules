@@ -191,25 +191,15 @@ resource "aws_eks_addon" "privateca_issuer" {
   depends_on = [module.eks_node_group]
 }
 
-# resource "helm_release" "secrets_store_csi_driver" {
-#   count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
-#   name       = "csi-secrets-store"
-#   namespace  = "kube-system"
-#   repository = "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
-#   chart      = "secrets-store-csi-driver"
-#   version    = var.eks.eks_addons.secrets_manager_csi_driver_version
+resource "aws_eks_addon" "pod_identity_agent" {
+  count         = var.eks.eks_addons != null && var.eks.eks_addons.enable_pod_identity_agent && var.eks.create_node_group ? 1 : 0
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  addon_name    = "eks-pod-identity-agent"
+  addon_version = var.eks.eks_addons.pod_identity_agent_version
 
-#   values = [
-#     yamlencode({
-#       syncSecret = {
-#         enabled = true
-#       }
-#       enableSecretRotation = var.eks.eks_addons.enableSecretRotation
-#       rotationPollInterval = var.eks.eks_addons.rotationPollInterval
-#     })
-#   ]
-#   depends_on = [module.eks_node_group]
-# }
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+}
 
 resource "helm_release" "secrets_store_aws_provider" {
   count     = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
@@ -436,4 +426,12 @@ module "iam_roles" {
     }
   )
   depends_on = [aws_eks_cluster.eks_cluster]
+}
+
+resource "aws_eks_pod_identity_association" "dynamodb" {
+  for_each        = var.eks.create_service_accounts && var.eks.eks_pia != null && var.eks.service_accounts != null && var.eks.eks_pia.enable_eks_pia ? { for item in var.eks.service_accounts : item.key => item } : {}
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  namespace       = each.value.service_account_namespace
+  service_account = each.value.service_account_keys != null ? module.service_account[each.key].service_account_namespace : each.value.service_account_namespace
+  role_arn        = each.value.role_keys != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
 }
