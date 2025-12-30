@@ -24,9 +24,10 @@ locals {
       }
     ]
   ])
-  access_entries_map = { for entry in local.access_entries : entry.key => entry }
-  admin_role_arn     = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
-  network_role_arn   = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
+  access_entries_map           = { for entry in local.access_entries : entry.key => entry }
+  admin_role_arn               = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
+  network_role_arn             = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
+  created_service_account_keys = var.eks.create_service_accounts && var.eks.service_accounts != null ? toset([for sa in var.eks.service_accounts : sa.key]) : toset([])
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -430,10 +431,11 @@ module "iam_roles" {
 }
 
 resource "aws_eks_pod_identity_association" "pia" {
-  for_each        = var.eks.enable_eks_pia && var.eks.eks_pia != null ? { for item in var.eks.eks_pia : item.key => item } : {}
-  cluster_name    = aws_eks_cluster.eks_cluster.name
-  namespace       = each.value.service_account_namespace
-  service_account = each.value.service_account_keys != null ? module.service_account[each.key].service_account_name : each.value.service_account_name
-  role_arn        = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
-  depends_on      = [aws_eks_cluster.eks_cluster]
+  for_each     = var.eks.enable_eks_pia && var.eks.eks_pia != null ? { for item in var.eks.eks_pia : item.key => item } : {}
+  cluster_name = aws_eks_cluster.eks_cluster.name
+  namespace    = each.value.service_account_namespace
+  service_account = (each.value.service_account_keys != null && length(each.value.service_account_keys) > 0 && contains(local.created_service_account_keys, each.key) ? module.service_account[each.key].service_account_name : each.value.service_account_name
+  )
+  role_arn   = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
+  depends_on = [aws_eks_cluster.eks_cluster]
 }
