@@ -428,8 +428,8 @@ module "iam_roles" {
   depends_on = [aws_eks_cluster.eks_cluster]
 }
 
-resource "aws_eks_pod_identity_association" "dynamodb" {
-  for_each        = var.eks.create_service_accounts && var.eks.eks_pia != null && var.eks.service_accounts != null && var.eks.service_accounts.enable_eks_pia ? { for item in var.eks.service_accounts : item.key => item } : {}
+resource "aws_eks_pod_identity_association" "pia" {
+  for_each        = var.eks.create_service_accounts && var.eks.eks_pia != null && var.eks.service_accounts != null && var.eks.service_accounts.enable_eks_pia ? { for item in var.eks.eks_pia : item.key => item } : {}
   cluster_name    = aws_eks_cluster.eks_cluster.name
   namespace       = each.value.service_account_namespace
   service_account = each.value.service_account_keys != null ? module.service_account[each.key].service_account_namespace : each.value.service_account_namespace
