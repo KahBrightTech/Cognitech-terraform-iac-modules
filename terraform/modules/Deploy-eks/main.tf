@@ -426,7 +426,7 @@ module "iam_roles" {
             Action = "sts:AssumeRoleWithWebIdentity"
             Condition = {
               StringEquals = {
-                "${aws_iam_openid_connect_provider.eks_oidc.url}:sub" = "system:serviceaccount:${var.eks.service_accounts.namespace}:${var.eks.service_accounts.name}"
+                "${aws_iam_openid_connect_provider.eks_oidc.url}:sub" = "system:serviceaccount:${each.value.service_account_namespace}:${each.value.service_account_name}"
                 "${aws_iam_openid_connect_provider.eks_oidc.url}:aud" = "sts.amazonaws.com"
               }
             }
