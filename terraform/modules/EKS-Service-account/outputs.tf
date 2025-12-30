@@ -10,6 +10,6 @@ output "service_account_namespace" {
 }
 
 output "service_account_role_arn" {
-  description = "The IAM role ARN associated with the service account."
-  value       = kubernetes_service_account.irsa.metadata[0].annotations["eks.amazonaws.com/role-arn"]
+  description = "The IAM role ARN associated with the service account (IRSA only)."
+  value       = try(kubernetes_service_account.irsa.metadata[0].annotations["eks.amazonaws.com/role-arn"], null)
 }
