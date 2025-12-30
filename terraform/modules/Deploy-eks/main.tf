@@ -433,5 +433,5 @@ resource "aws_eks_pod_identity_association" "pia" {
   cluster_name    = aws_eks_cluster.eks_cluster.name
   namespace       = each.value.service_account_namespace
   service_account = each.value.service_account_keys != null ? module.service_account[each.key].service_account_namespace : each.value.service_account_namespace
-  role_arn        = each.value.role_keys != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
+  role_arn        = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
 }
