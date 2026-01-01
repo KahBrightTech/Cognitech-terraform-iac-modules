@@ -89,7 +89,7 @@ resource "aws_launch_template" "main" {
   }
   lifecycle {
     create_before_destroy = true
-    ignore_changes        = [latest_version, image_id, iam_instance_profile]
+    ignore_changes        = [image_id, iam_instance_profile]
   }
 
   tags = merge(var.common.tags, {
