@@ -47,6 +47,12 @@ output "db_instance_username" {
   sensitive   = true
 }
 
+output "db_instance_password" {
+  description = "The master password for the database (randomly generated)"
+  value       = try(random_password.master_password[0].result, null)
+  sensitive   = true
+}
+
 output "db_instance_engine" {
   description = "The database engine"
   value       = try(aws_db_instance.instance[0].engine, null)

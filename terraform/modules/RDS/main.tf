@@ -5,11 +5,21 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 #--------------------------------------------------------------------
+# Generate random username for RDS
+#--------------------------------------------------------------------
+resource "random_pet" "master_username" {
+  count     = var.rds_instance != null && var.rds_instance.master_username == null ? 1 : 0
+  length    = 2
+  separator = "_"
+  prefix    = "admin"
+}
+
+#--------------------------------------------------------------------
 # Generate random password for RDS
 #--------------------------------------------------------------------
 resource "random_password" "master_password" {
   count            = var.rds_instance != null ? 1 : 0
-  length           = 32
+  length           = 15
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
@@ -19,7 +29,7 @@ resource "random_password" "master_password" {
 #--------------------------------------------------------------------
 resource "aws_db_subnet_group" "group" {
   count      = var.rds_instance != null ? 1 : 0
-  name       = "${var.common.account_name}-${var.rds_instance.name}-subnet-group"
+  name       = "${var.common.account_name}-${var.common.region_prefix}-${var.rds_instance.name}-subnet-group"
   subnet_ids = var.rds_instance.subnet_ids
 
   tags = merge(
@@ -80,7 +90,7 @@ resource "aws_db_instance" "instance" {
   iops                  = var.rds_instance.iops
 
   db_name  = var.rds_instance.database_name
-  username = var.rds_instance.master_username
+  username = var.rds_instance.master_username != null ? var.rds_instance.master_username : random_pet.master_username[0].id
   password = random_password.master_password[0].result
   port     = var.rds_instance.port
 
@@ -133,10 +143,9 @@ resource "aws_db_instance" "instance" {
 resource "aws_secretsmanager_secret" "rds_credentials" {
   count = var.rds_instance != null ? 1 : 0
 
-  name        = "${var.common.account_name}/${var.rds_instance.name}/rds-credentials"
-  description = "RDS credentials and connection information for ${var.rds_instance.name}"
-  kms_key_id  = var.rds_instance.secrets_kms_key_id
-
+  name_prefix             = "${var.common.account_name}-${var.common.region_prefix}-${var.rds_instance.name}/rds-credentials"
+  description             = "RDS credentials and connection information for ${var.rds_instance.name}"
+  kms_key_id              = var.rds_instance.secrets_kms_key_id
   recovery_window_in_days = var.rds_instance.secret_recovery_window_days
 
   tags = merge(
@@ -152,7 +161,7 @@ resource "aws_secretsmanager_secret_version" "rds_credentials" {
 
   secret_id = aws_secretsmanager_secret.rds_credentials[0].id
   secret_string = jsonencode({
-    username = aws_db_instance.instance[0].username
+    username = var.rds_instance.master_username != null ? var.rds_instance.master_username : random_pet.master_username[0].id
     password = random_password.master_password[0].result
     host     = aws_db_instance.instance[0].address
     endpoint = aws_db_instance.instance[0].endpoint
@@ -166,7 +175,7 @@ resource "aws_secretsmanager_secret_version" "rds_credentials" {
 resource "aws_db_instance" "read_replica" {
   count = var.rds_instance != null && var.rds_instance.create_read_replica ? 1 : 0
 
-  identifier                 = "${var.common.account_name}-${var.rds_instance.name}-replica"
+  identifier                 = "${var.common.account_name}-${var.common.region_prefix}-${var.rds_instance.name}-replica"
   replicate_source_db        = aws_db_instance.instance[0].identifier
   instance_class             = var.rds_instance.replica_instance_class != null ? var.rds_instance.replica_instance_class : var.rds_instance.instance_class
   auto_minor_version_upgrade = var.rds_instance.auto_minor_version_upgrade
