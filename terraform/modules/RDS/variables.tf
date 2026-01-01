@@ -58,7 +58,7 @@ variable "rds_instance" {
     monitoring_role_arn                   = optional(string)           # IAM role for enhanced monitoring
     performance_insights_enabled          = optional(bool, false)
     performance_insights_kms_key_id       = optional(string)
-    performance_insights_retention_period = optional(number, 7) # 7 or 731 days
+    performance_insights_retention_period = optional(number) # 7 or 731 days
 
     apply_immediately = optional(bool, false)
 
