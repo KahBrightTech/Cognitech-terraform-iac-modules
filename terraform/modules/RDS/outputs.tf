@@ -106,6 +106,7 @@ output "secret_arn" {
 
 output "secret_id" {
   description = "The ID of the secret containing RDS credentials"
+  sensitive   = true
   value       = try(aws_secretsmanager_secret.rds_credentials[0].id, null)
 }
 
