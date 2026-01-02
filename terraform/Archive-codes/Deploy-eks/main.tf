@@ -330,8 +330,7 @@ module "launch_template" {
     {
       vpc_security_group_ids = concat(
         each.value.vpc_security_group_keys != null ? [
-          for sg_key in each.value.vpc_security_group_keys :
-          sg_key == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : module.security_group[sg_key].security_group_id
+          for sg_key in each.value.vpc_security_group_keys : module.security_group[sg_key].security_group_id
         ] : [],
         each.value.vpc_security_group_ids != null ? each.value.vpc_security_group_ids : []
       )
