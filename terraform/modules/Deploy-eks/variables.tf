@@ -49,6 +49,7 @@ variable "eks" {
       enable_privateca_issuer                         = optional(bool, false)
       enable_pod_identity_agent                       = optional(bool, false)
       enable_ebs_csi_driver                           = optional(bool, false)
+      enable_aws_load_balancer_controller             = optional(bool, false)
       vpc_cni_version                                 = optional(string)
       kube_proxy_version                              = optional(string)
       coredns_version                                 = optional(string)
@@ -58,6 +59,7 @@ variable "eks" {
       pod_identity_agent_version                      = optional(string)
       ebs_csi_driver_version                          = optional(string)
       secrets_manager_csi_driver_aws_provider_version = optional(string)
+      aws_load_balancer_controller_version            = optional(string)
       privateca_issuer_version                        = optional(string)
       cloudwatch_observability_role_arn               = optional(string)
       cloudwatch_observability_role_key               = optional(string)
@@ -65,6 +67,7 @@ variable "eks" {
       ebs_csi_driver_role_key                         = optional(string)
       enableSecretRotation                            = optional(bool, false)
       rotationPollInterval                            = optional(string)
+      aws_load_balancer_controller_role_key           = optional(string)
     }))
     key_pair = object({
       name               = optional(string)

@@ -320,3 +320,30 @@ output "eks_service_accounts" {
     }
   } : {}
 }
+
+#--------------------------------------------------------------------
+# Helm Releases Outputs
+#--------------------------------------------------------------------
+output "helm_aws_load_balancer_controller" {
+  description = "AWS Load Balancer Controller Helm release information"
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_aws_load_balancer_controller && var.eks.create_node_group ? {
+    name       = try(helm_release.aws_load_balancer_controller[0].name, null)
+    namespace  = try(helm_release.aws_load_balancer_controller[0].namespace, null)
+    chart      = try(helm_release.aws_load_balancer_controller[0].chart, null)
+    version    = try(helm_release.aws_load_balancer_controller[0].version, null)
+    status     = try(helm_release.aws_load_balancer_controller[0].status, null)
+    repository = try(helm_release.aws_load_balancer_controller[0].repository, null)
+  } : null
+}
+
+output "helm_secrets_store_aws_provider" {
+  description = "Secrets Store AWS Provider Helm release information"
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? {
+    name       = try(helm_release.secrets_store_aws_provider[0].name, null)
+    namespace  = try(helm_release.secrets_store_aws_provider[0].namespace, null)
+    chart      = try(helm_release.secrets_store_aws_provider[0].chart, null)
+    version    = try(helm_release.secrets_store_aws_provider[0].version, null)
+    status     = try(helm_release.secrets_store_aws_provider[0].status, null)
+    repository = try(helm_release.secrets_store_aws_provider[0].repository, null)
+  } : null
+}

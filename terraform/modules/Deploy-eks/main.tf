@@ -232,6 +232,40 @@ resource "helm_release" "secrets_store_aws_provider" {
 }
 
 #--------------------------------------------------------------------
+# AWS Load Balancer Controller (Helm)
+#--------------------------------------------------------------------
+
+resource "helm_release" "aws_load_balancer_controller" {
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_aws_load_balancer_controller && var.eks.create_node_group ? 1 : 0
+  name       = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  version    = var.eks.eks_addons.aws_load_balancer_controller_version
+
+  cleanup_on_fail = true
+  replace         = true
+  force_update    = true
+
+  values = [
+    yamlencode({
+      clusterName = aws_eks_cluster.eks_cluster.name
+      region      = data.aws_region.current.name
+      vpcId       = var.eks.vpc_id
+      serviceAccount = {
+        create = true
+        name   = "aws-load-balancer-controller"
+        annotations = {
+          "eks.amazonaws.com/role-arn" = var.eks.eks_addons.aws_load_balancer_controller_role_key != null ? module.iam_roles[var.eks.eks_addons.aws_load_balancer_controller_role_key].iam_role_arn : var.eks.eks_addons.aws_load_balancer_controller_role_arn
+        }
+      }
+    })
+  ]
+
+  depends_on = [module.eks_node_group, module.iam_roles]
+}
+
+#--------------------------------------------------------------------
 # Key Pair Resource for EKS EC2 Node Group
 #--------------------------------------------------------------------
 
