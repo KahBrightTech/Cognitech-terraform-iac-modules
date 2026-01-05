@@ -99,7 +99,7 @@ resource "aws_iam_openid_connect_provider" "eks_oidc" {
 }
 
 #--------------------------------------------------------------------
-# EKS Addons - Tier 1: Core Networking (Install First)
+# EKS Addons
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "vpc_cni" {
   count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_vpc_cni ? 1 : 0
@@ -125,9 +125,6 @@ resource "aws_eks_addon" "kube_proxy" {
   })
 }
 
-#--------------------------------------------------------------------
-# EKS Addons - Tier 2: After Node Groups
-#--------------------------------------------------------------------
 resource "aws_eks_addon" "coredns" {
   count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_coredns && var.eks.create_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
@@ -138,32 +135,37 @@ resource "aws_eks_addon" "coredns" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-coredns-addon"
   })
-  depends_on = [
-    module.eks_node_group,
-    aws_eks_addon.vpc_cni,
-    aws_eks_addon.kube_proxy
-  ]
+  depends_on = [module.eks_node_group]
 }
 
-resource "aws_eks_addon" "pod_identity_agent" {
-  count         = var.eks.eks_addons != null && var.eks.eks_addons.enable_pod_identity_agent && var.eks.create_node_group ? 1 : 0
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  addon_name    = "eks-pod-identity-agent"
-  addon_version = var.eks.eks_addons.pod_identity_agent_version
+resource "aws_eks_addon" "metrics_server" {
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_metrics_server && var.eks.create_node_group ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "metrics-server"
+  addon_version               = var.eks.eks_addons.metrics_server_version
+  resolve_conflicts_on_update = "PRESERVE"
 
-  resolve_conflicts_on_create = "OVERWRITE"
-  resolve_conflicts_on_update = "OVERWRITE"
-
-  depends_on = [
-    module.eks_node_group,
-    aws_eks_addon.vpc_cni,
-    aws_eks_addon.kube_proxy
-  ]
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-metrics-server-addon"
+  })
+  depends_on = [module.eks_node_group]
 }
 
-#--------------------------------------------------------------------
-# EKS Addons - Tier 3: Infrastructure Controllers
-#--------------------------------------------------------------------
+resource "aws_eks_addon" "cloudwatch_observability" {
+  count = var.eks.eks_addons != null && var.eks.eks_addons.enable_cloudwatch_observability && var.eks.create_node_group && (var.eks.eks_addons.cloudwatch_observability_role_arn != null ||
+  var.eks.eks_addons.cloudwatch_observability_role_key != null) ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "amazon-cloudwatch-observability"
+  addon_version               = var.eks.eks_addons.cloudwatch_observability_version
+  resolve_conflicts_on_update = "PRESERVE"
+  service_account_role_arn    = var.eks.eks_addons.cloudwatch_observability_role_arn
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-cloudwatch-observability-addon"
+  })
+  depends_on = [module.eks_node_group]
+}
+
 resource "aws_eks_addon" "ebs_csi_driver" {
   count                    = var.eks.eks_addons != null && var.eks.eks_addons.enable_ebs_csi_driver && var.eks.create_node_group ? 1 : 0
   cluster_name             = aws_eks_cluster.eks_cluster.name
@@ -173,15 +175,11 @@ resource "aws_eks_addon" "ebs_csi_driver" {
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
-
   depends_on = [
     module.eks_node_group,
-    module.iam_roles,
-    aws_eks_addon.coredns,
-    aws_eks_addon.pod_identity_agent
+    module.iam_roles
   ]
 }
-
 resource "aws_eks_addon" "privateca_issuer" {
   count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_privateca_issuer && var.eks.create_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
@@ -192,12 +190,17 @@ resource "aws_eks_addon" "privateca_issuer" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-privateca-issuer-addon"
   })
+  depends_on = [module.eks_node_group]
+}
 
-  depends_on = [
-    module.eks_node_group,
-    aws_eks_addon.coredns,
-    aws_eks_addon.pod_identity_agent
-  ]
+resource "aws_eks_addon" "pod_identity_agent" {
+  count         = var.eks.eks_addons != null && var.eks.eks_addons.enable_pod_identity_agent && var.eks.create_node_group ? 1 : 0
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  addon_name    = "eks-pod-identity-agent"
+  addon_version = var.eks.eks_addons.pod_identity_agent_version
+
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
 }
 
 resource "helm_release" "secrets_store_aws_provider" {
@@ -225,16 +228,13 @@ resource "helm_release" "secrets_store_aws_provider" {
     })
   ]
 
-  depends_on = [
-    module.eks_node_group,
-    aws_eks_addon.coredns,
-    aws_eks_addon.pod_identity_agent
-  ]
+  depends_on = [module.eks_node_group]
 }
 
 #--------------------------------------------------------------------
-# AWS Load Balancer Controller (Helm) - Tier 3
+# AWS Load Balancer Controller (Helm)
 #--------------------------------------------------------------------
+
 resource "helm_release" "aws_load_balancer_controller" {
   count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_aws_load_balancer_controller && var.eks.create_node_group ? 1 : 0
   name       = "aws-load-balancer-controller"
@@ -261,57 +261,7 @@ resource "helm_release" "aws_load_balancer_controller" {
     })
   ]
 
-  depends_on = [
-    module.eks_node_group,
-    module.iam_roles,
-    aws_eks_addon.coredns,
-    aws_eks_addon.pod_identity_agent
-  ]
-}
-
-#--------------------------------------------------------------------
-# EKS Addons - Tier 4: Observability (Install Last)
-#--------------------------------------------------------------------
-resource "aws_eks_addon" "metrics_server" {
-  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_metrics_server && var.eks.create_node_group ? 1 : 0
-  cluster_name                = aws_eks_cluster.eks_cluster.name
-  addon_name                  = "metrics-server"
-  addon_version               = var.eks.eks_addons.metrics_server_version
-  resolve_conflicts_on_update = "PRESERVE"
-
-  tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-metrics-server-addon"
-  })
-
-  depends_on = [
-    module.eks_node_group,
-    aws_eks_addon.coredns,
-    aws_eks_addon.ebs_csi_driver,
-    helm_release.aws_load_balancer_controller
-  ]
-}
-
-resource "aws_eks_addon" "cloudwatch_observability" {
-  count = var.eks.eks_addons != null && var.eks.eks_addons.enable_cloudwatch_observability && var.eks.create_node_group && (var.eks.eks_addons.cloudwatch_observability_role_arn != null ||
-  var.eks.eks_addons.cloudwatch_observability_role_key != null) ? 1 : 0
-  cluster_name                = aws_eks_cluster.eks_cluster.name
-  addon_name                  = "amazon-cloudwatch-observability"
-  addon_version               = var.eks.eks_addons.cloudwatch_observability_version
-  resolve_conflicts_on_update = "PRESERVE"
-  service_account_role_arn    = var.eks.eks_addons.cloudwatch_observability_role_arn
-
-  tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-cloudwatch-observability-addon"
-  })
-
-  depends_on = [
-    module.eks_node_group,
-    aws_eks_addon.coredns,
-    aws_eks_addon.pod_identity_agent,
-    aws_eks_addon.ebs_csi_driver,
-    helm_release.secrets_store_aws_provider,
-    helm_release.aws_load_balancer_controller
-  ]
+  depends_on = [module.eks_node_group, module.iam_roles]
 }
 
 #--------------------------------------------------------------------
