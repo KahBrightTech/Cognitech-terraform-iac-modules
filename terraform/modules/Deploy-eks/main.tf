@@ -270,6 +270,47 @@ resource "helm_release" "aws_load_balancer_controller" {
 }
 
 #--------------------------------------------------------------------
+# External DNS (Helm) - Tier 3
+#--------------------------------------------------------------------
+resource "helm_release" "external_dns" {
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_external_dns && var.eks.create_node_group ? 1 : 0
+  name       = "external-dns"
+  namespace  = var.eks.eks_addons.external_dns_namespace != null ? var.eks.eks_addons.external_dns_namespace : "kube-system"
+  repository = "https://kubernetes-sigs.github.io/external-dns"
+  chart      = "external-dns"
+  version    = var.eks.eks_addons.external_dns_version
+
+  cleanup_on_fail = true
+  replace         = true
+  force_update    = true
+
+  values = [
+    yamlencode({
+      provider = "aws"
+      serviceAccount = {
+        create = true
+        name   = "external-dns"
+        annotations = {
+          "eks.amazonaws.com/role-arn" = var.eks.eks_addons.external_dns_role_key != null ? module.iam_roles[var.eks.eks_addons.external_dns_role_key].iam_role_arn : var.eks.eks_addons.external_dns_role_arn
+        }
+      }
+      policy        = var.eks.eks_addons.external_dns_policy != null ? var.eks.eks_addons.external_dns_policy : "upsert-only"
+      txtOwnerId    = aws_eks_cluster.eks_cluster.name
+      domainFilters = var.eks.eks_addons.external_dns_domain_filters != null ? var.eks.eks_addons.external_dns_domain_filters : []
+      sources       = var.eks.eks_addons.external_dns_sources != null ? var.eks.eks_addons.external_dns_sources : ["service", "ingress"]
+      logLevel      = var.eks.eks_addons.external_dns_log_level != null ? var.eks.eks_addons.external_dns_log_level : "info"
+    })
+  ]
+
+  depends_on = [
+    module.eks_node_group,
+    module.iam_roles,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent
+  ]
+}
+
+#--------------------------------------------------------------------
 # EKS Addons - Tier 4: Observability (Install Last)
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "metrics_server" {

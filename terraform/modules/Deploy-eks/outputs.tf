@@ -347,3 +347,15 @@ output "helm_secrets_store_aws_provider" {
     repository = try(helm_release.secrets_store_aws_provider[0].repository, null)
   } : null
 }
+
+output "helm_external_dns" {
+  description = "External DNS Helm release information"
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_external_dns && var.eks.create_node_group ? {
+    name       = try(helm_release.external_dns[0].name, null)
+    namespace  = try(helm_release.external_dns[0].namespace, null)
+    chart      = try(helm_release.external_dns[0].chart, null)
+    version    = try(helm_release.external_dns[0].version, null)
+    status     = try(helm_release.external_dns[0].status, null)
+    repository = try(helm_release.external_dns[0].repository, null)
+  } : null
+}
