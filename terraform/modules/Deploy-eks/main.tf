@@ -18,9 +18,10 @@ locals {
   access_entries = flatten([
     for group_name, config in var.eks.access_entries : [
       for principal_arn in config.principal_arns : {
-        key           = "${group_name}-${principal_arn}"
-        principal_arn = principal_arn
-        policy_arn    = config.policy_arn
+        key               = "${group_name}-${principal_arn}"
+        principal_arn     = principal_arn
+        policy_arn        = config.policy_arn
+        kubernetes_groups = config.kubernetes_groups
       }
     ]
   ])
@@ -70,9 +71,10 @@ resource "aws_eks_cluster" "eks_cluster" {
 resource "aws_eks_access_entry" "access_entry" {
   for_each = local.access_entries_map
 
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  principal_arn = each.value.principal_arn
-  type          = "STANDARD"
+  cluster_name      = aws_eks_cluster.eks_cluster.name
+  principal_arn     = each.value.principal_arn
+  type              = "STANDARD"
+  kubernetes_groups = length(each.value.kubernetes_groups) > 0 ? each.value.kubernetes_groups : null
 }
 
 resource "aws_eks_access_policy_association" "access_policy" {

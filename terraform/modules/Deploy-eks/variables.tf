@@ -28,8 +28,9 @@ variable "eks" {
     enabled_cluster_log_types                   = optional(list(string), [])
     service_ipv4_cidr                           = optional(string, null)
     access_entries = optional(map(object({
-      principal_arns = optional(list(string))
-      policy_arn     = optional(string)
+      principal_arns    = optional(list(string))
+      policy_arn        = optional(string)
+      kubernetes_groups = optional(list(string), []) # Map IAM principals to these Kubernetes groups for RBAC
     })), {})
     auth = optional(object({
       cluster_roles = optional(list(object({
