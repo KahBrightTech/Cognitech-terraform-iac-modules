@@ -359,3 +359,50 @@ output "helm_external_dns" {
     repository = try(helm_release.external_dns[0].repository, null)
   } : null
 }
+
+#--------------------------------------------------------------------
+# RBAC Outputs
+#--------------------------------------------------------------------
+output "cluster_roles" {
+  description = "Map of created Kubernetes ClusterRoles"
+  value = var.eks.auth != null && var.eks.auth.cluster_roles != null ? {
+    for key, role in kubernetes_cluster_role_v1.cluster_role : key => {
+      name = role.metadata[0].name
+      uid  = role.metadata[0].uid
+    }
+  } : {}
+}
+
+output "cluster_role_bindings" {
+  description = "Map of created Kubernetes ClusterRoleBindings"
+  value = var.eks.auth != null && var.eks.auth.cluster_role_bindings != null ? {
+    for key, binding in kubernetes_cluster_role_binding_v1.cluster_role_binding : key => {
+      name      = binding.metadata[0].name
+      uid       = binding.metadata[0].uid
+      role_name = binding.role_ref[0].name
+    }
+  } : {}
+}
+
+output "roles" {
+  description = "Map of created Kubernetes Roles"
+  value = var.eks.auth != null && var.eks.auth.roles != null ? {
+    for key, role in kubernetes_role_v1.role : key => {
+      name      = role.metadata[0].name
+      namespace = role.metadata[0].namespace
+      uid       = role.metadata[0].uid
+    }
+  } : {}
+}
+
+output "role_bindings" {
+  description = "Map of created Kubernetes RoleBindings"
+  value = var.eks.auth != null && var.eks.auth.role_bindings != null ? {
+    for key, binding in kubernetes_role_binding_v1.role_binding : key => {
+      name      = binding.metadata[0].name
+      namespace = binding.metadata[0].namespace
+      uid       = binding.metadata[0].uid
+      role_name = binding.role_ref[0].name
+    }
+  } : {}
+}

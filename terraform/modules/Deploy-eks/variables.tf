@@ -31,6 +31,56 @@ variable "eks" {
       principal_arns = optional(list(string))
       policy_arn     = optional(string)
     })), {})
+    auth = optional(object({
+      cluster_roles = optional(list(object({
+        key  = string
+        name = string
+        rules = list(object({
+          api_groups = list(string)
+          resources  = list(string)
+          verbs      = list(string)
+        }))
+        labels = optional(map(string), {})
+      })), [])
+      cluster_role_bindings = optional(list(object({
+        key               = string
+        name              = string
+        cluster_role_key  = optional(string)
+        cluster_role_name = optional(string)
+        subjects = list(object({
+          kind      = string # Options: "User", "Group", "ServiceAccount"
+          name      = string
+          namespace = optional(string)
+          api_group = optional(string, "rbac.authorization.k8s.io") # Use "rbac.authorization.k8s.io" for User/Group, "" for ServiceAccount
+        }))
+        labels = optional(map(string), {})
+      })), [])
+      roles = optional(list(object({
+        key       = string
+        name      = string
+        namespace = optional(string, "default")
+        rules = list(object({
+          api_groups = list(string)
+          resources  = list(string)
+          verbs      = list(string)
+        }))
+        labels = optional(map(string), {})
+      })), [])
+      role_bindings = optional(list(object({
+        key       = string
+        name      = string
+        namespace = optional(string, "default")
+        role_key  = optional(string)
+        role_name = optional(string)
+        subjects = list(object({
+          kind      = string # Options: "User", "Group", "ServiceAccount"
+          name      = string
+          namespace = optional(string)
+          api_group = optional(string, "rbac.authorization.k8s.io") # Use "rbac.authorization.k8s.io" for User/Group, "" for ServiceAccount
+        }))
+        labels = optional(map(string), {})
+      })), [])
+    }))
     version                 = optional(string, "1.32")
     oidc_thumbprint         = optional(string)
     is_this_ec2_node_group  = optional(bool, false)
@@ -71,7 +121,7 @@ variable "eks" {
       external_dns_role_arn                           = optional(string)
       external_dns_role_key                           = optional(string)
       external_dns_namespace                          = optional(string)
-      external_dns_policy                             = optional(string)
+      external_dns_policy                             = optional(string) # options are upsert-only, sync or 
       external_dns_domain_filters                     = optional(list(string))
       external_dns_sources                            = optional(list(string))
       external_dns_log_level                          = optional(string)

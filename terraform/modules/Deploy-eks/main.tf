@@ -564,3 +564,111 @@ resource "aws_eks_pod_identity_association" "pia" {
   role_arn   = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
   depends_on = [aws_eks_cluster.eks_cluster]
 }
+
+#--------------------------------------------------------------------
+# Kubernetes RBAC - Cluster Roles
+#--------------------------------------------------------------------
+resource "kubernetes_cluster_role_v1" "cluster_role" {
+  for_each = var.eks.auth != null && var.eks.auth.cluster_roles != null ? { for role in var.eks.auth.cluster_roles : role.key => role } : {}
+
+  metadata {
+    name   = each.value.name
+    labels = each.value.labels
+  }
+
+  dynamic "rule" {
+    for_each = each.value.rules
+    content {
+      api_groups = rule.value.api_groups
+      resources  = rule.value.resources
+      verbs      = rule.value.verbs
+    }
+  }
+
+  depends_on = [aws_eks_cluster.eks_cluster]
+}
+
+#--------------------------------------------------------------------
+# Kubernetes RBAC - Cluster Role Bindings
+#--------------------------------------------------------------------
+resource "kubernetes_cluster_role_binding_v1" "cluster_role_binding" {
+  for_each = var.eks.auth != null && var.eks.auth.cluster_role_bindings != null ? { for binding in var.eks.auth.cluster_role_bindings : binding.key => binding } : {}
+
+  metadata {
+    name   = each.value.name
+    labels = each.value.labels
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = each.value.cluster_role_key != null ? kubernetes_cluster_role_v1.cluster_role[each.value.cluster_role_key].metadata[0].name : each.value.cluster_role_name
+  }
+
+  dynamic "subject" {
+    for_each = each.value.subjects
+    content {
+      kind      = subject.value.kind
+      name      = subject.value.name
+      namespace = subject.value.namespace
+      api_group = subject.value.api_group
+    }
+  }
+
+  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_cluster_role_v1.cluster_role]
+}
+
+#--------------------------------------------------------------------
+# Kubernetes RBAC - Roles
+#--------------------------------------------------------------------
+resource "kubernetes_role_v1" "role" {
+  for_each = var.eks.auth != null && var.eks.auth.roles != null ? { for role in var.eks.auth.roles : role.key => role } : {}
+
+  metadata {
+    name      = each.value.name
+    namespace = each.value.namespace
+    labels    = each.value.labels
+  }
+
+  dynamic "rule" {
+    for_each = each.value.rules
+    content {
+      api_groups = rule.value.api_groups
+      resources  = rule.value.resources
+      verbs      = rule.value.verbs
+    }
+  }
+
+  depends_on = [aws_eks_cluster.eks_cluster]
+}
+
+#--------------------------------------------------------------------
+# Kubernetes RBAC - Role Bindings
+#--------------------------------------------------------------------
+resource "kubernetes_role_binding_v1" "role_binding" {
+  for_each = var.eks.auth != null && var.eks.auth.role_bindings != null ? { for binding in var.eks.auth.role_bindings : binding.key => binding } : {}
+
+  metadata {
+    name      = each.value.name
+    namespace = each.value.namespace
+    labels    = each.value.labels
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = each.value.role_key != null ? kubernetes_role_v1.role[each.value.role_key].metadata[0].name : each.value.role_name
+  }
+
+  dynamic "subject" {
+    for_each = each.value.subjects
+    content {
+      kind      = subject.value.kind
+      name      = subject.value.name
+      namespace = subject.value.namespace
+      api_group = subject.value.api_group
+    }
+  }
+
+  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_role_v1.role]
+}
