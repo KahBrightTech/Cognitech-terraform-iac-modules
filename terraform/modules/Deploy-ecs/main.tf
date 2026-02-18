@@ -14,6 +14,10 @@ data "aws_iam_roles" "network_role" {
 locals {
   admin_role_arn   = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
   network_role_arn = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
+
+  # Create maps keyed by family/name for for_each
+  task_definitions_map = { for td in var.ecs.task_definitions : td.family => td }
+  services_map         = { for svc in var.ecs.services : svc.name => svc }
 }
 
 #--------------------------------------------------------------------
@@ -79,18 +83,18 @@ resource "aws_ecs_cluster_capacity_providers" "ecs" {
 # ECS Task Definition
 #--------------------------------------------------------------------
 resource "aws_ecs_task_definition" "ecs" {
-  count                    = var.ecs.task_definition != null ? 1 : 0
-  family                   = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.task_definition.family}"
-  task_role_arn            = var.ecs.task_definition.task_role_arn
-  execution_role_arn       = var.ecs.task_definition.execution_role_arn
-  network_mode             = var.ecs.task_definition.network_mode
-  requires_compatibilities = var.ecs.task_definition.requires_compatibilities
-  cpu                      = var.ecs.task_definition.cpu
-  memory                   = var.ecs.task_definition.memory
-  container_definitions    = var.ecs.task_definition.container_definitions_file != null ? file(var.ecs.task_definition.container_definitions_file) : var.ecs.task_definition.container_definitions
+  for_each                 = local.task_definitions_map
+  family                   = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${each.value.family}"
+  task_role_arn            = each.value.task_role_arn
+  execution_role_arn       = each.value.execution_role_arn
+  network_mode             = each.value.network_mode
+  requires_compatibilities = each.value.requires_compatibilities
+  cpu                      = each.value.cpu
+  memory                   = each.value.memory
+  container_definitions    = each.value.container_definitions_file != null ? file(each.value.container_definitions_file) : each.value.container_definitions
 
   dynamic "volume" {
-    for_each = var.ecs.task_definition.volumes != null ? var.ecs.task_definition.volumes : []
+    for_each = each.value.volumes != null ? each.value.volumes : []
     content {
       name      = volume.value.name
       host_path = volume.value.host_path
@@ -127,7 +131,7 @@ resource "aws_ecs_task_definition" "ecs" {
   }
 
   dynamic "placement_constraints" {
-    for_each = var.ecs.task_definition.placement_constraints != null ? var.ecs.task_definition.placement_constraints : []
+    for_each = each.value.placement_constraints != null ? each.value.placement_constraints : []
     content {
       type       = placement_constraints.value.type
       expression = placement_constraints.value.expression
@@ -135,7 +139,7 @@ resource "aws_ecs_task_definition" "ecs" {
   }
 
   dynamic "proxy_configuration" {
-    for_each = var.ecs.task_definition.proxy_configuration != null ? [var.ecs.task_definition.proxy_configuration] : []
+    for_each = each.value.proxy_configuration != null ? [each.value.proxy_configuration] : []
     content {
       container_name = proxy_configuration.value.container_name
       properties     = proxy_configuration.value.properties
@@ -144,7 +148,7 @@ resource "aws_ecs_task_definition" "ecs" {
   }
 
   dynamic "runtime_platform" {
-    for_each = var.ecs.task_definition.runtime_platform != null ? [var.ecs.task_definition.runtime_platform] : []
+    for_each = each.value.runtime_platform != null ? [each.value.runtime_platform] : []
     content {
       operating_system_family = runtime_platform.value.operating_system_family
       cpu_architecture        = runtime_platform.value.cpu_architecture
@@ -152,31 +156,31 @@ resource "aws_ecs_task_definition" "ecs" {
   }
 
   tags = merge(var.ecs.common.tags, {
-    "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.task_definition.family}"
+    "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${each.value.family}"
   })
 }
 
 #--------------------------------------------------------------------
-# ECS Service
+# ECS Services
 #--------------------------------------------------------------------
 resource "aws_ecs_service" "ecs" {
-  count                              = var.ecs.service != null ? 1 : 0
-  name                               = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.service.name}"
+  for_each                           = local.services_map
+  name                               = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${each.value.name}"
   cluster                            = aws_ecs_cluster.ecs.id
-  task_definition                    = var.ecs.service.task_definition != null ? var.ecs.service.task_definition : aws_ecs_task_definition.ecs[0].arn
-  desired_count                      = var.ecs.service.desired_count
-  launch_type                        = var.ecs.service.launch_type
-  platform_version                   = var.ecs.service.platform_version
-  scheduling_strategy                = var.ecs.service.scheduling_strategy
-  deployment_maximum_percent         = var.ecs.service.deployment_maximum_percent
-  deployment_minimum_healthy_percent = var.ecs.service.deployment_minimum_healthy_percent
-  enable_ecs_managed_tags            = var.ecs.service.enable_ecs_managed_tags
-  enable_execute_command             = var.ecs.service.enable_execute_command
-  health_check_grace_period_seconds  = var.ecs.service.health_check_grace_period_seconds
-  propagate_tags                     = var.ecs.service.propagate_tags
+  task_definition                    = each.value.task_definition != null ? each.value.task_definition : aws_ecs_task_definition.ecs[each.value.task_definition_family].arn
+  desired_count                      = each.value.desired_count
+  launch_type                        = each.value.launch_type
+  platform_version                   = each.value.platform_version
+  scheduling_strategy                = each.value.scheduling_strategy
+  deployment_maximum_percent         = each.value.deployment_maximum_percent
+  deployment_minimum_healthy_percent = each.value.deployment_minimum_healthy_percent
+  enable_ecs_managed_tags            = each.value.enable_ecs_managed_tags
+  enable_execute_command             = each.value.enable_execute_command
+  health_check_grace_period_seconds  = each.value.health_check_grace_period_seconds
+  propagate_tags                     = each.value.propagate_tags
 
   dynamic "capacity_provider_strategy" {
-    for_each = var.ecs.service.capacity_provider_strategy != null ? var.ecs.service.capacity_provider_strategy : []
+    for_each = each.value.capacity_provider_strategy != null ? each.value.capacity_provider_strategy : []
     content {
       capacity_provider = capacity_provider_strategy.value.capacity_provider
       weight            = capacity_provider_strategy.value.weight
@@ -185,7 +189,7 @@ resource "aws_ecs_service" "ecs" {
   }
 
   dynamic "deployment_circuit_breaker" {
-    for_each = var.ecs.service.deployment_circuit_breaker != null ? [var.ecs.service.deployment_circuit_breaker] : []
+    for_each = each.value.deployment_circuit_breaker != null ? [each.value.deployment_circuit_breaker] : []
     content {
       enable   = deployment_circuit_breaker.value.enable
       rollback = deployment_circuit_breaker.value.rollback
@@ -193,14 +197,14 @@ resource "aws_ecs_service" "ecs" {
   }
 
   dynamic "deployment_controller" {
-    for_each = var.ecs.service.deployment_controller != null ? [var.ecs.service.deployment_controller] : []
+    for_each = each.value.deployment_controller != null ? [each.value.deployment_controller] : []
     content {
       type = deployment_controller.value.type
     }
   }
 
   dynamic "load_balancer" {
-    for_each = var.ecs.service.load_balancers != null ? var.ecs.service.load_balancers : []
+    for_each = each.value.load_balancers != null ? each.value.load_balancers : []
     content {
       target_group_arn = load_balancer.value.target_group_arn
       container_name   = load_balancer.value.container_name
@@ -209,7 +213,7 @@ resource "aws_ecs_service" "ecs" {
   }
 
   dynamic "network_configuration" {
-    for_each = var.ecs.service.network_configuration != null ? [var.ecs.service.network_configuration] : []
+    for_each = each.value.network_configuration != null ? [each.value.network_configuration] : []
     content {
       subnets          = network_configuration.value.subnets
       security_groups  = network_configuration.value.security_groups
@@ -218,7 +222,7 @@ resource "aws_ecs_service" "ecs" {
   }
 
   dynamic "placement_constraints" {
-    for_each = var.ecs.service.placement_constraints != null ? var.ecs.service.placement_constraints : []
+    for_each = each.value.placement_constraints != null ? each.value.placement_constraints : []
     content {
       type       = placement_constraints.value.type
       expression = placement_constraints.value.expression
@@ -226,7 +230,7 @@ resource "aws_ecs_service" "ecs" {
   }
 
   dynamic "ordered_placement_strategy" {
-    for_each = var.ecs.service.ordered_placement_strategy != null ? var.ecs.service.ordered_placement_strategy : []
+    for_each = each.value.ordered_placement_strategy != null ? each.value.ordered_placement_strategy : []
     content {
       type  = ordered_placement_strategy.value.type
       field = ordered_placement_strategy.value.field
@@ -234,7 +238,7 @@ resource "aws_ecs_service" "ecs" {
   }
 
   dynamic "service_registries" {
-    for_each = var.ecs.service.service_registries != null ? [var.ecs.service.service_registries] : []
+    for_each = each.value.service_registries != null ? [each.value.service_registries] : []
     content {
       registry_arn   = service_registries.value.registry_arn
       port           = service_registries.value.port
@@ -244,7 +248,7 @@ resource "aws_ecs_service" "ecs" {
   }
 
   tags = merge(var.ecs.common.tags, {
-    "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.service.name}"
+    "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${each.value.name}"
   })
 
   depends_on = [aws_ecs_task_definition.ecs]

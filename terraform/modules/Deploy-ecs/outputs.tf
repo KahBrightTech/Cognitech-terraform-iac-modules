@@ -19,47 +19,47 @@ output "ecs_cluster_name" {
 #--------------------------------------------------------------------
 # ECS Task Definition Outputs
 #--------------------------------------------------------------------
-output "ecs_task_definition_arn" {
-  description = "The ARN of the ECS task definition"
-  value       = var.ecs.task_definition != null ? aws_ecs_task_definition.ecs[0].arn : null
+output "ecs_task_definition_arns" {
+  description = "Map of task definition ARNs keyed by family name"
+  value       = { for k, v in aws_ecs_task_definition.ecs : k => v.arn }
 }
 
-output "ecs_task_definition_family" {
-  description = "The family of the ECS task definition"
-  value       = var.ecs.task_definition != null ? aws_ecs_task_definition.ecs[0].family : null
+output "ecs_task_definition_families" {
+  description = "Map of task definition families keyed by family name"
+  value       = { for k, v in aws_ecs_task_definition.ecs : k => v.family }
 }
 
-output "ecs_task_definition_revision" {
-  description = "The revision of the ECS task definition"
-  value       = var.ecs.task_definition != null ? aws_ecs_task_definition.ecs[0].revision : null
+output "ecs_task_definition_revisions" {
+  description = "Map of task definition revisions keyed by family name"
+  value       = { for k, v in aws_ecs_task_definition.ecs : k => v.revision }
 }
 
-output "ecs_task_definition_arn_without_revision" {
-  description = "The ARN of the ECS task definition without revision"
-  value       = var.ecs.task_definition != null ? aws_ecs_task_definition.ecs[0].arn_without_revision : null
+output "ecs_task_definition_arns_without_revision" {
+  description = "Map of task definition ARNs without revision keyed by family name"
+  value       = { for k, v in aws_ecs_task_definition.ecs : k => v.arn_without_revision }
 }
 
 #--------------------------------------------------------------------
 # ECS Service Outputs
 #--------------------------------------------------------------------
-output "ecs_service_id" {
-  description = "The ID of the ECS service"
-  value       = var.ecs.service != null ? aws_ecs_service.ecs[0].id : null
+output "ecs_service_ids" {
+  description = "Map of ECS service IDs keyed by service name"
+  value       = { for k, v in aws_ecs_service.ecs : k => v.id }
 }
 
-output "ecs_service_name" {
-  description = "The name of the ECS service"
-  value       = var.ecs.service != null ? aws_ecs_service.ecs[0].name : null
+output "ecs_service_names" {
+  description = "Map of ECS service names keyed by service name"
+  value       = { for k, v in aws_ecs_service.ecs : k => v.name }
 }
 
-output "ecs_service_cluster" {
-  description = "The cluster of the ECS service"
-  value       = var.ecs.service != null ? aws_ecs_service.ecs[0].cluster : null
+output "ecs_service_clusters" {
+  description = "Map of ECS service clusters keyed by service name"
+  value       = { for k, v in aws_ecs_service.ecs : k => v.cluster }
 }
 
-output "ecs_service_desired_count" {
-  description = "The desired count of the ECS service"
-  value       = var.ecs.service != null ? aws_ecs_service.ecs[0].desired_count : null
+output "ecs_service_desired_counts" {
+  description = "Map of ECS service desired counts keyed by service name"
+  value       = { for k, v in aws_ecs_service.ecs : k => v.desired_count }
 }
 
 #--------------------------------------------------------------------

@@ -35,7 +35,7 @@ variable "ecs" {
         base              = optional(number, 0)
       })))
     }))
-    task_definition = optional(object({
+    task_definitions = optional(list(object({
       family                     = string
       task_role_arn              = optional(string)
       execution_role_arn         = optional(string)
@@ -81,10 +81,11 @@ variable "ecs" {
         operating_system_family = optional(string, "LINUX")
         cpu_architecture        = optional(string, "X86_64")
       }))
-    }))
-    service = optional(list(object({
+    })))
+    services = optional(list(object({
       name                               = string
       task_definition                    = optional(string)
+      task_definition_family             = optional(string)
       desired_count                      = optional(number, 1)
       launch_type                        = optional(string, "EC2")
       platform_version                   = optional(string)
@@ -203,11 +204,12 @@ variable "ecs" {
     }))
   })
   validation {
-    condition = (
-      var.ecs.service != null &&
-      var.ecs.service.deployment_controller != null &&
-      var.ecs.service.deployment_controller.type != null
-    ) ? contains(["ECS", "CODE_DEPLOY", "EXTERNAL"], var.ecs.service.deployment_controller.type) : true
+    condition = alltrue([
+      for svc in coalesce(var.ecs.services, []) :
+      svc.deployment_controller == null ||
+      svc.deployment_controller.type == null ||
+      contains(["ECS", "CODE_DEPLOY", "EXTERNAL"], svc.deployment_controller.type)
+    ])
     error_message = "The deployment_controller type must be one of: ECS, CODE_DEPLOY, or EXTERNAL."
   }
 }
