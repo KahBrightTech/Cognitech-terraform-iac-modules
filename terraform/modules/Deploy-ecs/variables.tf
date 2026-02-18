@@ -1,19 +1,21 @@
+variable "common" {
+  description = "Common variables used by all resources"
+  type = object({
+    global           = bool
+    tags             = map(string)
+    account_name     = string
+    region_prefix    = string
+    account_name_abr = optional(string, "")
+  })
+}
+
 variable "ecs" {
   description = "ECS configuration including common settings"
   type = object({
-    common = object({
-      global           = bool
-      tags             = map(string)
-      account_name     = string
-      region_prefix    = string
-      account_name_abr = optional(string, "")
-    })
-
     cluster_name               = string
     container_insights_enabled = optional(bool, false)
     load_balancer_arn          = optional(string)
     target_group_arns          = optional(list(string), [])
-
     execute_command_configuration = optional(object({
       kms_key_id = optional(string)
       logging    = optional(string, "DEFAULT")
@@ -25,7 +27,6 @@ variable "ecs" {
         s3_key_prefix                  = optional(string)
       }))
     }))
-
     capacity_providers = optional(object({
       capacity_provider_names = list(string)
       default_capacity_provider_strategy = optional(list(object({
@@ -34,7 +35,6 @@ variable "ecs" {
         base              = optional(number, 0)
       })))
     }))
-
     task_definition = optional(object({
       family                     = string
       task_role_arn              = optional(string)
@@ -45,7 +45,6 @@ variable "ecs" {
       memory                     = optional(string)
       container_definitions      = optional(string)
       container_definitions_file = optional(string)
-
       volumes = optional(list(object({
         name      = string
         host_path = optional(string)
@@ -57,7 +56,6 @@ variable "ecs" {
           driver_opts   = optional(map(string))
           labels        = optional(map(string))
         }))
-
         efs_volume_configuration = optional(object({
           file_system_id          = string
           root_directory          = optional(string, "/")
@@ -69,7 +67,6 @@ variable "ecs" {
           }))
         }))
       })))
-
       placement_constraints = optional(list(object({
         type       = string
         expression = optional(string)
@@ -80,13 +77,11 @@ variable "ecs" {
         properties     = optional(map(string))
         type           = optional(string, "APPMESH")
       }))
-
       runtime_platform = optional(object({
         operating_system_family = optional(string, "LINUX")
         cpu_architecture        = optional(string, "X86_64")
       }))
     }))
-
     service = optional(object({
       name                               = string
       task_definition                    = optional(string)
@@ -100,44 +95,36 @@ variable "ecs" {
       enable_execute_command             = optional(bool, false)
       health_check_grace_period_seconds  = optional(number)
       propagate_tags                     = optional(string)
-
       capacity_provider_strategy = optional(list(object({
         capacity_provider = string
         weight            = optional(number, 1)
         base              = optional(number, 0)
       })))
-
       deployment_circuit_breaker = optional(object({
         enable   = bool
         rollback = bool
       }))
-
       deployment_controller = optional(object({
         type = optional(string, "ECS")
       }))
-
       load_balancers = optional(list(object({
         target_group_arn = string
         container_name   = string
         container_port   = number
       })))
-
       network_configuration = optional(object({
         subnets          = list(string)
         security_groups  = optional(list(string))
         assign_public_ip = optional(bool, false)
       }))
-
       placement_constraints = optional(list(object({
         type       = string
         expression = optional(string)
       })))
-
       ordered_placement_strategy = optional(list(object({
         type  = string
         field = optional(string)
       })))
-
       service_registries = optional(object({
         registry_arn   = string
         port           = optional(number)
@@ -145,7 +132,6 @@ variable "ecs" {
         container_port = optional(number)
       }))
     }))
-
     ec2_autoscaling = optional(object({
       launch_template = object({
         name                   = string
@@ -168,11 +154,9 @@ variable "ecs" {
             throughput            = optional(number)
           })
         })))
-
         monitoring = optional(object({
           enabled = optional(bool, true)
         }))
-
         network_interfaces = optional(list(object({
           associate_public_ip_address = optional(bool, false)
           delete_on_termination       = optional(bool, true)
@@ -180,7 +164,6 @@ variable "ecs" {
           subnet_id                   = optional(string)
         })))
       })
-
       autoscaling_group = object({
         name                      = string
         max_size                  = number
@@ -194,7 +177,6 @@ variable "ecs" {
         protect_from_scale_in     = optional(bool, false)
         launch_template_version   = optional(string, "$Latest")
       })
-
       capacity_provider = object({
         name                           = string
         managed_termination_protection = optional(string, "DISABLED")
@@ -206,7 +188,6 @@ variable "ecs" {
           instance_warmup_period    = optional(number, 300)
         })
       })
-
       scaling_policies = optional(object({
         scale_up = object({
           scaling_adjustment = number
@@ -221,7 +202,6 @@ variable "ecs" {
       }))
     }))
   })
-
   validation {
     condition = (
       var.ecs.service != null &&
