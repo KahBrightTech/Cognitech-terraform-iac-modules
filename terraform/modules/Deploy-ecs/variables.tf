@@ -82,7 +82,7 @@ variable "ecs" {
         cpu_architecture        = optional(string, "X86_64")
       }))
     }))
-    service = optional(object({
+    service = optional(list(object({
       name                               = string
       task_definition                    = optional(string)
       desired_count                      = optional(number, 1)
@@ -131,7 +131,7 @@ variable "ecs" {
         container_name = optional(string)
         container_port = optional(number)
       }))
-    }))
+    })))
     ec2_autoscaling = optional(object({
       launch_template = object({
         name                   = string

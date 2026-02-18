@@ -182,10 +182,42 @@ The ECS cluster is the foundational resource that serves as a logical grouping f
 - Provides task-level and service-level performance monitoring
 
 **ECS Exec (Execute Command):**
-- Allows running commands inside containers without SSH access
-- Sessions can be encrypted with KMS
-- Logs can be stored in CloudWatch Logs or S3 for audit trails
-- Example usage: `aws ecs execute-command --cluster my-cluster --task task-id --command "/bin/bash"`
+
+Allows running interactive commands inside containers without SSH access — similar to `docker exec`. Configured via the `execute_command_configuration` block (optional, omitted when `null`).
+
+- **kms_key_id** (`string`, optional): KMS key ARN to encrypt exec session data in transit. If omitted, sessions are unencrypted.
+- **logging** (`string`, optional, default `"DEFAULT"`): Controls where session audit logs are sent.
+  - `"DEFAULT"` — Uses the awslogs log driver if already configured on the task.
+  - `"NONE"` — No session logging.
+  - `"OVERRIDE"` — Uses the `log_configuration` block below.
+- **log_configuration** (optional): Defines where session transcripts are stored. Only used when `logging = "OVERRIDE"`.
+  - **cloud_watch_encryption_enabled** (`bool`, default `false`): Encrypt CloudWatch logs at rest.
+  - **cloud_watch_log_group_name** (`string`): CloudWatch log group for session logs.
+  - **s3_bucket_name** (`string`): S3 bucket to store session logs.
+  - **s3_bucket_encryption_enabled** (`bool`, default `false`): Encrypt S3 logs at rest.
+  - **s3_key_prefix** (`string`): S3 key prefix for organizing log files.
+
+```hcl
+execute_command_configuration = {
+  kms_key_id = "arn:aws:kms:us-east-1:123456789012:key/my-key-id"
+  logging    = "OVERRIDE"
+
+  log_configuration = {
+    cloud_watch_encryption_enabled = true
+    cloud_watch_log_group_name     = "/ecs/exec-logs"
+    s3_bucket_name                 = "my-ecs-exec-logs"
+    s3_bucket_encryption_enabled   = true
+    s3_key_prefix                  = "exec-sessions"
+  }
+}
+```
+
+**Usage:** Once configured at the cluster level, set `enable_execute_command = true` on the ECS service, then run:
+```bash
+aws ecs execute-command --cluster my-cluster --task <task-id> --command "/bin/bash" --interactive
+```
+
+> **Note:** ECS Exec requires appropriate IAM permissions on the task role for KMS, CloudWatch, and S3 as applicable.
 
 ### ECS Cluster Capacity Providers
 
