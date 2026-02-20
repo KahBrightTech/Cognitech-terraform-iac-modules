@@ -32,7 +32,7 @@ resource "aws_lb_listener" "nlb_listener" {
 
   default_action {
     type             = var.nlb_listener.action
-    target_group_arn = module.nlb_target_group.target_group_arn
+    target_group_arn = var.nlb_listener.target_group_arn != null ? var.nlb_listener.target_group_arn : module.nlb_target_group.target_group_arn
   }
 
   tags = merge(

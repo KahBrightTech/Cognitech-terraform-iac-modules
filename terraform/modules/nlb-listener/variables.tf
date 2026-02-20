@@ -23,6 +23,7 @@ variable "nlb_listener" {
       domain_name     = optional(string)
       certificate_arn = optional(string)
     })))
+    target_group_arn = optional(string)
     target_group = optional(object({
       name         = optional(string)
       port         = optional(number)
