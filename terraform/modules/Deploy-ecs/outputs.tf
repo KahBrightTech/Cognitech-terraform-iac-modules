@@ -63,38 +63,44 @@ output "ecs_service_desired_counts" {
 }
 
 #--------------------------------------------------------------------
-# EC2 Auto Scaling Outputs
+# Launch Template Outputs
 #--------------------------------------------------------------------
-output "launch_template_id" {
-  description = "The ID of the launch template"
-  value       = var.ecs.ec2_autoscaling != null ? aws_launch_template.ecs_ec2[0].id : null
+output "launch_template_ids" {
+  description = "Map of launch template IDs keyed by template key"
+  value       = { for k, v in module.launch_template : k => v.id }
 }
 
-output "launch_template_arn" {
-  description = "The ARN of the launch template"
-  value       = var.ecs.ec2_autoscaling != null ? aws_launch_template.ecs_ec2[0].arn : null
+output "launch_template_arns" {
+  description = "Map of launch template ARNs keyed by template key"
+  value       = { for k, v in module.launch_template : k => v.arn }
 }
 
-output "launch_template_latest_version" {
-  description = "The latest version of the launch template"
-  value       = var.ecs.ec2_autoscaling != null ? aws_launch_template.ecs_ec2[0].latest_version : null
+output "launch_template_names" {
+  description = "Map of launch template names keyed by template key"
+  value       = { for k, v in module.launch_template : k => v.name }
 }
 
-output "autoscaling_group_id" {
-  description = "The ID of the Auto Scaling Group"
-  value       = var.ecs.ec2_autoscaling != null ? aws_autoscaling_group.ecs_ec2[0].id : null
+#--------------------------------------------------------------------
+# Auto Scaling Group Outputs
+#--------------------------------------------------------------------
+output "autoscaling_group_ids" {
+  description = "Map of Auto Scaling Group IDs keyed by ASG name"
+  value       = { for k, v in module.autoscaling_group : k => v.id }
 }
 
-output "autoscaling_group_arn" {
-  description = "The ARN of the Auto Scaling Group"
-  value       = var.ecs.ec2_autoscaling != null ? aws_autoscaling_group.ecs_ec2[0].arn : null
+output "autoscaling_group_arns" {
+  description = "Map of Auto Scaling Group ARNs keyed by ASG name"
+  value       = { for k, v in module.autoscaling_group : k => v.arn }
 }
 
-output "autoscaling_group_name" {
-  description = "The name of the Auto Scaling Group"
-  value       = var.ecs.ec2_autoscaling != null ? aws_autoscaling_group.ecs_ec2[0].name : null
+output "autoscaling_group_names" {
+  description = "Map of Auto Scaling Group names keyed by ASG name"
+  value       = { for k, v in module.autoscaling_group : k => v.name }
 }
 
+#--------------------------------------------------------------------
+# ECS Capacity Provider Outputs
+#--------------------------------------------------------------------
 output "capacity_provider_id" {
   description = "The ID of the ECS Capacity Provider"
   value       = var.ecs.ec2_autoscaling != null ? aws_ecs_capacity_provider.ecs_ec2[0].id : null
@@ -105,6 +111,9 @@ output "capacity_provider_arn" {
   value       = var.ecs.ec2_autoscaling != null ? aws_ecs_capacity_provider.ecs_ec2[0].arn : null
 }
 
+#--------------------------------------------------------------------
+# Auto Scaling Policy Outputs
+#--------------------------------------------------------------------
 output "scale_up_policy_arn" {
   description = "The ARN of the scale up policy"
   value       = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.scaling_policies != null ? aws_autoscaling_policy.ecs_scale_up[0].arn : null

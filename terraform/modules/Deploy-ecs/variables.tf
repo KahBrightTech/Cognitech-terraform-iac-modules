@@ -133,51 +133,51 @@ variable "ecs" {
         container_port = optional(number)
       }))
     })))
-    ec2_autoscaling = optional(object({
-      launch_template = object({
-        name                   = string
-        image_id               = string
-        instance_type          = string
-        key_name               = optional(string)
-        iam_instance_profile   = string
-        user_data              = optional(string)
-        vpc_security_group_ids = optional(list(string))
-
-        block_device_mappings = optional(list(object({
-          device_name = string
-          ebs = object({
-            volume_size           = number
-            volume_type           = optional(string, "gp3")
-            delete_on_termination = optional(bool, true)
-            encrypted             = optional(bool, true)
-            kms_key_id            = optional(string)
-            iops                  = optional(number)
-            throughput            = optional(number)
-          })
-        })))
-        monitoring = optional(object({
-          enabled = optional(bool, true)
+    ec2_autoscaling = optional(list(object({
+      launch_templates = optional(list(object({
+        key              = optional(string)
+        name             = optional(string)
+        instance_profile = optional(string)
+        custom_ami       = optional(string)
+        ami_config = object({
+          os_release_date  = optional(string)
+          os_base_packages = optional(string)
+        })
+        instance_type               = optional(string)
+        key_name                    = optional(string)
+        ec2_ssh_key                 = optional(string)
+        associate_public_ip_address = optional(bool)
+        vpc_security_group_ids      = optional(list(string))
+        vpc_security_group_keys     = optional(list(string))
+        tags                        = optional(map(string))
+        user_data                   = optional(string)
+        volume_size                 = optional(number)
+        root_device_name            = optional(string)
+      })))
+      autoscaling_group = optional(list(object({
+        name                      = optional(string)
+        min_size                  = optional(number)
+        max_size                  = optional(number)
+        health_check_type         = optional(string)
+        health_check_grace_period = optional(number)
+        force_delete              = optional(bool)
+        desired_capacity          = optional(number)
+        subnet_ids                = optional(list(string))
+        attach_target_groups      = optional(list(string))
+        launch_template = optional(object({
+          id      = string
+          version = optional(string, "$Latest")
         }))
-        network_interfaces = optional(list(object({
-          associate_public_ip_address = optional(bool, false)
-          delete_on_termination       = optional(bool, true)
-          security_groups             = list(string)
-          subnet_id                   = optional(string)
+        timeouts = optional(object({
+          delete = optional(string)
+        }))
+        tags = optional(map(string))
+        additional_tags = optional(list(object({
+          key                 = string
+          value               = string
+          propagate_at_launch = optional(bool, true)
         })))
-      })
-      autoscaling_group = object({
-        name                      = string
-        max_size                  = number
-        min_size                  = number
-        desired_capacity          = number
-        health_check_grace_period = optional(number, 300)
-        health_check_type         = optional(string, "EC2")
-        vpc_zone_identifier       = list(string)
-        target_group_arns         = optional(list(string))
-        termination_policies      = optional(list(string), ["Default"])
-        protect_from_scale_in     = optional(bool, false)
-        launch_template_version   = optional(string, "$Latest")
-      })
+      })))
       capacity_provider = object({
         name                           = string
         managed_termination_protection = optional(string, "DISABLED")
@@ -201,7 +201,7 @@ variable "ecs" {
           cooldown           = optional(number, 300)
         })
       }))
-    }))
+    })))
   })
   validation {
     condition = alltrue([

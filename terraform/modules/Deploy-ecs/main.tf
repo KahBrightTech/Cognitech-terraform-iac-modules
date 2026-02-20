@@ -11,11 +11,11 @@ data "aws_iam_roles" "network_role" {
   name_regex  = "AWSReservedSSO_NetworkAdministrator_.*"
   path_prefix = "/aws-reserved/sso.amazonaws.com/"
 }
+
 locals {
   admin_role_arn   = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
   network_role_arn = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
 
-  # Create maps keyed by family/name for for_each
   task_definitions_map = { for td in var.ecs.task_definitions : td.family => td }
   services_map         = { for svc in var.ecs.services : svc.name => svc }
 }
@@ -255,110 +255,23 @@ resource "aws_ecs_service" "ecs" {
 }
 
 #--------------------------------------------------------------------
-# EC2 Launch Template
+# Launch Template
 #--------------------------------------------------------------------
-resource "aws_launch_template" "ecs_ec2" {
-  count         = var.ecs.ec2_autoscaling != null ? 1 : 0
-  name          = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.ec2_autoscaling.launch_template.name}"
-  image_id      = var.ecs.ec2_autoscaling.launch_template.image_id
-  instance_type = var.ecs.ec2_autoscaling.launch_template.instance_type
-  key_name      = var.ecs.ec2_autoscaling.launch_template.key_name
-  user_data     = var.ecs.ec2_autoscaling.launch_template.user_data != null ? base64encode(var.ecs.ec2_autoscaling.launch_template.user_data) : null
-
-  iam_instance_profile {
-    name = var.ecs.ec2_autoscaling.launch_template.iam_instance_profile
-  }
-
-  dynamic "block_device_mappings" {
-    for_each = var.ecs.ec2_autoscaling.launch_template.block_device_mappings != null ? var.ecs.ec2_autoscaling.launch_template.block_device_mappings : []
-    content {
-      device_name = block_device_mappings.value.device_name
-
-      ebs {
-        volume_size           = block_device_mappings.value.ebs.volume_size
-        volume_type           = block_device_mappings.value.ebs.volume_type
-        delete_on_termination = block_device_mappings.value.ebs.delete_on_termination
-        encrypted             = block_device_mappings.value.ebs.encrypted
-        kms_key_id            = block_device_mappings.value.ebs.kms_key_id
-        iops                  = block_device_mappings.value.ebs.iops
-        throughput            = block_device_mappings.value.ebs.throughput
-      }
-    }
-  }
-
-  dynamic "monitoring" {
-    for_each = var.ecs.ec2_autoscaling.launch_template.monitoring != null ? [var.ecs.ec2_autoscaling.launch_template.monitoring] : []
-    content {
-      enabled = monitoring.value.enabled
-    }
-  }
-
-  dynamic "network_interfaces" {
-    for_each = var.ecs.ec2_autoscaling.launch_template.network_interfaces != null ? var.ecs.ec2_autoscaling.launch_template.network_interfaces : []
-    content {
-      associate_public_ip_address = network_interfaces.value.associate_public_ip_address
-      delete_on_termination       = network_interfaces.value.delete_on_termination
-      security_groups             = network_interfaces.value.security_groups
-      subnet_id                   = network_interfaces.value.subnet_id
-    }
-  }
-
-  vpc_security_group_ids = var.ecs.ec2_autoscaling.launch_template.vpc_security_group_ids
-
-  tag_specifications {
-    resource_type = "instance"
-    tags = merge(var.ecs.common.tags, {
-      "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-ecs-instance"
-    })
-  }
-
-  tag_specifications {
-    resource_type = "volume"
-    tags = merge(var.ecs.common.tags, {
-      "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-ecs-volume"
-    })
-  }
-
-  tags = merge(var.ecs.common.tags, {
-    "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.ec2_autoscaling.launch_template.name}"
-  })
+module "launch_template" {
+  for_each        = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.launch_templates != null ? { for item in var.ecs.ec2_autoscaling.launch_templates : item.key => item } : {}
+  source          = "../Launch_template"
+  common          = var.common
+  launch_template = each.value
 }
 
 #--------------------------------------------------------------------
 # EC2 Auto Scaling Group
 #--------------------------------------------------------------------
-resource "aws_autoscaling_group" "ecs_ec2" {
-  count                     = var.ecs.ec2_autoscaling != null ? 1 : 0
-  name                      = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.ec2_autoscaling.autoscaling_group.name}"
-  max_size                  = var.ecs.ec2_autoscaling.autoscaling_group.max_size
-  min_size                  = var.ecs.ec2_autoscaling.autoscaling_group.min_size
-  desired_capacity          = var.ecs.ec2_autoscaling.autoscaling_group.desired_capacity
-  health_check_grace_period = var.ecs.ec2_autoscaling.autoscaling_group.health_check_grace_period
-  health_check_type         = var.ecs.ec2_autoscaling.autoscaling_group.health_check_type
-  vpc_zone_identifier       = var.ecs.ec2_autoscaling.autoscaling_group.vpc_zone_identifier
-  target_group_arns         = var.ecs.ec2_autoscaling.autoscaling_group.target_group_arns
-  termination_policies      = var.ecs.ec2_autoscaling.autoscaling_group.termination_policies
-  protect_from_scale_in     = var.ecs.ec2_autoscaling.autoscaling_group.protect_from_scale_in
-
-  launch_template {
-    id      = aws_launch_template.ecs_ec2[0].id
-    version = var.ecs.ec2_autoscaling.autoscaling_group.launch_template_version
-  }
-
-  dynamic "tag" {
-    for_each = merge(var.ecs.common.tags, {
-      "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-ecs-asg"
-    })
-    content {
-      key                 = tag.key
-      value               = tag.value
-      propagate_at_launch = true
-    }
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
+module "autoscaling_group" {
+  for_each          = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.autoscaling_group != null ? { for item in var.ecs.ec2_autoscaling.autoscaling_group : item.name => item } : {}
+  source            = "../AutoScaling"
+  common            = var.common
+  Autoscaling_group = each.value
 }
 
 #--------------------------------------------------------------------
@@ -369,7 +282,7 @@ resource "aws_ecs_capacity_provider" "ecs_ec2" {
   name  = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.ec2_autoscaling.capacity_provider.name}"
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn         = aws_autoscaling_group.ecs_ec2[0].arn
+    auto_scaling_group_arn         = module.autoscaling_group[keys(module.autoscaling_group)[0]].arn
     managed_termination_protection = var.ecs.ec2_autoscaling.capacity_provider.managed_termination_protection
 
     managed_scaling {
@@ -395,7 +308,7 @@ resource "aws_autoscaling_policy" "ecs_scale_up" {
   scaling_adjustment     = var.ecs.ec2_autoscaling.scaling_policies.scale_up.scaling_adjustment
   adjustment_type        = var.ecs.ec2_autoscaling.scaling_policies.scale_up.adjustment_type
   cooldown               = var.ecs.ec2_autoscaling.scaling_policies.scale_up.cooldown
-  autoscaling_group_name = aws_autoscaling_group.ecs_ec2[0].name
+  autoscaling_group_name = module.autoscaling_group[keys(module.autoscaling_group)[0]].name
 }
 
 resource "aws_autoscaling_policy" "ecs_scale_down" {
@@ -404,5 +317,5 @@ resource "aws_autoscaling_policy" "ecs_scale_down" {
   scaling_adjustment     = var.ecs.ec2_autoscaling.scaling_policies.scale_down.scaling_adjustment
   adjustment_type        = var.ecs.ec2_autoscaling.scaling_policies.scale_down.adjustment_type
   cooldown               = var.ecs.ec2_autoscaling.scaling_policies.scale_down.cooldown
-  autoscaling_group_name = aws_autoscaling_group.ecs_ec2[0].name
+  autoscaling_group_name = module.autoscaling_group[keys(module.autoscaling_group)[0]].name
 }
