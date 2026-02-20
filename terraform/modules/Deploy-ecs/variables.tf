@@ -134,6 +134,7 @@ variable "ecs" {
       }))
     })))
     ec2_autoscaling = optional(list(object({
+      launch_template_key = optional(string)
       launch_templates = optional(list(object({
         key              = optional(string)
         name             = optional(string)

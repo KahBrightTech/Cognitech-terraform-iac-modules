@@ -268,10 +268,18 @@ module "launch_template" {
 # EC2 Auto Scaling Group
 #--------------------------------------------------------------------
 module "autoscaling_group" {
-  for_each          = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.autoscaling_group != null ? { for item in var.ecs.ec2_autoscaling.autoscaling_group : item.name => item } : {}
-  source            = "../AutoScaling"
-  common            = var.common
-  Autoscaling_group = each.value
+  for_each = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.autoscaling_group != null ? { for item in var.ecs.ec2_autoscaling.autoscaling_group : item.name => item } : {}
+  source   = "../AutoScaling"
+  common   = var.common
+  Autoscaling_group = merge(
+    each.value,
+    {
+      launch_template = each.value.launch_template_key != null ? {
+        id      = module.launch_template[each.value.launch_template_key].id
+        version = try(each.value.launch_template.version, "$Latest")
+      } : each.value.launch_template
+    }
+  )
 }
 
 #--------------------------------------------------------------------
