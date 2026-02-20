@@ -32,8 +32,10 @@ resource "aws_lb_listener" "alb_listener" {
   certificate_arn   = var.alb_listener.certificate_arn
 
   default_action {
-    type             = var.alb_listener.action
-    target_group_arn = var.alb_listener.action == "forward" ? module.alb_target_group[0].target_group_arn : null
+    type = var.alb_listener.action
+    target_group_arn = var.alb_listener.action == "forward" ? (
+      var.alb_listener.target_group.target_group_arn != null ? var.alb_listener.target_group.target_group_arn : module.alb_target_group[0].target_group_arn
+    ) : null
 
     # Dynamic block for fixed-response default action
     dynamic "fixed_response" {

@@ -29,10 +29,11 @@ variable "alb_listener" {
       certificate_arn = optional(string)
     })))
     target_group = optional(object({
-      name         = optional(string)
-      port         = optional(number)
-      protocol     = optional(string)
-      vpc_name_abr = optional(string)
+      target_group_arn = optional(string)
+      name             = optional(string)
+      port             = optional(number)
+      protocol         = optional(string)
+      vpc_name_abr     = optional(string)
       attachments = optional(list(object({
         target_id = optional(string)
         port      = optional(number)
