@@ -134,7 +134,6 @@ variable "ecs" {
       }))
     })))
     ec2_autoscaling = optional(list(object({
-      launch_template_key = optional(string)
       launch_templates = optional(list(object({
         key              = optional(string)
         name             = optional(string)
@@ -165,6 +164,7 @@ variable "ecs" {
         desired_capacity          = optional(number)
         subnet_ids                = optional(list(string))
         attach_target_groups      = optional(list(string))
+        launch_template_key       = optional(string)
         launch_template = optional(object({
           id      = string
           version = optional(string, "$Latest")
