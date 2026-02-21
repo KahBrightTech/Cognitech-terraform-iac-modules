@@ -24,7 +24,7 @@ locals {
 # ECS Cluster
 #--------------------------------------------------------------------
 resource "aws_ecs_cluster" "ecs" {
-  name = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.cluster_name}"
+  name = "${var.common.account_name}-${var.common.region_prefix}-${var.ecs.cluster_name}"
 
   dynamic "setting" {
     for_each = var.ecs.container_insights_enabled ? [1] : []
@@ -55,8 +55,8 @@ resource "aws_ecs_cluster" "ecs" {
     }
   }
 
-  tags = merge(var.ecs.common.tags, {
-    "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.cluster_name}"
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ecs.cluster_name}"
   })
 }
 
@@ -84,7 +84,7 @@ resource "aws_ecs_cluster_capacity_providers" "ecs" {
 #--------------------------------------------------------------------
 resource "aws_ecs_task_definition" "ecs" {
   for_each                 = local.task_definitions_map
-  family                   = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${each.value.family}"
+  family                   = "${var.common.account_name}-${var.common.region_prefix}-${each.value.family}"
   task_role_arn            = each.value.task_role_arn
   execution_role_arn       = each.value.execution_role_arn
   network_mode             = each.value.network_mode
@@ -155,8 +155,8 @@ resource "aws_ecs_task_definition" "ecs" {
     }
   }
 
-  tags = merge(var.ecs.common.tags, {
-    "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${each.value.family}"
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.family}"
   })
 }
 
@@ -165,7 +165,7 @@ resource "aws_ecs_task_definition" "ecs" {
 #--------------------------------------------------------------------
 resource "aws_ecs_service" "ecs" {
   for_each                           = local.services_map
-  name                               = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${each.value.name}"
+  name                               = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}"
   cluster                            = aws_ecs_cluster.ecs.id
   task_definition                    = each.value.task_definition != null ? each.value.task_definition : aws_ecs_task_definition.ecs[each.value.task_definition_family].arn
   desired_count                      = each.value.desired_count
@@ -258,17 +258,17 @@ resource "aws_ecs_service" "ecs" {
 # Launch Template
 #--------------------------------------------------------------------
 module "launch_template" {
-  for_each        = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.launch_templates != null ? { for item in var.ecs.ec2_autoscaling.launch_templates : item.key => item } : {}
+  for_each = var.ecs.ec2_autoscaling != null ? { for item in flatten([for asg in var.ecs.ec2_autoscaling : asg.launch_templates != null ? asg.launch_templates : []]) : item.key => item
+  } : {}
   source          = "../Launch_template"
   common          = var.common
   launch_template = each.value
 }
-
 #--------------------------------------------------------------------
 # EC2 Auto Scaling Group
 #--------------------------------------------------------------------
 module "autoscaling_group" {
-  for_each = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.autoscaling_group != null ? { for item in var.ecs.ec2_autoscaling.autoscaling_group : item.name => item } : {}
+  for_each = var.ecs.ec2_autoscaling != null ? { for item in flatten([for asg in var.ecs.ec2_autoscaling : asg.autoscaling_group != null ? asg.autoscaling_group : []]) : item.name => item } : {}
   source   = "../AutoScaling"
   common   = var.common
   Autoscaling_group = merge(
