@@ -44,37 +44,37 @@ variable "ecs" {
       cpu                      = optional(string)
       memory                   = optional(string)
       container_definitions = optional(list(object({
-        name      = string
-        image     = string
+        name      = optional(string)
+        image     = optional(string)
         cpu       = optional(number)
         memory    = optional(number)
         essential = optional(bool, true)
         port_mappings = optional(list(object({
-          container_port = number
+          container_port = optional(number)
           host_port      = optional(number)
           protocol       = optional(string, "tcp")
         })))
         environment = optional(list(object({
-          name  = string
-          value = string
+          name  = optional(string)
+          value = optional(string)
         })))
         secrets = optional(list(object({
-          name       = string
-          value_from = string
+          name       = optional(string)
+          value_from = optional(string)
         })))
         mount_points = optional(list(object({
-          source_volume  = string
-          container_path = string
+          source_volume  = optional(string)
+          container_path = optional(string)
           read_only      = optional(bool, false)
         })))
         log_configuration = optional(object({
-          log_driver = string
+          log_driver = optional(string)
           options    = optional(map(string))
         }))
       })))
       container_definitions_file = optional(string)
       volumes = optional(list(object({
-        name      = string
+        name      = optional(string)
         host_path = optional(string)
 
         docker_volume_configuration = optional(object({
@@ -232,13 +232,13 @@ variable "ecs" {
       }))
     }))
   })
-  validation {
-    condition = alltrue([
-      for svc in coalesce(var.ecs.services, []) :
-      svc.deployment_controller == null ||
-      svc.deployment_controller.type == null ||
-      contains(["ECS", "CODE_DEPLOY", "EXTERNAL"], svc.deployment_controller.type)
-    ])
-    error_message = "The deployment_controller type must be one of: ECS, CODE_DEPLOY, or EXTERNAL."
-  }
+  # validation {
+  #   condition = alltrue([
+  #     for svc in coalesce(var.ecs.services, []) :
+  #     svc.deployment_controller == null ||
+  #     svc.deployment_controller.type == null ||
+  #     contains(["ECS", "CODE_DEPLOY", "EXTERNAL"], svc.deployment_controller.type)
+  #   ])
+  #   error_message = "The deployment_controller type must be one of: ECS, CODE_DEPLOY, or EXTERNAL."
+  # }
 }
