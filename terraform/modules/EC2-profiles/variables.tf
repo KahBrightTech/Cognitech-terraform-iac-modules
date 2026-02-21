@@ -21,6 +21,7 @@ variable "ec2_profiles" {
     managed_policy_arns       = optional(list(string))
     max_session_duration      = optional(number, 3600)
     permissions_boundary      = optional(string)
+    create_custom_policy      = optional(bool, true)
     policy = optional(object({
       name          = string
       description   = optional(string)

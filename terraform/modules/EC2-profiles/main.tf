@@ -25,6 +25,7 @@ locals {
 #--------------------------------------------------------------------
 
 resource "aws_iam_policy" "policy" {
+  count       = var.ec2_profiles.create_custom_policy ? 1 : 0
   name        = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.policy.name}-policy"
   description = var.ec2_profiles.policy.description
   path        = var.ec2_profiles.policy.path
@@ -46,7 +47,7 @@ resource "aws_iam_policy" "policy" {
   ))) : jsonencode(jsondecode(file(var.ec2_profiles.policy.policy)))
 
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.policy.name}-policy"
+    "Name" = var.ec2_profiles.create_custom_policy ? "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.policy.name}-policy" : ""
   })
 }
 
@@ -93,6 +94,7 @@ resource "aws_iam_instance_profile" "ec2_profiles" {
 #Attach IAM Policy to Role
 #--------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
+  count      = var.ec2_profiles.create_custom_policy ? 1 : 0
   role       = aws_iam_role.ec2_profiles.name
   policy_arn = aws_iam_policy.policy.arn
 }
