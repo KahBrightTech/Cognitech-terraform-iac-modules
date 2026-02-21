@@ -247,8 +247,8 @@ resource "aws_ecs_service" "ecs" {
     }
   }
 
-  tags = merge(var.ecs.common.tags, {
-    "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${each.value.name}"
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}"
   })
 
   depends_on = [aws_ecs_task_definition.ecs]
@@ -258,26 +258,26 @@ resource "aws_ecs_service" "ecs" {
 # Launch Template
 #--------------------------------------------------------------------
 module "launch_template" {
-  for_each = var.ecs.ec2_autoscaling != null ? { for item in flatten([for asg in var.ecs.ec2_autoscaling : asg.launch_templates != null ? asg.launch_templates : []]) : item.key => item
-  } : {}
+  for_each        = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.launch_templates != null ? { for item in var.ecs.ec2_autoscaling.launch_templates : item.key => item } : {}
   source          = "../Launch_template"
   common          = var.common
   launch_template = each.value
 }
+
 #--------------------------------------------------------------------
 # EC2 Auto Scaling Group
 #--------------------------------------------------------------------
 module "autoscaling_group" {
-  for_each = var.ecs.ec2_autoscaling != null ? { for item in flatten([for asg in var.ecs.ec2_autoscaling : asg.autoscaling_group != null ? asg.autoscaling_group : []]) : item.name => item } : {}
-  source   = "../AutoScaling"
-  common   = var.common
+  count  = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.autoscaling_group != null ? 1 : 0
+  source = "../AutoScaling"
+  common = var.common
   Autoscaling_group = merge(
-    each.value,
+    var.ecs.ec2_autoscaling.autoscaling_group,
     {
-      launch_template = each.value.launch_template_key != null ? {
-        id      = module.launch_template[each.value.launch_template_key].id
-        version = try(each.value.launch_template.version, "$Latest")
-      } : each.value.launch_template
+      launch_template = var.ecs.ec2_autoscaling.autoscaling_group.launch_template_key != null ? {
+        id      = module.launch_template[var.ecs.ec2_autoscaling.autoscaling_group.launch_template_key].id
+        version = try(var.ecs.ec2_autoscaling.autoscaling_group.launch_template.version, "$Latest")
+      } : var.ecs.ec2_autoscaling.autoscaling_group.launch_template
     }
   )
 }
@@ -287,10 +287,10 @@ module "autoscaling_group" {
 #--------------------------------------------------------------------
 resource "aws_ecs_capacity_provider" "ecs_ec2" {
   count = var.ecs.ec2_autoscaling != null ? 1 : 0
-  name  = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.ec2_autoscaling.capacity_provider.name}"
+  name  = "${var.common.account_name}-${var.common.region_prefix}-${var.ecs.ec2_autoscaling.capacity_provider.name}"
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn         = module.autoscaling_group[keys(module.autoscaling_group)[0]].arn
+    auto_scaling_group_arn         = module.autoscaling_group[0].arn
     managed_termination_protection = var.ecs.ec2_autoscaling.capacity_provider.managed_termination_protection
 
     managed_scaling {
@@ -302,8 +302,8 @@ resource "aws_ecs_capacity_provider" "ecs_ec2" {
     }
   }
 
-  tags = merge(var.ecs.common.tags, {
-    "Name" = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-${var.ecs.ec2_autoscaling.capacity_provider.name}"
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ecs.ec2_autoscaling.capacity_provider.name}"
   })
 }
 
@@ -312,18 +312,18 @@ resource "aws_ecs_capacity_provider" "ecs_ec2" {
 #--------------------------------------------------------------------
 resource "aws_autoscaling_policy" "ecs_scale_up" {
   count                  = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.scaling_policies != null ? 1 : 0
-  name                   = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-ecs-scale-up"
+  name                   = "${var.common.account_name}-${var.common.region_prefix}-ecs-scale-up"
   scaling_adjustment     = var.ecs.ec2_autoscaling.scaling_policies.scale_up.scaling_adjustment
   adjustment_type        = var.ecs.ec2_autoscaling.scaling_policies.scale_up.adjustment_type
   cooldown               = var.ecs.ec2_autoscaling.scaling_policies.scale_up.cooldown
-  autoscaling_group_name = module.autoscaling_group[keys(module.autoscaling_group)[0]].name
+  autoscaling_group_name = module.autoscaling_group[0].name
 }
 
 resource "aws_autoscaling_policy" "ecs_scale_down" {
   count                  = var.ecs.ec2_autoscaling != null && var.ecs.ec2_autoscaling.scaling_policies != null ? 1 : 0
-  name                   = "${var.ecs.common.account_name}-${var.ecs.common.region_prefix}-ecs-scale-down"
+  name                   = "${var.common.account_name}-${var.common.region_prefix}-ecs-scale-down"
   scaling_adjustment     = var.ecs.ec2_autoscaling.scaling_policies.scale_down.scaling_adjustment
   adjustment_type        = var.ecs.ec2_autoscaling.scaling_policies.scale_down.adjustment_type
   cooldown               = var.ecs.ec2_autoscaling.scaling_policies.scale_down.cooldown
-  autoscaling_group_name = module.autoscaling_group[keys(module.autoscaling_group)[0]].name
+  autoscaling_group_name = module.autoscaling_group[0].name
 }

@@ -189,7 +189,7 @@ variable "ecs" {
         container_port = optional(number)
       }))
     })))
-    ec2_autoscaling = optional(list(object({
+    ec2_autoscaling = optional(object({
       launch_templates = optional(list(object({
         key              = optional(string)
         name             = optional(string)
@@ -258,7 +258,7 @@ variable "ecs" {
           cooldown           = optional(number, 300)
         })
       }))
-    })))
+    }))
   })
   validation {
     condition = alltrue([
