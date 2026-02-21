@@ -55,7 +55,7 @@ resource "aws_iam_policy" "policy" {
 # IAM Role - Creates IAM role with the specified policy
 #--------------------------------------------------------------------
 resource "aws_iam_role" "ec2_profiles" {
-  name        = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.name}-profile"
+  name        = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.name}-role"
   description = var.ec2_profiles.description
   path        = var.ec2_profiles.path
   assume_role_policy = var.ec2_profiles.custom_assume_role_policy ? jsonencode(jsondecode(replace(
@@ -75,7 +75,7 @@ resource "aws_iam_role" "ec2_profiles" {
   max_session_duration  = var.ec2_profiles.max_session_duration
   permissions_boundary  = var.ec2_profiles.permissions_boundary
   tags = merge(var.common.tags, {
-    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.policy.name}-profile"
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.ec2_profiles.name}-role"
   })
 }
 
