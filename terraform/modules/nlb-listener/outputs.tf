@@ -3,19 +3,23 @@
 #--------------------------------------------------------------------
 output "nlb_target_group_arn" {
   description = "The ARN of the NLB target group"
-  value       = module.nlb_target_group.target_group_arn
+  value       = length(module.nlb_target_group) > 0 ? module.nlb_target_group[0].target_group_arn : var.nlb_listener.target_group_arn
 }
 
 output "nlb_target_group_id" {
   description = "The ID of the NLB target group"
-  value       = module.nlb_target_group.target_group_id
+  value       = length(module.nlb_target_group) > 0 ? module.nlb_target_group[0].target_group_id : var.nlb_listener.target_group_arn
 }
 
 output "nlb_attachments" {
   description = "The attachments of the NLB target group"
-  value       = var.nlb_listener.target_group != null ? (var.nlb_listener.target_group.attachments != null ? module.nlb_target_group.target_group_attachments : null) : null
-
+  value = length(module.nlb_target_group) > 0 ? (
+    var.nlb_listener.target_group != null && var.nlb_listener.target_group.attachments != null
+    ? module.nlb_target_group[0].target_group_attachments
+    : null
+  ) : null
 }
+
 #--------------------------------------------------------------------
 # NLB Listener Outputs
 #--------------------------------------------------------------------

@@ -8,6 +8,7 @@ data "aws_region" "current" {}
 # Create Default target group for the Load Balancer
 #-------------------------------------------------------------------------------------------------------------------
 module "nlb_target_group" {
+  count  = var.nlb_listener.target_group != null ? 1 : 0
   source = "../Target-groups"
 
   common = var.common
