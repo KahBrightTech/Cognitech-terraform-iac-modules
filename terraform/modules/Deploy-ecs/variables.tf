@@ -43,7 +43,7 @@ variable "ecs" {
       requires_compatibilities = optional(list(string), ["EC2"])
       cpu                      = optional(string)
       memory                   = optional(string)
-      container_definitions = optional(object({
+      container_definitions = optional(list(object({
         name      = string
         image     = string
         cpu       = optional(number)
@@ -71,36 +71,8 @@ variable "ecs" {
           log_driver = string
           options    = optional(map(string))
         }))
-      }))
-      container_definitions_file = optional(object({
-        name      = string
-        image     = string
-        cpu       = optional(number)
-        memory    = optional(number)
-        essential = optional(bool, true)
-        port_mappings = optional(list(object({
-          container_port = number
-          host_port      = optional(number)
-          protocol       = optional(string, "tcp")
-        })))
-        environment = optional(list(object({
-          name  = string
-          value = string
-        })))
-        secrets = optional(list(object({
-          name       = string
-          value_from = string
-        })))
-        mount_points = optional(list(object({
-          source_volume  = string
-          container_path = string
-          read_only      = optional(bool, false)
-        })))
-        log_configuration = optional(object({
-          log_driver = string
-          options    = optional(map(string))
-        }))
-      }))
+      })))
+      container_definitions_file = optional(string)
       volumes = optional(list(object({
         name      = string
         host_path = optional(string)
