@@ -210,7 +210,7 @@ variable "ecs" {
         volume_size                 = optional(number)
         root_device_name            = optional(string)
       })))
-      autoscaling_group = optional(list(object({
+      autoscaling_group = optional(object({
         name                      = optional(string)
         min_size                  = optional(number)
         max_size                  = optional(number)
@@ -234,7 +234,7 @@ variable "ecs" {
           value               = string
           propagate_at_launch = optional(bool, true)
         })))
-      })))
+      }))
       capacity_provider = object({
         name                           = string
         managed_termination_protection = optional(string, "DISABLED")
