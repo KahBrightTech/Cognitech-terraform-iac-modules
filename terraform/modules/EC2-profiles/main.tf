@@ -96,7 +96,7 @@ resource "aws_iam_instance_profile" "ec2_profiles" {
 resource "aws_iam_role_policy_attachment" "policy_attachment" {
   count      = var.ec2_profiles.create_custom_policy ? 1 : 0
   role       = aws_iam_role.ec2_profiles.name
-  policy_arn = aws_iam_policy.policy.arn
+  policy_arn = aws_iam_policy.policy[0].arn
 }
 
 #--------------------------------------------------------------------
