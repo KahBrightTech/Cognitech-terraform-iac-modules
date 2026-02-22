@@ -16,8 +16,15 @@ locals {
   admin_role_arn   = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
   network_role_arn = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
 
-  task_definitions_map = { for td in var.ecs.task_definitions : td.family => td }
-  services_map         = { for svc in var.ecs.services : svc.name => svc }
+  task_definitions_map = {
+    for td in var.ecs.task_definitions : td.family => merge(td, {
+      container_definitions_resolved = td.container_definitions_file != null ? file(td.container_definitions_file) : (
+        td.container_definitions != null ? jsonencode(td.container_definitions) : null
+      )
+    })
+  }
+
+  services_map = { for svc in var.ecs.services : svc.name => svc }
 }
 
 #--------------------------------------------------------------------
@@ -91,8 +98,7 @@ resource "aws_ecs_task_definition" "ecs" {
   requires_compatibilities = each.value.requires_compatibilities
   cpu                      = each.value.cpu
   memory                   = each.value.memory
-  container_definitions    = each.value.container_definitions_file != null ? file(each.value.container_definitions_file) : each.value.container_definitions
-
+  container_definitions    = each.value.container_definitions_resolved
   dynamic "volume" {
     for_each = each.value.volumes != null ? each.value.volumes : []
     content {
