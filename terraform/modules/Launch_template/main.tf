@@ -31,7 +31,7 @@ locals {
     # EKS Optimized AMIs
     EKSAL2    = { pattern = "amazon-eks-node-*", owners = ["amazon"] }
     EKSAL2023 = { pattern = "amazon-eks-node-al2023-x86_64-standard-*", owners = ["amazon"] }
-    ECSAL2023 = { pattern = "al2023-ami-ecs-hvm-*", owners = ["amazon"] }
+    ECSAL2023 = { pattern = "al2023-ami-ecs-hvm-*-x86_64", owners = ["amazon"] }
 
     # Red Hat Enterprise Linux AMIs
     RHEL9  = { pattern = "RHEL-9.6.0_HVM_*-x86_64-*-Hourly2-GP3", owners = ["amazon"] }
