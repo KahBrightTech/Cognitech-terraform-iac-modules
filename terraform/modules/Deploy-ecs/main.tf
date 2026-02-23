@@ -13,13 +13,18 @@ data "aws_iam_roles" "network_role" {
 }
 
 locals {
-  admin_role_arn   = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
-  network_role_arn = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
-
   task_definitions_map = {
     for td in var.ecs.task_definitions : td.family => merge(td, {
-      container_definitions_resolved = td.container_definitions_file != null ? file(td.container_definitions_file) : (
-        td.container_definitions != null ? jsonencode(td.container_definitions) : null
+      container_definitions_resolved = td.container_definitions_file != null ? (
+        can(jsondecode(td.container_definitions_file))
+        ? td.container_definitions_file
+        : file(td.container_definitions_file)
+        ) : (
+        td.container_definitions != null ? (
+          can(jsondecode(td.container_definitions))
+          ? td.container_definitions
+          : jsonencode(td.container_definitions)
+        ) : null
       )
     })
   }
