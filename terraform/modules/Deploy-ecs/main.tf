@@ -84,6 +84,7 @@ resource "aws_ecs_cluster_capacity_providers" "ecs" {
       base              = default_capacity_provider_strategy.value.base
     }
   }
+  depends_on = [aws_ecs_capacity_provider.ecs_ec2]
 }
 
 #--------------------------------------------------------------------
