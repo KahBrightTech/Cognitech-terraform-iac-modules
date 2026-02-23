@@ -170,10 +170,11 @@ resource "aws_ecs_task_definition" "ecs" {
 # ECS Services
 #--------------------------------------------------------------------
 resource "aws_ecs_service" "ecs" {
-  for_each                           = local.services_map
-  name                               = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}"
-  cluster                            = aws_ecs_cluster.ecs.id
-  task_definition                    = each.value.task_definition != null ? each.value.task_definition : aws_ecs_task_definition.ecs[each.value.task_definition_family].arn
+  for_each = local.services_map
+  name     = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}"
+  cluster  = aws_ecs_cluster.ecs.id
+  task_definition = each.value.task_definition != null ? each.value.task_definition : (
+  each.value.task_definition_family != null ? aws_ecs_task_definition.ecs[each.value.task_definition_family].arn : null)
   desired_count                      = each.value.desired_count
   launch_type                        = each.value.launch_type
   platform_version                   = each.value.platform_version
