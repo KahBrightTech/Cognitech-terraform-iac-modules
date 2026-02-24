@@ -166,6 +166,7 @@ resource "aws_secretsmanager_secret_version" "rds_credentials" {
     host     = aws_db_instance.instance[0].address
     endpoint = aws_db_instance.instance[0].endpoint
     port     = aws_db_instance.instance[0].port
+    dbname   = aws_db_instance.instance[0].db_name
   })
 }
 
