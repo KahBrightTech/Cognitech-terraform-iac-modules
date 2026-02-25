@@ -113,34 +113,6 @@ variable "ecs" {
         cpu_architecture        = optional(string, "X86_64")
       }))
     })))
-    cloud_map_namespaces = optional(list(object({
-      name        = string
-      description = optional(string)
-      # Supported types: HTTP | DNS_PRIVATE | DNS_PUBLIC
-      type   = optional(string, "DNS_PRIVATE")
-      vpc_id = optional(string) # Required for DNS_PRIVATE
-      services = optional(list(object({
-        name = string
-
-        dns_config = optional(object({
-          namespace_id   = optional(string) # Auto-resolved if null
-          routing_policy = optional(string, "MULTIVALUE")
-          dns_records = optional(list(object({
-            ttl  = number
-            type = string # A | AAAA | CNAME | SRV
-          })))
-        }))
-        health_check_config = optional(object({
-          failure_threshold = optional(number, 1)
-          resource_path     = optional(string)
-          type              = optional(string) # HTTP | HTTPS | TCP
-        }))
-
-        health_check_custom_config = optional(object({
-          failure_threshold = optional(number, 1)
-        }))
-      })))
-    })))
     services = optional(list(object({
       name                               = string
       task_definition                    = optional(string)
@@ -186,11 +158,10 @@ variable "ecs" {
         field = optional(string)
       })))
       service_registries = optional(object({
-        registry_arn          = optional(string)
-        cloud_map_service_key = optional(string)
-        port                  = optional(number)
-        container_name        = optional(string)
-        container_port        = optional(number)
+        registry_arn   = string
+        port           = optional(number)
+        container_name = optional(string)
+        container_port = optional(number)
       }))
     })))
     ec2_autoscaling = optional(object({

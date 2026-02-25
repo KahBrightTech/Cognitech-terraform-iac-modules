@@ -105,7 +105,6 @@ resource "aws_ecs_task_definition" "ecs" {
   cpu                      = each.value.cpu
   memory                   = each.value.memory
   container_definitions    = each.value.container_definitions_resolved
-
   dynamic "volume" {
     for_each = each.value.volumes != null ? each.value.volumes : []
     content {
@@ -171,123 +170,6 @@ resource "aws_ecs_task_definition" "ecs" {
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.family}"
   })
-}
-
-#--------------------------------------------------------------------
-# Cloud Map - HTTP Namespace
-#--------------------------------------------------------------------
-resource "aws_service_discovery_http_namespace" "ecs" {
-  for_each    = { for ns in coalesce(var.ecs.cloud_map_namespaces, []) : ns.name => ns if ns.type == "HTTP" }
-  name        = each.value.name
-  description = each.value.description
-
-  tags = merge(var.common.tags, {
-    "Name" = each.value.name
-  })
-}
-
-#--------------------------------------------------------------------
-# Cloud Map - Private DNS Namespace
-#--------------------------------------------------------------------
-resource "aws_service_discovery_private_dns_namespace" "ecs" {
-  for_each    = { for ns in coalesce(var.ecs.cloud_map_namespaces, []) : ns.name => ns if ns.type == "DNS_PRIVATE" }
-  name        = each.value.name
-  description = each.value.description
-  vpc         = each.value.vpc_id
-
-  tags = merge(var.common.tags, {
-    "Name" = each.value.name
-  })
-}
-
-#--------------------------------------------------------------------
-# Cloud Map - Public DNS Namespace
-#--------------------------------------------------------------------
-resource "aws_service_discovery_public_dns_namespace" "ecs" {
-  for_each    = { for ns in coalesce(var.ecs.cloud_map_namespaces, []) : ns.name => ns if ns.type == "DNS_PUBLIC" }
-  name        = each.value.name
-  description = each.value.description
-
-  tags = merge(var.common.tags, {
-    "Name" = each.value.name
-  })
-}
-
-#--------------------------------------------------------------------
-# Cloud Map - Service Discovery Services
-#--------------------------------------------------------------------
-locals {
-  # Build a flat map of all Cloud Map services across all namespaces
-  cloud_map_services_map = {
-    for item in flatten([
-      for ns in coalesce(var.ecs.cloud_map_namespaces, []) : [
-        for svc in coalesce(ns.services, []) : merge(svc, {
-          namespace_name = ns.name
-          namespace_type = ns.type
-        })
-      ]
-    ]) : "${item.namespace_name}/${item.name}" => item
-  }
-}
-
-resource "aws_service_discovery_service" "ecs" {
-  for_each = local.cloud_map_services_map
-
-  name = each.value.name
-
-  # Resolve the namespace ID based on namespace type
-  namespace_id = (
-    each.value.namespace_type == "HTTP" ? aws_service_discovery_http_namespace.ecs[each.value.namespace_name].id :
-    each.value.namespace_type == "DNS_PRIVATE" ? aws_service_discovery_private_dns_namespace.ecs[each.value.namespace_name].id :
-    each.value.namespace_type == "DNS_PUBLIC" ? aws_service_discovery_public_dns_namespace.ecs[each.value.namespace_name].id :
-    null
-  )
-
-  dynamic "dns_config" {
-    for_each = each.value.dns_config != null ? [each.value.dns_config] : []
-    content {
-      namespace_id = dns_config.value.namespace_id != null ? dns_config.value.namespace_id : (
-        each.value.namespace_type == "DNS_PRIVATE" ? aws_service_discovery_private_dns_namespace.ecs[each.value.namespace_name].id :
-        each.value.namespace_type == "DNS_PUBLIC" ? aws_service_discovery_public_dns_namespace.ecs[each.value.namespace_name].id :
-        null
-      )
-      routing_policy = dns_config.value.routing_policy
-
-      dynamic "dns_records" {
-        for_each = dns_config.value.dns_records != null ? dns_config.value.dns_records : []
-        content {
-          ttl  = dns_records.value.ttl
-          type = dns_records.value.type
-        }
-      }
-    }
-  }
-
-  dynamic "health_check_config" {
-    for_each = each.value.health_check_config != null ? [each.value.health_check_config] : []
-    content {
-      failure_threshold = health_check_config.value.failure_threshold
-      resource_path     = health_check_config.value.resource_path
-      type              = health_check_config.value.type
-    }
-  }
-
-  dynamic "health_check_custom_config" {
-    for_each = each.value.health_check_custom_config != null ? [each.value.health_check_custom_config] : []
-    content {
-      failure_threshold = health_check_custom_config.value.failure_threshold
-    }
-  }
-
-  tags = merge(var.common.tags, {
-    "Name" = each.value.name
-  })
-
-  depends_on = [
-    aws_service_discovery_http_namespace.ecs,
-    aws_service_discovery_private_dns_namespace.ecs,
-    aws_service_discovery_public_dns_namespace.ecs,
-  ]
 }
 
 #--------------------------------------------------------------------
@@ -371,12 +253,7 @@ resource "aws_ecs_service" "ecs" {
   dynamic "service_registries" {
     for_each = each.value.service_registries != null ? [each.value.service_registries] : []
     content {
-      # Support both a direct ARN or a reference to a managed Cloud Map service
-      registry_arn = service_registries.value.registry_arn != null ? service_registries.value.registry_arn : (
-        service_registries.value.cloud_map_service_key != null
-        ? aws_service_discovery_service.ecs[service_registries.value.cloud_map_service_key].arn
-        : null
-      )
+      registry_arn   = service_registries.value.registry_arn
       port           = service_registries.value.port
       container_name = service_registries.value.container_name
       container_port = service_registries.value.container_port
@@ -387,10 +264,7 @@ resource "aws_ecs_service" "ecs" {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${each.value.name}"
   })
 
-  depends_on = [
-    aws_ecs_task_definition.ecs,
-    aws_service_discovery_service.ecs,
-  ]
+  depends_on = [aws_ecs_task_definition.ecs]
 }
 
 #--------------------------------------------------------------------
