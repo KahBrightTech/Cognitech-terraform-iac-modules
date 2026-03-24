@@ -365,44 +365,44 @@ output "helm_external_dns" {
 #--------------------------------------------------------------------
 output "cluster_roles" {
   description = "Map of created Kubernetes ClusterRoles"
-  value = var.eks.create_node_group && var.eks.auth != null && var.eks.auth.cluster_roles != null ? {
+  value = {
     for key, role in kubernetes_cluster_role_v1.cluster_role : key => {
       name = role.metadata[0].name
       uid  = role.metadata[0].uid
     }
-  } : {}
+  }
 }
 
 output "cluster_role_bindings" {
   description = "Map of created Kubernetes ClusterRoleBindings"
-  value = var.eks.create_node_group && var.eks.auth != null && var.eks.auth.cluster_role_bindings != null ? {
+  value = {
     for key, binding in kubernetes_cluster_role_binding_v1.cluster_role_binding : key => {
       name      = binding.metadata[0].name
       uid       = binding.metadata[0].uid
       role_name = binding.role_ref[0].name
     }
-  } : {}
+  }
 }
 
 output "roles" {
   description = "Map of created Kubernetes Roles"
-  value = var.eks.create_node_group && var.eks.auth != null && var.eks.auth.roles != null ? {
+  value = {
     for key, role in kubernetes_role_v1.role : key => {
       name      = role.metadata[0].name
       namespace = role.metadata[0].namespace
       uid       = role.metadata[0].uid
     }
-  } : {}
+  }
 }
 
 output "role_bindings" {
   description = "Map of created Kubernetes RoleBindings"
-  value = var.eks.create_node_group && var.eks.auth != null && var.eks.auth.role_bindings != null ? {
+  value = {
     for key, binding in kubernetes_role_binding_v1.role_binding : key => {
       name      = binding.metadata[0].name
       namespace = binding.metadata[0].namespace
       uid       = binding.metadata[0].uid
       role_name = binding.role_ref[0].name
     }
-  } : {}
+  }
 }

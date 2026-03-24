@@ -571,7 +571,8 @@ resource "aws_eks_pod_identity_association" "pia" {
 # Kubernetes RBAC - Cluster Roles
 #--------------------------------------------------------------------
 resource "kubernetes_cluster_role_v1" "cluster_role" {
-  for_each = var.eks.auth != null && var.eks.auth.cluster_roles != null ? { for role in var.eks.auth.cluster_roles : role.key => role } : {}
+  for_each = try({ for role in var.eks.auth.cluster_roles : role.key => role }, {}
+  )
 
   metadata {
     name   = each.value.name
@@ -594,7 +595,8 @@ resource "kubernetes_cluster_role_v1" "cluster_role" {
 # Kubernetes RBAC - Cluster Role Bindings
 #--------------------------------------------------------------------
 resource "kubernetes_cluster_role_binding_v1" "cluster_role_binding" {
-  for_each = var.eks.auth != null && var.eks.auth.cluster_role_bindings != null ? { for binding in var.eks.auth.cluster_role_bindings : binding.key => binding } : {}
+  for_each = try({ for binding in var.eks.auth.cluster_role_bindings : binding.key => binding }, {}
+  )
 
   metadata {
     name   = each.value.name
@@ -624,7 +626,8 @@ resource "kubernetes_cluster_role_binding_v1" "cluster_role_binding" {
 # Kubernetes RBAC - Roles
 #--------------------------------------------------------------------
 resource "kubernetes_role_v1" "role" {
-  for_each = var.eks.auth != null && var.eks.auth.roles != null ? { for role in var.eks.auth.roles : role.key => role } : {}
+  for_each = try({ for role in var.eks.auth.roles : role.key => role }, {}
+  )
 
   metadata {
     name      = each.value.name
@@ -648,7 +651,8 @@ resource "kubernetes_role_v1" "role" {
 # Kubernetes RBAC - Role Bindings
 #--------------------------------------------------------------------
 resource "kubernetes_role_binding_v1" "role_binding" {
-  for_each = var.eks.auth != null && var.eks.auth.role_bindings != null ? { for binding in var.eks.auth.role_bindings : binding.key => binding } : {}
+  for_each = try({ for binding in var.eks.auth.role_bindings : binding.key => binding }, {}
+  )
 
   metadata {
     name      = each.value.name
