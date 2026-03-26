@@ -25,7 +25,15 @@ locals {
       }
     ]
   ])
-  access_entries_map           = { for entry in local.access_entries : entry.key => entry }
+
+  access_entries_map = { for entry in local.access_entries : entry.key => entry }
+
+  # Filtered map — only entries that have a policy_arn
+  access_policies_map = {
+    for k, v in local.access_entries_map : k => v
+    if v.policy_arn != null && v.policy_arn != ""
+  }
+
   admin_role_arn               = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
   network_role_arn             = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
   created_service_account_keys = var.eks.create_service_accounts && var.eks.service_accounts != null ? toset([for sa in var.eks.service_accounts : sa.key]) : toset([])
@@ -78,7 +86,7 @@ resource "aws_eks_access_entry" "access_entry" {
 }
 
 resource "aws_eks_access_policy_association" "access_policy" {
-  for_each = local.access_entries_map
+  for_each = local.access_policies_map
 
   cluster_name  = aws_eks_cluster.eks_cluster.name
   principal_arn = each.value.principal_arn
