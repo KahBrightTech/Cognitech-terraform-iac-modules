@@ -85,7 +85,7 @@ resource "aws_lambda_function" "lambda_function" {
   timeout       = var.Lambda.timeout
 
   s3_bucket = var.Lambda.private_bucket_name
-  s3_key    = var.Lambda.lamda_s3_key
+  s3_key    = var.Lambda.lambda_s3_key
   layers    = [aws_lambda_layer_version.default.arn]
   dynamic "environment" {
     for_each = var.Lambda.env_variables != null ? [1] : []
