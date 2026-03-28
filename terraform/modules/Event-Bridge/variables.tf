@@ -12,12 +12,12 @@ variable "common" {
 variable "event" {
   description = "EventBridge configuration object."
   type = object({
-    event_bus_name   = string
-    rule_name        = string
-    event_pattern    = string
-    rule_description = optional(string, "")
+    event_bus_name   = optional(string, "")
+    rule_name        = optional(string)
+    event_pattern    = optional(string)
+    rule_description = optional(string)
     rule_enabled     = optional(bool, true)
-    target_arn       = string
+    target_arn       = optional(string)
     tags             = optional(map(string), {})
   })
 }
