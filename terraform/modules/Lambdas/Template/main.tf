@@ -68,7 +68,7 @@ resource "aws_lambda_layer_version" "default" {
   layer_name          = "${var.common.account_name}-${var.common.region_prefix}-${var.Lambda.function_name}-layer"
   compatible_runtimes = [var.Lambda.runtime]
   description         = var.Lambda.layer_description
-  s3_bucket           = var.Lambda.private_bucklet_name
+  s3_bucket           = var.Lambda.private_bucket_name
   s3_key              = var.Lambda.layer_s3_key
 
 }
@@ -84,7 +84,7 @@ resource "aws_lambda_function" "lambda_function" {
   role          = aws_iam_role.lambda_exec_role.arn
   timeout       = var.Lambda.timeout
 
-  s3_bucket = var.Lambda.private_bucklet_name
+  s3_bucket = var.Lambda.private_bucket_name
   s3_key    = var.Lambda.lamda_s3_key
   layers    = [aws_lambda_layer_version.default.arn]
   dynamic "environment" {
