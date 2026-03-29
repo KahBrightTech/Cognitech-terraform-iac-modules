@@ -1,23 +1,14 @@
-# Output for Lambda permission statement ID
-output "lambda_permission_statement_id" {
-  description = "The statement ID of the Lambda permission."
-  value       = aws_lambda_permission.this.statement_id
-  condition   = can(aws_lambda_permission.this.statement_id)
+output "lambda_permission_statement_ids" {
+  description = "The statement IDs of the Lambda permissions."
+  value       = { for k, v in aws_lambda_permission.this : k => v.statement_id }
 }
 
-# Output for Lambda permission action
-output "lambda_permission_action" {
-  description = "The action granted by the Lambda permission."
-  value       = aws_lambda_permission.this.action
-  condition   = can(aws_lambda_permission.this.action)
+output "lambda_permission_actions" {
+  description = "The actions granted by the Lambda permissions."
+  value       = { for k, v in aws_lambda_permission.this : k => v.action }
 }
 
-# Output for Lambda permission principal
-output "lambda_permission_principal" {
-  description = "The principal allowed by the Lambda permission."
-  value       = aws_lambda_permission.this.principal
-  condition   = can(aws_lambda_permission.this.principal)
+output "lambda_permission_principals" {
+  description = "The principals allowed by the Lambda permissions."
+  value       = { for k, v in aws_lambda_permission.this : k => v.principal }
 }
-
-
-
