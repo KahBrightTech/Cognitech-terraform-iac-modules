@@ -406,3 +406,8 @@ output "role_bindings" {
     }
   }
 }
+
+output "namespace_names" {
+  description = "Names of the created Kubernetes namespaces."
+  value       = [for ns in kubernetes_namespace_v1.namespace : ns.metadata[0].name]
+}

@@ -82,7 +82,7 @@ variable "eks" {
         labels = optional(map(string), {})
       })), [])
     }))
-    namespace = optional(list(object({
+    namespaces = optional(list(object({
       name   = optional(string, "")
       labels = optional(map(string), {})
     })))

@@ -634,13 +634,16 @@ resource "kubernetes_cluster_role_binding_v1" "cluster_role_binding" {
 # Kubernetes RBAC - Roles
 #--------------------------------------------------------------------
 resource "kubernetes_role_v1" "role" {
-  for_each = try({ for role in var.eks.auth.roles : role.key => role }, {}
-  )
+  for_each = try({ for role in var.eks.auth.roles : role.key => role }, {})
 
   metadata {
-    name      = each.value.name
-    namespace = each.value.namespace
-    labels    = each.value.labels
+    name = each.value.name
+    namespace = (
+      contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
+      ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
+      : each.value.namespace
+    )
+    labels = each.value.labels
   }
 
   dynamic "rule" {
@@ -652,20 +655,23 @@ resource "kubernetes_role_v1" "role" {
     }
   }
 
-  depends_on = [aws_eks_cluster.eks_cluster]
+  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace]
 }
 
 #--------------------------------------------------------------------
 # Kubernetes RBAC - Role Bindings
 #--------------------------------------------------------------------
 resource "kubernetes_role_binding_v1" "role_binding" {
-  for_each = try({ for binding in var.eks.auth.role_bindings : binding.key => binding }, {}
-  )
+  for_each = try({ for binding in var.eks.auth.role_bindings : binding.key => binding }, {})
 
   metadata {
-    name      = each.value.name
-    namespace = each.value.namespace
-    labels    = each.value.labels
+    name = each.value.name
+    namespace = (
+      contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
+      ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
+      : each.value.namespace
+    )
+    labels = each.value.labels
   }
 
   role_ref {
@@ -677,21 +683,25 @@ resource "kubernetes_role_binding_v1" "role_binding" {
   dynamic "subject" {
     for_each = each.value.subjects
     content {
-      kind      = subject.value.kind
-      name      = subject.value.name
-      namespace = subject.value.namespace
+      kind = subject.value.kind
+      name = subject.value.name
+      namespace = (
+        subject.value.namespace != null && contains(keys(kubernetes_namespace_v1.namespace), subject.value.namespace)
+        ? kubernetes_namespace_v1.namespace[subject.value.namespace].metadata[0].name
+        : subject.value.namespace
+      )
       api_group = subject.value.api_group
     }
   }
 
-  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_role_v1.role]
+  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_role_v1.role, kubernetes_namespace_v1.namespace]
 }
 
 #--------------------------------------------------------------------
 # Kubernetes Namespace (Optional)
 #--------------------------------------------------------------------
 resource "kubernetes_namespace_v1" "namespace" {
-  for_each = var.eks.namespace != null ? { for ns in var.eks.namespace : ns.name => ns if ns.name != "" } : {}
+  for_each = var.eks.namespaces != null ? { for ns in var.eks.namespaces : ns.name => ns if ns.name != "" } : {}
   metadata {
     name   = each.value.name
     labels = each.value.labels
