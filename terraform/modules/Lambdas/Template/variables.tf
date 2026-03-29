@@ -22,5 +22,11 @@ variable "Lambda" {
     layer_description   = optional(string)
     layer_s3_key        = optional(string)
     env_variables       = optional(map(string))
+    permissions = optional(map(object({
+      statement_id   = string
+      principal      = string
+      source_arn     = optional(string)
+      source_account = optional(string)
+    })))
   })
 }

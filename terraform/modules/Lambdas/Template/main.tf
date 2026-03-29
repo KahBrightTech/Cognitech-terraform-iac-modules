@@ -48,6 +48,7 @@ resource "aws_iam_role_policy" "lambda_policy" {
     ]
   })
 }
+
 #--------------------------------------------------------------------
 #  Creates Cloudwatch log group for Lambda function
 #--------------------------------------------------------------------
@@ -62,7 +63,7 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
 }
 
 #--------------------------------------------------------------------
-# Creates lambda layers 
+# Creates lambda layers
 #--------------------------------------------------------------------
 resource "aws_lambda_layer_version" "default" {
   layer_name          = "${var.common.account_name}-${var.common.region_prefix}-${var.Lambda.function_name}-layer"
@@ -70,7 +71,6 @@ resource "aws_lambda_layer_version" "default" {
   description         = var.Lambda.layer_description
   s3_bucket           = var.Lambda.private_bucket_name
   s3_key              = var.Lambda.layer_s3_key
-
 }
 
 #--------------------------------------------------------------------
@@ -87,12 +87,14 @@ resource "aws_lambda_function" "lambda_function" {
   s3_bucket = var.Lambda.private_bucket_name
   s3_key    = var.Lambda.lambda_s3_key
   layers    = [aws_lambda_layer_version.default.arn]
+
   dynamic "environment" {
     for_each = var.Lambda.env_variables != null ? [1] : []
     content {
       variables = var.Lambda.env_variables
     }
   }
+
   tags = merge(var.common.tags,
     {
       Name = "${var.common.account_name}-${var.common.region_prefix}-${var.Lambda.function_name}"
@@ -101,12 +103,15 @@ resource "aws_lambda_function" "lambda_function" {
 }
 
 #--------------------------------------------------------------------
-# Creates permission for cloudformation to invoke the Lambda function
+# Creates permissions for services to invoke the Lambda function
 #--------------------------------------------------------------------
-resource "aws_lambda_permission" "allow_cloudformation" {
-  statement_id   = "AllowExecutionFromCloudFormation"
+resource "aws_lambda_permission" "this" {
+  for_each = var.lambda_permissions
+
+  statement_id   = each.value.statement_id
   action         = "lambda:InvokeFunction"
   function_name  = aws_lambda_function.lambda_function.function_name
-  principal      = "cloudformation.amazonaws.com"
-  source_account = data.aws_caller_identity.current.account_id
+  principal      = each.value.principal
+  source_arn     = each.value.source_arn
+  source_account = each.value.source_account
 }
