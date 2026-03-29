@@ -82,6 +82,10 @@ variable "eks" {
         labels = optional(map(string), {})
       })), [])
     }))
+    namespace = optional(list(object({
+      name   = optional(string, "")
+      labels = optional(map(string), {})
+    })))
     version                 = optional(string, "1.32")
     oidc_thumbprint         = optional(string)
     is_this_ec2_node_group  = optional(bool, false)
@@ -282,3 +286,5 @@ variable "eks" {
   })
   default = null
 }
+# Namespace creation variables
+

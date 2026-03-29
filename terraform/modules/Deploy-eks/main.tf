@@ -686,3 +686,14 @@ resource "kubernetes_role_binding_v1" "role_binding" {
 
   depends_on = [aws_eks_cluster.eks_cluster, kubernetes_role_v1.role]
 }
+
+#--------------------------------------------------------------------
+# Kubernetes Namespace (Optional)
+#--------------------------------------------------------------------
+resource "kubernetes_namespace_v1" "namespace" {
+  for_each = var.eks.namespace != null ? { for ns in var.eks.namespace : ns.name => ns if ns.name != "" } : {}
+  metadata {
+    name   = each.value.name
+    labels = each.value.labels
+  }
+}
