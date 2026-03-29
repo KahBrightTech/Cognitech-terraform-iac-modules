@@ -101,17 +101,3 @@ resource "aws_lambda_function" "lambda_function" {
     }
   )
 }
-
-#--------------------------------------------------------------------
-# Creates permissions for services to invoke the Lambda function
-#--------------------------------------------------------------------
-resource "aws_lambda_permission" "this" {
-  for_each = var.lambda_permissions
-
-  statement_id   = each.value.statement_id
-  action         = "lambda:InvokeFunction"
-  function_name  = aws_lambda_function.lambda_function.function_name
-  principal      = each.value.principal
-  source_arn     = each.value.source_arn
-  source_account = each.value.source_account
-}
