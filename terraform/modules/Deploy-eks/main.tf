@@ -686,9 +686,13 @@ resource "kubernetes_role_binding_v1" "role_binding" {
       kind = subject.value.kind
       name = subject.value.name
       namespace = (
-        subject.value.namespace != null && contains(keys(kubernetes_namespace_v1.namespace), subject.value.namespace)
-        ? kubernetes_namespace_v1.namespace[subject.value.namespace].metadata[0].name
-        : subject.value.namespace
+        subject.value.namespace != null
+        ? (
+          contains(keys(kubernetes_namespace_v1.namespace), subject.value.namespace)
+          ? kubernetes_namespace_v1.namespace[subject.value.namespace].metadata[0].name
+          : subject.value.namespace
+        )
+        : null
       )
       api_group = subject.value.api_group
     }
