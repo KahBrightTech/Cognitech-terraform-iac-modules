@@ -8,7 +8,7 @@ data "aws_region" "current" {}
 # Creates permissions for services to invoke the Lambda function
 #--------------------------------------------------------------------
 resource "aws_lambda_permission" "this" {
-  statement_id   = each.value.statement_id
+  statement_id   = var.lambda-invocations.statement_id
   action         = "lambda:InvokeFunction"
   function_name  = var.lambda-invocations.function_name
   principal      = var.lambda-invocations.principal
