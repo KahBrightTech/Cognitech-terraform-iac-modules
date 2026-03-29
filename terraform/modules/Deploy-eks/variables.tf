@@ -14,6 +14,7 @@ variable "eks" {
   type = object({
     key                                         = string
     name                                        = string
+    create_namespaces                           = optional(bool, false)
     role_arn                                    = optional(string)
     role_key                                    = optional(string)
     subnet_ids                                  = optional(list(string))

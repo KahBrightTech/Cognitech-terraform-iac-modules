@@ -639,7 +639,7 @@ resource "kubernetes_role_v1" "role" {
   metadata {
     name = each.value.name
     namespace = (
-      contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
+      var.eks.create_namespaces && contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
       ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
       : each.value.namespace
     )
@@ -667,7 +667,7 @@ resource "kubernetes_role_binding_v1" "role_binding" {
   metadata {
     name = each.value.name
     namespace = (
-      contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
+      var.eks.create_namespaces && contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
       ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
       : each.value.namespace
     )
@@ -688,7 +688,7 @@ resource "kubernetes_role_binding_v1" "role_binding" {
       namespace = (
         subject.value.namespace != null
         ? (
-          contains(keys(kubernetes_namespace_v1.namespace), subject.value.namespace)
+          var.eks.create_namespaces && contains(keys(kubernetes_namespace_v1.namespace), subject.value.namespace)
           ? kubernetes_namespace_v1.namespace[subject.value.namespace].metadata[0].name
           : subject.value.namespace
         )
@@ -705,7 +705,7 @@ resource "kubernetes_role_binding_v1" "role_binding" {
 # Kubernetes Namespace (Optional)
 #--------------------------------------------------------------------
 resource "kubernetes_namespace_v1" "namespace" {
-  for_each = var.eks.namespaces != null ? { for ns in var.eks.namespaces : ns.name => ns if ns.name != "" } : {}
+  for_each = var.eks.create_namespaces && var.eks.namespaces != null ? { for ns in var.eks.namespaces : ns.name => ns if ns.name != "" } : {}
   metadata {
     name   = each.value.name
     labels = each.value.labels
