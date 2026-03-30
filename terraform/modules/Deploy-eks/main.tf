@@ -633,73 +633,73 @@ resource "kubernetes_cluster_role_binding_v1" "cluster_role_binding" {
 #--------------------------------------------------------------------
 # Kubernetes RBAC - Roles
 #--------------------------------------------------------------------
-resource "kubernetes_role_v1" "role" {
-  for_each = try({ for role in var.eks.auth.roles : role.key => role }, {})
+# resource "kubernetes_role_v1" "role" {
+#   for_each = try({ for role in var.eks.auth.roles : role.key => role }, {})
 
-  metadata {
-    name = each.value.name
-    namespace = (
-      var.eks.create_namespaces && contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
-      ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
-      : each.value.namespace
-    )
-    labels = each.value.labels
-  }
+#   metadata {
+#     name = each.value.name
+#     namespace = (
+#       var.eks.create_namespaces && contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
+#       ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
+#       : each.value.namespace
+#     )
+#     labels = each.value.labels
+#   }
 
-  dynamic "rule" {
-    for_each = each.value.rules
-    content {
-      api_groups = rule.value.api_groups
-      resources  = rule.value.resources
-      verbs      = rule.value.verbs
-    }
-  }
+#   dynamic "rule" {
+#     for_each = each.value.rules
+#     content {
+#       api_groups = rule.value.api_groups
+#       resources  = rule.value.resources
+#       verbs      = rule.value.verbs
+#     }
+#   }
 
-  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace]
-}
+#   depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace]
+# }
 
-#--------------------------------------------------------------------
-# Kubernetes RBAC - Role Bindings
-#--------------------------------------------------------------------
-resource "kubernetes_role_binding_v1" "role_binding" {
-  for_each = try({ for binding in var.eks.auth.role_bindings : binding.key => binding }, {})
+# #--------------------------------------------------------------------
+# # Kubernetes RBAC - Role Bindings
+# #--------------------------------------------------------------------
+# resource "kubernetes_role_binding_v1" "role_binding" {
+#   for_each = try({ for binding in var.eks.auth.role_bindings : binding.key => binding }, {})
 
-  metadata {
-    name = each.value.name
-    namespace = (
-      var.eks.create_namespaces && contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
-      ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
-      : each.value.namespace
-    )
-    labels = each.value.labels
-  }
+#   metadata {
+#     name = each.value.name
+#     namespace = (
+#       var.eks.create_namespaces && contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
+#       ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
+#       : each.value.namespace
+#     )
+#     labels = each.value.labels
+#   }
 
-  role_ref {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "Role"
-    name      = each.value.role_key != null ? kubernetes_role_v1.role[each.value.role_key].metadata[0].name : each.value.role_name
-  }
+#   role_ref {
+#     api_group = "rbac.authorization.k8s.io"
+#     kind      = "Role"
+#     name      = each.value.role_key != null ? kubernetes_role_v1.role[each.value.role_key].metadata[0].name : each.value.role_name
+#   }
 
-  dynamic "subject" {
-    for_each = each.value.subjects
-    content {
-      kind = subject.value.kind
-      name = subject.value.name
-      namespace = (
-        subject.value.namespace != null
-        ? (
-          var.eks.create_namespaces && contains(keys(kubernetes_namespace_v1.namespace), subject.value.namespace)
-          ? kubernetes_namespace_v1.namespace[subject.value.namespace].metadata[0].name
-          : subject.value.namespace
-        )
-        : null
-      )
-      api_group = subject.value.api_group
-    }
-  }
+#   dynamic "subject" {
+#     for_each = each.value.subjects
+#     content {
+#       kind = subject.value.kind
+#       name = subject.value.name
+#       namespace = (
+#         subject.value.namespace != null
+#         ? (
+#           var.eks.create_namespaces && contains(keys(kubernetes_namespace_v1.namespace), subject.value.namespace)
+#           ? kubernetes_namespace_v1.namespace[subject.value.namespace].metadata[0].name
+#           : subject.value.namespace
+#         )
+#         : null
+#       )
+#       api_group = subject.value.api_group
+#     }
+#   }
 
-  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_role_v1.role, kubernetes_namespace_v1.namespace]
-}
+#   depends_on = [aws_eks_cluster.eks_cluster, kubernetes_role_v1.role, kubernetes_namespace_v1.namespace]
+# }
 
 # #--------------------------------------------------------------------
 # # Kubernetes Namespace (Optional)
