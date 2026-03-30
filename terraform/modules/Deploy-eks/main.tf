@@ -634,7 +634,7 @@ resource "kubernetes_cluster_role_binding_v1" "cluster_role_binding" {
 # Kubernetes RBAC - Roles
 #--------------------------------------------------------------------
 resource "kubernetes_role_v1" "role" {
-  for_each = aws_eks_cluster.eks_cluster.endpoint != null ? try({
+  for_each = var.eks.auth != null ? try({
     for role in var.eks.auth.roles : role.key => role
     if coalesce(role.namespace, "default") == "default"
     || !contains(
@@ -670,7 +670,7 @@ resource "kubernetes_role_v1" "role" {
 # Kubernetes RBAC - Role Bindings
 #--------------------------------------------------------------------
 resource "kubernetes_role_binding_v1" "role_binding" {
-  for_each = aws_eks_cluster.eks_cluster.endpoint != null ? try({
+  for_each = var.eks.auth != null ? try({
     for binding in var.eks.auth.role_bindings : binding.key => binding
     if coalesce(binding.namespace, "default") == "default"
     || !contains(
@@ -721,13 +721,14 @@ resource "kubernetes_role_binding_v1" "role_binding" {
 # Kubernetes Namespace (Optional)
 #--------------------------------------------------------------------
 resource "kubernetes_namespace_v1" "namespace" {
-  for_each = (
-    aws_eks_cluster.eks_cluster.endpoint != null &&
-    var.eks.namespaces != null
-  ) ? { for ns in var.eks.namespaces : ns.name => ns if ns.name != "" } : {}
+  for_each = var.eks.namespaces != null ? {
+    for ns in var.eks.namespaces : ns.name => ns if ns.name != ""
+  } : {}
 
   metadata {
     name   = each.value.name
     labels = each.value.labels
   }
+
+  depends_on = [aws_eks_cluster.eks_cluster]
 }
