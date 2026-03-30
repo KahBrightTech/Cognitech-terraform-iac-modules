@@ -636,18 +636,20 @@ resource "kubernetes_cluster_role_binding_v1" "cluster_role_binding" {
 resource "kubernetes_role_v1" "role" {
   for_each = aws_eks_cluster.eks_cluster.endpoint != null ? try({
     for role in var.eks.auth.roles : role.key => role
-    if !contains(
+    if coalesce(role.namespace, "default") == "default"
+    || !contains(
       [for ns in coalesce(var.eks.namespaces, []) : ns.name],
-      role.namespace
-    ) || contains(keys(kubernetes_namespace_v1.namespace), role.namespace)
+      coalesce(role.namespace, "default")
+    )
+    || contains(keys(kubernetes_namespace_v1.namespace), coalesce(role.namespace, "default"))
   }, {}) : {}
 
   metadata {
     name = each.value.name
     namespace = (
-      contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
-      ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
-      : each.value.namespace
+      contains(keys(kubernetes_namespace_v1.namespace), coalesce(each.value.namespace, "default"))
+      ? kubernetes_namespace_v1.namespace[coalesce(each.value.namespace, "default")].metadata[0].name
+      : coalesce(each.value.namespace, "default")
     )
     labels = each.value.labels
   }
@@ -670,18 +672,20 @@ resource "kubernetes_role_v1" "role" {
 resource "kubernetes_role_binding_v1" "role_binding" {
   for_each = aws_eks_cluster.eks_cluster.endpoint != null ? try({
     for binding in var.eks.auth.role_bindings : binding.key => binding
-    if !contains(
+    if coalesce(binding.namespace, "default") == "default"
+    || !contains(
       [for ns in coalesce(var.eks.namespaces, []) : ns.name],
-      binding.namespace
-    ) || contains(keys(kubernetes_namespace_v1.namespace), binding.namespace)
+      coalesce(binding.namespace, "default")
+    )
+    || contains(keys(kubernetes_namespace_v1.namespace), coalesce(binding.namespace, "default"))
   }, {}) : {}
 
   metadata {
     name = each.value.name
     namespace = (
-      contains(keys(kubernetes_namespace_v1.namespace), each.value.namespace)
-      ? kubernetes_namespace_v1.namespace[each.value.namespace].metadata[0].name
-      : each.value.namespace
+      contains(keys(kubernetes_namespace_v1.namespace), coalesce(each.value.namespace, "default"))
+      ? kubernetes_namespace_v1.namespace[coalesce(each.value.namespace, "default")].metadata[0].name
+      : coalesce(each.value.namespace, "default")
     )
     labels = each.value.labels
   }
