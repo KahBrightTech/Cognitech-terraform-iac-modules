@@ -384,30 +384,30 @@ output "cluster_role_bindings" {
   }
 }
 
-# output "roles" {
-#   description = "Map of created Kubernetes Roles"
-#   value = {
-#     for key, role in kubernetes_role_v1.role : key => {
-#       name      = role.metadata[0].name
-#       namespace = role.metadata[0].namespace
-#       uid       = role.metadata[0].uid
-#     }
-#   }
-# }
+output "roles" {
+  description = "Map of created Kubernetes Roles"
+  value = {
+    for key, role in kubernetes_role_v1.role : key => {
+      name      = role.metadata[0].name
+      namespace = role.metadata[0].namespace
+      uid       = role.metadata[0].uid
+    }
+  }
+}
 
-# output "role_bindings" {
-#   description = "Map of created Kubernetes RoleBindings"
-#   value = {
-#     for key, binding in kubernetes_role_binding_v1.role_binding : key => {
-#       name      = binding.metadata[0].name
-#       namespace = binding.metadata[0].namespace
-#       uid       = binding.metadata[0].uid
-#       role_name = binding.role_ref[0].name
-#     }
-#   }
-# }
+output "role_bindings" {
+  description = "Map of created Kubernetes RoleBindings"
+  value = {
+    for key, binding in kubernetes_role_binding_v1.role_binding : key => {
+      name      = binding.metadata[0].name
+      namespace = binding.metadata[0].namespace
+      uid       = binding.metadata[0].uid
+      role_name = binding.role_ref[0].name
+    }
+  }
+}
 
-# output "namespace_names" {
-#   description = "Names of the created Kubernetes namespaces."
-#   value       = [for ns in kubernetes_namespace_v1.namespace : ns.metadata[0].name]
-# }
+output "namespace_names" {
+  description = "Names of the created Kubernetes namespaces."
+  value       = [for ns in kubernetes_namespace_v1.namespace : ns.metadata[0].name]
+}
