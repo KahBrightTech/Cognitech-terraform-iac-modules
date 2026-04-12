@@ -366,6 +366,51 @@ resource "aws_eks_addon" "cloudwatch_observability" {
 }
 
 #--------------------------------------------------------------------
+# Fluent Bit (Helm) - Tier 4: Observability
+#--------------------------------------------------------------------
+resource "helm_release" "fluent_bit" {
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_fluent_bit && var.eks.create_node_group ? 1 : 0
+  name       = "fluent-bit"
+  namespace  = var.eks.eks_addons.fluent_bit_namespace != null ? var.eks.eks_addons.fluent_bit_namespace : "amazon-cloudwatch"
+  repository = "https://fluent.github.io/helm-charts"
+  chart      = "fluent-bit"
+  version    = var.eks.eks_addons.fluent_bit_version
+
+  create_namespace = true
+  cleanup_on_fail  = true
+  replace          = true
+  force_update     = true
+
+  values = [
+    yamlencode({
+      serviceAccount = {
+        create = true
+        name   = "fluent-bit"
+        annotations = {
+          "eks.amazonaws.com/role-arn" = var.eks.eks_addons.fluent_bit_role_key != null ? module.iam_roles[var.eks.eks_addons.fluent_bit_role_key].iam_role_arn : var.eks.eks_addons.fluent_bit_role_arn
+        }
+      }
+      config = var.eks.eks_addons.fluent_bit_firehose_delivery_stream != null ? {
+        outputs = join("\n", [
+          "[OUTPUT]",
+          "    Name              kinesis_firehose",
+          "    Match             *",
+          "    region            ${data.aws_region.current.name}",
+          "    delivery_stream   ${var.eks.eks_addons.fluent_bit_firehose_delivery_stream}",
+        ])
+      } : {}
+    })
+  ]
+
+  depends_on = [
+    module.eks_node_group,
+    module.iam_roles,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent
+  ]
+}
+
+#--------------------------------------------------------------------
 # Key Pair Resource for EKS EC2 Node Group
 #--------------------------------------------------------------------
 

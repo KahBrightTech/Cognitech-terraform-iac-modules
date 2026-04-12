@@ -132,6 +132,12 @@ variable "eks" {
       external_dns_log_level                          = optional(string)
       enableSecretRotation                            = optional(bool, false)
       rotationPollInterval                            = optional(string)
+      enable_fluent_bit                               = optional(bool, false)
+      fluent_bit_version                              = optional(string)
+      fluent_bit_namespace                            = optional(string)
+      fluent_bit_role_arn                             = optional(string)
+      fluent_bit_role_key                             = optional(string)
+      fluent_bit_firehose_delivery_stream             = optional(string)
     }))
     key_pair = object({
       name               = optional(string)

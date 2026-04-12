@@ -360,6 +360,18 @@ output "helm_external_dns" {
   } : null
 }
 
+output "helm_fluent_bit" {
+  description = "Fluent Bit Helm release information"
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_fluent_bit && var.eks.create_node_group ? {
+    name       = try(helm_release.fluent_bit[0].name, null)
+    namespace  = try(helm_release.fluent_bit[0].namespace, null)
+    chart      = try(helm_release.fluent_bit[0].chart, null)
+    version    = try(helm_release.fluent_bit[0].version, null)
+    status     = try(helm_release.fluent_bit[0].status, null)
+    repository = try(helm_release.fluent_bit[0].repository, null)
+  } : null
+}
+
 #--------------------------------------------------------------------
 # RBAC Outputs
 #--------------------------------------------------------------------
