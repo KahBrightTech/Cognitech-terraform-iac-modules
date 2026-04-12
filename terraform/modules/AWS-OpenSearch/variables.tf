@@ -91,7 +91,6 @@ variable "opensearch" {
       audit_logs_enabled          = optional(bool, false)
       log_retention_days          = optional(number, 14)
     }), {})
-
     tags = optional(map(string), {})
   })
 }
