@@ -38,14 +38,17 @@ data "aws_iam_policy_document" "default" {
               replace(
                 replace(
                   replace(
-                    file(var.s3.policy),
-                    "[[resource_name]]", aws_s3_bucket.private.id
+                    replace(
+                      file(var.s3.policy),
+                      "[[resource_name]]", aws_s3_bucket.private.id
+                    ),
+                    "[[account_number]]", data.aws_caller_identity.current.account_id
                   ),
-                  "[[account_number]]", data.aws_caller_identity.current.account_id
+                  "[[region]]", data.aws_region.current.name
                 ),
-                "[[region]]", data.aws_region.current.name
+                "[[account_name]]", var.common.account_name
               ),
-              "[[account_name]]", var.common.account_name
+              "[[region_prefix]]", var.common.region_prefix
             ),
             "[[bucket_arn]]", aws_s3_bucket.private.arn
           ),
