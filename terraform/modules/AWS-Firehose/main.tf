@@ -29,6 +29,53 @@ resource "aws_cloudwatch_log_stream" "firehose" {
 }
 
 #--------------------------------------------------------------------
+# IAM Role for Firehose
+#--------------------------------------------------------------------
+resource "aws_iam_role" "firehose" {
+  count = var.firehose.create_cw_role ? 1 : 0
+  name  = "${local.stream_name}-firehose-cw-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "firehose.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = merge(var.common.tags, {
+    "Name" = "${local.stream_name}-cloudwatch-role"
+  })
+}
+
+resource "aws_iam_role_policy" "firehose_cloudwatch" {
+  count = var.firehose.create_cw_role && var.firehose.enable_cloudwatch_logging ? 1 : 0
+  name  = "${local.stream_name}-cloudwatch-policy"
+  role  = aws_iam_role.firehose[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:PutLogEvents",
+          "logs:CreateLogStream"
+        ]
+        Resource = [
+          "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.firehose[0].name}:*"
+        ]
+      }
+    ]
+  })
+}
+
+#--------------------------------------------------------------------
 # Kinesis Data Firehose Delivery Stream
 #--------------------------------------------------------------------
 resource "aws_kinesis_firehose_delivery_stream" "main" {

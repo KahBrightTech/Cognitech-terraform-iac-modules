@@ -12,9 +12,10 @@ variable "common" {
 variable "firehose" {
   description = "Kinesis Data Firehose delivery stream configuration."
   type = object({
-    name        = string
-    destination = optional(string, "extended_s3") # extended_s3 or opensearch
-    role_arn    = string                          # IAM role ARN for Firehose to assume
+    name           = string
+    destination    = optional(string, "extended_s3") # extended_s3 or opensearch
+    role_arn       = string                          # IAM role ARN for Firehose to assume
+    create_cw_role = optional(bool, true)            # Whether to create an IAM role for Firehose
 
     # CloudWatch Logging
     enable_cloudwatch_logging     = optional(bool, true)
