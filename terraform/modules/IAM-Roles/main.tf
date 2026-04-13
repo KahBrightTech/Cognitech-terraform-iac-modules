@@ -33,10 +33,16 @@ resource "aws_iam_policy" "policy" {
       replace(
         replace(
           replace(
-            file(var.iam_role.policy.policy),
-            "[[account_number]]", data.aws_caller_identity.current.account_id,
+            replace(
+              replace(
+                file(var.iam_role.policy.policy),
+                "[[account_number]]", data.aws_caller_identity.current.account_id,
+              ),
+              "[[account_name_abr]]", var.common.account_name_abr
+            ),
+            "[[account_name]]", var.common.account_name
           ),
-          "[[account_name_abr]]", var.common.account_name_abr
+          "[[region_prefix]]", var.common.region_prefix
         ),
         "[[region]]", data.aws_region.current.name
       ),
@@ -61,10 +67,16 @@ resource "aws_iam_role" "role" {
     replace(
       replace(
         replace(
-          file(var.iam_role.assume_role_policy),
-          "[[account_number]]", data.aws_caller_identity.current.account_id
+          replace(
+            replace(
+              file(var.iam_role.assume_role_policy),
+              "[[account_number]]", data.aws_caller_identity.current.account_id
+            ),
+            "[[account_name_abr]]", var.common.account_name_abr
+          ),
+          "[[account_name]]", var.common.account_name
         ),
-        "[[account_name_abr]]", var.common.account_name_abr
+        "[[region_prefix]]", var.common.region_prefix
       ),
       "[[region]]", data.aws_region.current.name
     ),

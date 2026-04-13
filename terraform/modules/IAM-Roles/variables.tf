@@ -3,8 +3,8 @@ variable "common" {
   type = object({
     global           = bool
     tags             = map(string)
-    account_name     = string
-    region_prefix    = string
+    account_name     = optional(string)
+    region_prefix    = optional(string)
     account_name_abr = optional(string, "")
   })
 }
