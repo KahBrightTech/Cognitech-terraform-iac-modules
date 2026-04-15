@@ -5,7 +5,7 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 locals {
-  name_prefix = "${var.common.account_name}-${var.common.region_prefix}"
+  name_prefix = "${var.common.account_name_abr}-${var.common.region_prefix}"
   domain_name = "${local.name_prefix}-${var.opensearch.domain_name}"
 }
 
