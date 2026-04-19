@@ -136,8 +136,9 @@ variable "deploy_ansible" {
       priority             = optional(number)
       type                 = string
       target_groups = list(object({
-        arn    = string
-        weight = optional(number)
+        arn                      = optional(string)
+        use_created_target_group = optional(bool, false)
+        weight                   = optional(number)
       }))
       conditions = list(object({
         host_headers         = optional(list(string))

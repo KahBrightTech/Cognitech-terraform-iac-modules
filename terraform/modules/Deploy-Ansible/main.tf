@@ -77,6 +77,11 @@ module "alb_listener_rule" {
       listener_arn = rule.use_default_listener ? module.alb[0].default_listener_arn : (
         rule.use_alb_listener ? module.alb_listener[0].alb_listener_arn : rule.listener_arn
       )
+      target_groups = [
+        for tg in rule.target_groups : merge(tg, {
+          arn = tg.use_created_target_group ? module.target_group[0].target_group_arn : tg.arn
+        })
+      ]
     })
   ]
 }
