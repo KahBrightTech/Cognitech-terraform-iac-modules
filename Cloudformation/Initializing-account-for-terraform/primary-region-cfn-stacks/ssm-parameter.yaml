@@ -1,5 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Deploys SSM stacks to create a hierarchy for SSM parameters for secondary region
+Description: Deploys SSM stacks to create a hierarchy for SSM parameters
+
 Parameters:
   pPath:
     Description: The path to create a hierarchy for SSM
@@ -8,15 +9,15 @@ Parameters:
   pAccountName:
     Description: The name of the AWS account
     Type: String
-    Default: "MD-PROD"
+    Default: "INT-PROD"
   pAWSAccountLC:
     Description: The lowercase name of the AWS account
     Type: String
-    Default: "md-prod"
+    Default: "int-prod"
   pEnvironment:
     Description: The lowercase name of the AWS account
     Type: String
-    Default: "mdp"
+    Default: "int"
 
 Resources:
   rAWSAccount:

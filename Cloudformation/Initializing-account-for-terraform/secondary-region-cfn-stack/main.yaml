@@ -106,7 +106,7 @@ Resources:
   BackupVault:
     Type: AWS::Backup::BackupVault
     Properties:
-      BackupVaultName: !Sub "${AwsVPCName}-${RegionPrefix}-usw2-backup-vault"
+      BackupVaultName: !Sub "${AwsVPCName}-${RegionPrefix}-backup-vault"
 
   BackupPlan:
     Type: AWS::Backup::BackupPlan

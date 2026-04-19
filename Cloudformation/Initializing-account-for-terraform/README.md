@@ -122,55 +122,74 @@ For advanced automation and configuration management:
    cd Cognitech-terraform-iac-modules
    ```
 
-2. **Deploy Foundation Infrastructure**
+2. **Edit and Deploy SSM Parameters**
+
+   Before deploying, open the file:
+
+   `Cloudforamtion/Initializing-account-for-terraform/primary-region-cfn-stacks/ssm-parameter.yaml`
+
+   Update the following parameters with your account-specific values:
+
+   - `pAccountName`: The name of your AWS account (e.g., "INT-PROD")
+   - `pAWSAccountLC`: The lowercase name of your AWS account (e.g., "int-prod")
+   - `pEnvironment`: The environment name (e.g., "int")
+
+   Save the file after editing.
+
+   Then deploy the stack with:
+
+   ```powershell
+   aws cloudformation create-stack `
+     --stack-name account-parameters `
+     --template-body file://Cloudformation/Initializing-account-for-terraform/primary-region-cfn-stacks/ssm-parameter.yaml `
+     --region us-east-1
+   ```
+
+   Also deploy for the secondary region:
+
+   ```powershell
+    aws cloudformation create-stack `
+      --stack-name account-parameters-secondary `
+      --template-body file://Cloudformation/Initializing-account-for-terraform/secondary-region-cfn-stack/ssm-parameter.yaml `
+      --region us-west-2
+    ```
+
+3. **Deploy Foundation Infrastructure**
    ```bash
    # Deploy KMS keys for state encryption
    aws cloudformation create-stack \
      --stack-name terraform-kms-dual-region \
-     --template-body file://Cloudformation/Initializing-account-for-terraform/kms-keys-dual-region.yaml \
+     --template-body file://Cloudformation/Initializing-account-for-terraform/primary-region-cfn-stacks/main.yaml \
      --parameters ParameterKey=OrganizationId,ParameterValue=your-org-id \
      --capabilities CAPABILITY_IAM
-
-   # Deploy Terraform backend
-   aws cloudformation create-stack \
-     --stack-name terraform-backend \
-     --template-body file://Cloudformation/Initializing-account-for-terraform/bucket-and-state-lock.yaml
    ```
-
-3. **Configure Terraform Backend**
-   ```hcl
-   terraform {
-     backend "s3" {
-       bucket         = "your-account-region-network-config-state"
-       key            = "path/to/terraform.tfstate"
-       region         = "us-east-1"
-       encrypt        = true
-       kms_key_id     = "alias/terraform-state-key-us-east-1"
-       dynamodb_table = "your-account-region-state-lock"
-     }
-   }
-   ```
-
-4. **Deploy CloudFormation Foundation Templates**
-
-   The CloudFormation templates in `primary-region-cfn-stack` and `secondary-region-cfn-stack` will create all the necessary IAM roles, KMS keys, and other foundational resources required for infrastructure deployment.
-
-   **Deploy Primary Region Template:**
-   ```bash
-   aws cloudformation create-stack \
-     --stack-name account-foundation-primary \
-     --template-body file://Cloudformation/Initializing-account-for-terraform/primary-region-cfn-stacks/main.yaml \
-     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
-     --region us-east-1
+  Using powershell:
+   ```powershell
+aws cloudformation create-stack `
+    --stack-name Terraform-Prereqs `
+    --template-body file://Cloudformation/Initializing-account-for-terraform/primary-region-cfn-stacks/main.yaml `
+    --parameters ParameterKey=OrganizationId,ParameterValue=your-org-id `
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND `
+    --region us-east-1
    ```
 
    **Deploy Secondary Region Template:**
    ```bash
    aws cloudformation create-stack \
-     --stack-name account-foundation-secondary \
+     --stack-name Terraform-Prereqs-Secondary \
      --template-body file://Cloudformation/Initializing-account-for-terraform/secondary-region-cfn-stack/main.yaml \
-     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
      --region us-west-2
+   ```
+
+   Using powershell:
+   ```powershell
+    aws cloudformation create-stack `
+      --stack-name Terraform-Prereqs-Secondary `
+      --template-body file://Cloudformation/Initializing-account-for-terraform/secondary-region-cfn-stack/main.yaml `
+      --parameters ParameterKey=OrganizationId,ParameterValue=your-org-id `
+      --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND `
+      --region us-west-2
    ```
 
    **Resources Created:**
