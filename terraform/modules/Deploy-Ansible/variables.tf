@@ -129,10 +129,12 @@ variable "deploy_ansible" {
       }))
     }))
     alb_listener_rule = optional(list(object({
-      key          = string
-      listener_arn = optional(string)
-      priority     = optional(number)
-      type         = string
+      key                  = string
+      listener_arn         = optional(string)
+      use_default_listener = optional(bool, false)
+      use_alb_listener     = optional(bool, false)
+      priority             = optional(number)
+      type                 = string
       target_groups = list(object({
         arn    = string
         weight = optional(number)

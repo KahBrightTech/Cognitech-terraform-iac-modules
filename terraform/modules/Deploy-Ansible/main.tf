@@ -72,7 +72,13 @@ module "alb_listener_rule" {
   count  = var.deploy_ansible.attach_to_elb && var.deploy_ansible.alb_listener_rule != null ? 1 : 0
   source = "../alb-listener-rule"
   common = var.common
-  rule   = var.deploy_ansible.alb_listener_rule
+  rule = [
+    for rule in var.deploy_ansible.alb_listener_rule : merge(rule, {
+      listener_arn = rule.use_default_listener ? module.alb[0].default_listener_arn : (
+        rule.use_alb_listener ? module.alb_listener[0].alb_listener_arn : rule.listener_arn
+      )
+    })
+  ]
 }
 
 #--------------------------------------------------------------------
