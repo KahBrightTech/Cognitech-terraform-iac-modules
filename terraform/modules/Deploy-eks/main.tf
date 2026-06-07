@@ -411,6 +411,86 @@ resource "helm_release" "fluent_bit" {
 }
 
 #--------------------------------------------------------------------
+# Grafana + Prometheus (Helm) - Tier 4: Observability
+#--------------------------------------------------------------------
+resource "helm_release" "kube_prometheus_stack" {
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_kube_prometheus_stack && var.eks.create_node_group ? 1 : 0
+  name       = "kube-prometheus-stack"
+  namespace  = var.eks.eks_addons.grafana_namespace != null ? var.eks.eks_addons.grafana_namespace : "monitoring"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "kube-prometheus-stack"
+  version    = var.eks.eks_addons.kube_prometheus_stack_version
+
+  create_namespace = true
+  cleanup_on_fail  = true
+  replace          = true
+  force_update     = true
+
+  values = [
+    yamlencode({
+      grafana = {
+        enabled = true
+        service = {
+          type = var.eks.eks_addons.grafana_service_type != null ? var.eks.eks_addons.grafana_service_type : "ClusterIP"
+        }
+        ingress = {
+          enabled          = var.eks.eks_addons.grafana_ingress_enabled
+          ingressClassName = var.eks.eks_addons.grafana_ingress_class_name
+          annotations      = var.eks.eks_addons.grafana_ingress_annotations
+          hosts = [
+            for host in var.eks.eks_addons.grafana_ingress_hosts : {
+              host = host
+              paths = [
+                {
+                  path     = "/"
+                  pathType = "Prefix"
+                }
+              ]
+            }
+          ]
+        }
+        persistence = {
+          enabled          = var.eks.eks_addons.grafana_persistence_enabled
+          size             = var.eks.eks_addons.grafana_persistence_size != null ? var.eks.eks_addons.grafana_persistence_size : "10Gi"
+          storageClassName = var.eks.eks_addons.grafana_persistence_storage_class
+        }
+      }
+      prometheus = {
+        prometheusSpec = merge(
+          {
+            retention = var.eks.eks_addons.prometheus_retention != null ? var.eks.eks_addons.prometheus_retention : "15d"
+          },
+          var.eks.eks_addons.prometheus_persistence_enabled ? {
+            storageSpec = {
+              volumeClaimTemplate = {
+                spec = {
+                  accessModes = ["ReadWriteOnce"]
+                  resources = {
+                    requests = {
+                      storage = var.eks.eks_addons.prometheus_persistence_size != null ? var.eks.eks_addons.prometheus_persistence_size : "20Gi"
+                    }
+                  }
+                  storageClassName = var.eks.eks_addons.prometheus_persistence_storage_class
+                }
+              }
+            }
+          } : {}
+        )
+      }
+    })
+  ]
+
+  depends_on = [
+    module.eks_node_group,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent,
+    aws_eks_addon.metrics_server,
+    aws_eks_addon.ebs_csi_driver,
+    helm_release.aws_load_balancer_controller
+  ]
+}
+
+#--------------------------------------------------------------------
 # Key Pair Resource for EKS EC2 Node Group
 #--------------------------------------------------------------------
 
