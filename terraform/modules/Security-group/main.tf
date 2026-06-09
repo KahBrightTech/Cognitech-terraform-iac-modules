@@ -2,7 +2,7 @@
 # Security Group - Create a security group for the VPC
 #--------------------------------------------------------------------
 resource "aws_security_group" "security_group" {
-  name        = "${var.common.account_name}-${var.common.region_prefix}-${var.security_group.name}"
+  name        = "${var.common.account_name}-${var.common.region_prefix}-${var.security_group.vpc_name}-${var.security_group.name}"
   name_prefix = var.security_group.name_prefix
   description = var.security_group.description
   vpc_id      = var.security_group.vpc_id
