@@ -420,6 +420,8 @@ resource "helm_release" "kube_prometheus_stack" {
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
   version    = var.eks.eks_addons.kube_prometheus_stack_version
+  timeout    = var.eks.eks_addons.kube_prometheus_stack_timeout
+  wait       = true
 
   create_namespace = true
   cleanup_on_fail  = true

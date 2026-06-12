@@ -139,6 +139,7 @@ variable "eks" {
       fluent_bit_role_key                             = optional(string)
       fluent_bit_firehose_delivery_stream             = optional(string)
       enable_kube_prometheus_stack                    = optional(bool, false)
+      kube_prometheus_stack_timeout                   = optional(number, 1800)
       kube_prometheus_stack_version                   = optional(string)
       grafana_namespace                               = optional(string)
       grafana_service_type                            = optional(string)
