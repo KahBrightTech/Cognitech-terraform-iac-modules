@@ -192,6 +192,30 @@ resource "aws_eks_addon" "ebs_csi_driver" {
   ]
 }
 
+#--------------------------------------------------------------------
+# GP3 Storage Class for EBS CSI Driver
+#--------------------------------------------------------------------
+resource "kubernetes_storage_class_v1" "gp3" {
+  count = var.eks.eks_addons != null && var.eks.eks_addons.enable_ebs_csi_driver && var.eks.create_node_group ? 1 : 0
+
+  metadata {
+    name = "gp3"
+  }
+
+  storage_provisioner    = "ebs.csi.aws.com"
+  volume_binding_mode    = "WaitForFirstConsumer"
+  allow_volume_expansion = true
+
+  parameters = {
+    type   = "gp3"
+    fsType = "ext4"
+  }
+
+  depends_on = [
+    aws_eks_addon.ebs_csi_driver
+  ]
+}
+
 resource "aws_eks_addon" "privateca_issuer" {
   count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_privateca_issuer && var.eks.create_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
@@ -420,9 +444,11 @@ resource "helm_release" "kube_prometheus_stack" {
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
   version    = var.eks.eks_addons.kube_prometheus_stack_version
-  timeout    = var.eks.eks_addons.kube_prometheus_stack_timeout
+  timeout    = var.eks.eks_addons.kube_prometheus_stack_timeout != null ? var.eks.eks_addons.kube_prometheus_stack_timeout : 900
   wait       = true
+  atomic     = true
 
+  max_history      = 5
   create_namespace = true
   cleanup_on_fail  = true
   replace          = true
