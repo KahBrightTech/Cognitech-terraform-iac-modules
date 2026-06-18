@@ -172,6 +172,140 @@ eks_addons = {
 
 ---
 
+## Cluster Autoscaler Setup
+
+### Prerequisites
+
+Before enabling the Cluster Autoscaler, you need to:
+
+1. **Create IAM Policy for Cluster Autoscaler**
+
+Create a policy file `cluster-autoscaler-policy.json`:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ClusterAutoscalerDescribe",
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:DescribeAutoScalingGroups",
+        "autoscaling:DescribeAutoScalingInstances",
+        "autoscaling:DescribeLaunchConfigurations",
+        "autoscaling:DescribeScalingActivities",
+        "autoscaling:DescribeTags",
+        "ec2:DescribeImages",
+        "ec2:DescribeInstanceTypes",
+        "ec2:DescribeLaunchTemplateVersions",
+        "ec2:GetInstanceTypesFromInstanceRequirements",
+        "eks:DescribeNodegroup"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ClusterAutoscalerModify",
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:SetDesiredCapacity",
+        "autoscaling:TerminateInstanceInAutoScalingGroup"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+Create the policy:
+```bash
+aws iam create-policy \
+    --policy-name EKSClusterAutoscalerPolicy \
+    --policy-document file://cluster-autoscaler-policy.json
+```
+
+2. **Configure the Module**
+
+The module expects:
+- `enable_cluster_autoscaler = true`
+- `cluster_autoscaler_version` (e.g., "9.43.2" for Kubernetes 1.30)
+- `cluster_autoscaler_role_key` or `cluster_autoscaler_role_arn`
+- Node groups with appropriate min/max size configured
+
+### Configuration Options
+
+```hcl
+eks_addons = {
+  enable_cluster_autoscaler    = true
+  cluster_autoscaler_version   = "9.43.2"  # Helm chart version
+  
+  # Option 1: Use role key (references iam_roles)
+  cluster_autoscaler_role_key = "cluster-autoscaler"
+  
+  # Option 2: Use direct role ARN
+  # cluster_autoscaler_role_arn = "arn:aws:iam::123456789012:role/eks-cluster-autoscaler"
+}
+
+# IAM Role Configuration
+iam_roles = {
+  cluster-autoscaler = {
+    key                        = "cluster-autoscaler"
+    name                       = "eks-cluster-autoscaler"
+    description                = "IAM role for Kubernetes Cluster Autoscaler"
+    service_account_namespace  = "kube-system"
+    service_account_name       = "cluster-autoscaler"
+    managed_policy_arns = [
+      "arn:aws:iam::123456789012:policy/EKSClusterAutoscalerPolicy"
+    ]
+  }
+}
+
+# Node groups must have scaling capacity
+eks_node_groups = [{
+  key  = "default"
+  name = "default-node-group"
+  
+  scaling_config = {
+    desired_size = 2
+    min_size     = 1    # Minimum nodes
+    max_size     = 10   # Maximum nodes for autoscaling
+  }
+  
+  # Tags are automatically added for autodiscovery
+  tags = {
+    "k8s.io/cluster-autoscaler/${cluster_name}" = "owned"
+    "k8s.io/cluster-autoscaler/enabled"         = "true"
+  }
+}]
+```
+
+### Version Compatibility
+
+Match the Cluster Autoscaler version with your Kubernetes version:
+
+| Kubernetes Version | Helm Chart Version |
+|-------------------|--------------------|
+| 1.32              | 9.43.x            |
+| 1.31              | 9.41.x            |
+| 1.30              | 9.43.x            |
+| 1.29              | 9.37.x            |
+| 1.28              | 9.35.x            |
+
+### Verification
+
+After deployment, verify the Cluster Autoscaler:
+
+```bash
+# Check pod status
+kubectl get pods -n kube-system | grep cluster-autoscaler
+
+# View logs
+kubectl logs -n kube-system -l app.kubernetes.io/name=cluster-autoscaler --tail=50
+
+# Check service account
+kubectl get sa cluster-autoscaler -n kube-system
+```
+
+---
+
 ## Complete Example with All Features
 
 ```hcl
@@ -263,6 +397,11 @@ inputs = {
       aws_load_balancer_controller_version     = "1.8.1"
       aws_load_balancer_controller_role_key    = "aws-lb-controller"
       
+      # Cluster Autoscaler
+      enable_cluster_autoscaler    = true
+      cluster_autoscaler_version   = "9.43.2"
+      cluster_autoscaler_role_key  = "cluster-autoscaler"
+      
       # Pod Identity Agent
       enable_pod_identity_agent   = true
       pod_identity_agent_version  = "v1.3.4-eksbuild.1"
@@ -298,6 +437,17 @@ inputs = {
         service_account_name       = "aws-load-balancer-controller"
         managed_policy_arns = [
           "arn:aws:iam::${local.account_id}:policy/AWSLoadBalancerControllerIAMPolicy"
+        ]
+      }
+      
+      cluster-autoscaler = {
+        key                        = "cluster-autoscaler"
+        name                       = "eks-cluster-autoscaler"
+        description                = "IAM role for Kubernetes Cluster Autoscaler"
+        service_account_namespace  = "kube-system"
+        service_account_name       = "cluster-autoscaler"
+        managed_policy_arns = [
+          "arn:aws:iam::${local.account_id}:policy/EKSClusterAutoscalerPolicy"
         ]
       }
       

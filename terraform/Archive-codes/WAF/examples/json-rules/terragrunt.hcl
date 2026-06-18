@@ -11,14 +11,14 @@ include "root" {
 
 locals {
   environment      = "dev"
-  region          = "us-east-1" 
-  region_prefix   = "use1"
-  account_name    = "my-account"
+  region           = "us-east-1"
+  region_prefix    = "use1"
+  account_name     = "my-account"
   account_name_abr = "ma"
-  
+
   # Paths to JSON rule files
   rule_files_path = get_terragrunt_dir()
-  
+
   common_tags = {
     Environment = local.environment
     Project     = "Web Security"
@@ -37,12 +37,12 @@ inputs = {
   }
 
   waf = {
-    create_waf      = true
+    create_waf     = true
     name           = "json-rules-waf"
     description    = "WAF using JSON rule files for configuration"
     scope          = "REGIONAL"
     default_action = "allow"
-    
+
     # Load custom rules from JSON files
     rule_files = [
       "${local.rule_files_path}/rules/country-blocking.json",
@@ -75,8 +75,8 @@ inputs = {
 
     # Enable logging
     logging = {
-      enabled          = true
-      create_log_group = true
+      enabled            = true
+      create_log_group   = true
       log_retention_days = 14
     }
   }

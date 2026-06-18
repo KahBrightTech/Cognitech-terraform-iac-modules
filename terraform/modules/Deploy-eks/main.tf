@@ -304,6 +304,52 @@ resource "helm_release" "aws_load_balancer_controller" {
 }
 
 #--------------------------------------------------------------------
+# Cluster Autoscaler (Helm) - Tier 3
+#--------------------------------------------------------------------
+resource "helm_release" "cluster_autoscaler" {
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_cluster_autoscaler && var.eks.create_node_group ? 1 : 0
+  name       = "cluster-autoscaler"
+  namespace  = "kube-system"
+  repository = "https://kubernetes.github.io/autoscaler"
+  chart      = "cluster-autoscaler"
+  version    = var.eks.eks_addons.cluster_autoscaler_version
+
+  cleanup_on_fail = true
+  replace         = true
+  force_update    = true
+
+  values = [
+    yamlencode({
+      autoDiscovery = {
+        clusterName = aws_eks_cluster.eks_cluster.name
+      }
+      awsRegion = data.aws_region.current.name
+      rbac = {
+        serviceAccount = {
+          create = true
+          name   = "cluster-autoscaler"
+          annotations = {
+            "eks.amazonaws.com/role-arn" = var.eks.eks_addons.cluster_autoscaler_role_key != null ? module.iam_roles[var.eks.eks_addons.cluster_autoscaler_role_key].iam_role_arn : var.eks.eks_addons.cluster_autoscaler_role_arn
+          }
+        }
+      }
+      extraArgs = {
+        balance-similar-node-groups = true
+        skip-nodes-with-system-pods = false
+        expander                    = "least-waste"
+      }
+    })
+  ]
+
+  depends_on = [
+    module.eks_node_group,
+    module.iam_roles,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent
+  ]
+}
+
+#--------------------------------------------------------------------
 # External DNS (Helm) - Tier 3
 #--------------------------------------------------------------------
 resource "helm_release" "external_dns" {

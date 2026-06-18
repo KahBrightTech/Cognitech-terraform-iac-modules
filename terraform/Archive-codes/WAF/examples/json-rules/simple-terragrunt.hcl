@@ -11,10 +11,10 @@ include "root" {
 
 locals {
   environment      = "dev"
-  account_name    = "my-account"
+  account_name     = "my-account"
   account_name_abr = "ma"
-  region_prefix   = "use1"
-  
+  region_prefix    = "use1"
+
   common_tags = {
     Environment = local.environment
     Project     = "Security"
@@ -32,7 +32,7 @@ inputs = {
   }
 
   waf = {
-    create_waf      = true
+    create_waf     = true
     name           = "cameroon-blocking-waf"
     description    = "WAF to block Cameroon and allow office IP using JSON rules"
     scope          = "REGIONAL"
@@ -57,8 +57,8 @@ inputs = {
 
     # Basic logging
     logging = {
-      enabled          = true
-      create_log_group = true
+      enabled            = true
+      create_log_group   = true
       log_retention_days = 7
     }
   }
