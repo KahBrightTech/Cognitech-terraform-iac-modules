@@ -85,6 +85,12 @@ variable "eks" {
     namespaces = optional(list(object({
       name   = optional(string, "")
       labels = optional(map(string), {})
+      resource_quota = optional(object({
+        name      = optional(string)
+        hard      = optional(map(string), {})
+        scopes    = optional(list(string))
+        yaml_file = optional(string) # Path to a ResourceQuota YAML file. When set, spec.hard/spec.scopes are read from the file's spec block.
+      }))
     })))
     version                 = optional(string, "1.32")
     oidc_thumbprint         = optional(string)

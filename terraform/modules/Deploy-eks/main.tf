@@ -931,3 +931,30 @@ resource "kubernetes_namespace_v1" "namespace" {
 
   depends_on = [aws_eks_cluster.eks_cluster]
 }
+
+#--------------------------------------------------------------------
+# Kubernetes Resource Quotas (Optional)
+#--------------------------------------------------------------------
+resource "kubernetes_resource_quota_v1" "resource_quota" {
+  for_each = var.eks.namespaces != null ? {
+    for ns in var.eks.namespaces : ns.name => ns
+    if ns.name != "" && ns.resource_quota != null
+  } : {}
+
+  metadata {
+    name = coalesce(
+      each.value.resource_quota.name,
+      try(yamldecode(file(each.value.resource_quota.yaml_file)).metadata.name, null),
+      "${each.value.name}-quota"
+    )
+    namespace = kubernetes_namespace_v1.namespace[each.value.name].metadata[0].name
+    labels    = each.value.labels
+  }
+
+  spec {
+    hard   = each.value.resource_quota.yaml_file != null ? yamldecode(file(each.value.resource_quota.yaml_file)).spec.hard : each.value.resource_quota.hard
+    scopes = each.value.resource_quota.yaml_file != null ? try(yamldecode(file(each.value.resource_quota.yaml_file)).spec.scopes, null) : each.value.resource_quota.scopes
+  }
+
+  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace]
+}
