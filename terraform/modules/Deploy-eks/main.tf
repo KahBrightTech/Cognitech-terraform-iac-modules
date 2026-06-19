@@ -419,7 +419,7 @@ resource "aws_eks_addon" "cloudwatch_observability" {
   addon_name                  = "amazon-cloudwatch-observability"
   addon_version               = var.eks.eks_addons.cloudwatch_observability_version
   resolve_conflicts_on_update = "PRESERVE"
-  service_account_role_arn    = var.eks.eks_addons.cloudwatch_observability_role_arn
+  service_account_role_arn    = var.eks.eks_addons.cloudwatch_observability_role_key != null ? module.iam_roles[var.eks.eks_addons.cloudwatch_observability_role_key].iam_role_arn : var.eks.eks_addons.cloudwatch_observability_role_arn
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-cloudwatch-observability-addon"
