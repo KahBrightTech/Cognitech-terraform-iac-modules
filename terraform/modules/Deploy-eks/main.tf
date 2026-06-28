@@ -727,7 +727,7 @@ module "service_account" {
       role_arn = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
     }
   )
-  depends_on = [aws_eks_cluster.eks_cluster]
+  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace]
 }
 
 #--------------------------------------------------------------------
@@ -771,7 +771,7 @@ resource "aws_eks_pod_identity_association" "pia" {
   service_account = (each.value.service_account_keys != null && length(each.value.service_account_keys) > 0 && contains(local.created_service_account_keys, each.key) ? module.service_account[each.key].service_account_name : each.value.service_account_name
   )
   role_arn   = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
-  depends_on = [aws_eks_cluster.eks_cluster]
+  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace, module.service_account]
 }
 
 #--------------------------------------------------------------------
