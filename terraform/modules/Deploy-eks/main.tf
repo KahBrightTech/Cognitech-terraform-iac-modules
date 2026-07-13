@@ -216,6 +216,56 @@ resource "kubernetes_storage_class_v1" "gp3" {
   ]
 }
 
+#--------------------------------------------------------------------
+# EFS CSI Driver
+#--------------------------------------------------------------------
+resource "aws_eks_addon" "efs_csi_driver" {
+  count                    = var.eks.eks_addons != null && var.eks.eks_addons.enable_efs_csi_driver && var.eks.create_node_group ? 1 : 0
+  cluster_name             = aws_eks_cluster.eks_cluster.name
+  addon_name               = "aws-efs-csi-driver"
+  addon_version            = var.eks.eks_addons.efs_csi_driver_version
+  service_account_role_arn = var.eks.eks_addons.efs_csi_driver_role_key != null ? module.iam_roles[var.eks.eks_addons.efs_csi_driver_role_key].iam_role_arn : var.eks.eks_addons.efs_csi_driver_role_arn
+
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "PRESERVE"
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-efs-csi-driver-addon"
+  })
+
+  depends_on = [
+    module.eks_node_group,
+    module.iam_roles,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent
+  ]
+}
+
+#--------------------------------------------------------------------
+# FSx CSI Driver
+#--------------------------------------------------------------------
+resource "aws_eks_addon" "fsx_csi_driver" {
+  count                    = var.eks.eks_addons != null && var.eks.eks_addons.enable_fsx_csi_driver && var.eks.create_node_group ? 1 : 0
+  cluster_name             = aws_eks_cluster.eks_cluster.name
+  addon_name               = "aws-fsx-csi-driver"
+  addon_version            = var.eks.eks_addons.fsx_csi_driver_version
+  service_account_role_arn = var.eks.eks_addons.fsx_csi_driver_role_key != null ? module.iam_roles[var.eks.eks_addons.fsx_csi_driver_role_key].iam_role_arn : var.eks.eks_addons.fsx_csi_driver_role_arn
+
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "PRESERVE"
+
+  tags = merge(var.common.tags, {
+    "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-fsx-csi-driver-addon"
+  })
+
+  depends_on = [
+    module.eks_node_group,
+    module.iam_roles,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent
+  ]
+}
+
 resource "aws_eks_addon" "privateca_issuer" {
   count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_privateca_issuer && var.eks.create_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
