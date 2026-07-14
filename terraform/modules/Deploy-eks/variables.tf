@@ -101,7 +101,13 @@ variable "eks" {
     create_service_accounts = optional(bool, false)
     enable_eks_pia          = optional(bool, false)
     eks_addons = optional(object({
-      enable_vpc_cni                                  = optional(bool, false)
+      enable_vpc_cni           = optional(bool, false)
+      enable_prefix_delegation = optional(bool, false)
+      # Number of spare /28 IP prefixes (16 IPs each) the VPC CNI keeps pre-allocated
+      # per node ahead of demand. 1 keeps one prefix warm for instant pod IP assignment
+      # without over-reserving; raise only for bursty scaling. Only used when
+      # enable_prefix_delegation = true.
+      warm_prefix_target                              = optional(number, 1)
       enable_kube_proxy                               = optional(bool, false)
       enable_coredns                                  = optional(bool, false)
       enable_metrics_server                           = optional(bool, false)

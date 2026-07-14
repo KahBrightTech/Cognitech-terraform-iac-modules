@@ -118,6 +118,22 @@ resource "aws_eks_addon" "vpc_cni" {
   addon_version               = var.eks.eks_addons.vpc_cni_version
   resolve_conflicts_on_update = "PRESERVE"
 
+  # Prefix delegation lets each ENI allocate /28 IP prefixes (16 IPs at a time)
+  # instead of single secondary IPs, dramatically increasing pod density per node.
+  configuration_values = var.eks.eks_addons.enable_prefix_delegation ? jsonencode({
+    enableNetworkPolicy = "false"
+    env = {
+      ENABLE_PREFIX_DELEGATION = "true"
+      # WARM_PREFIX_TARGET controls how many spare /28 IP prefixes (16 IPs each) the
+      # VPC CNI keeps pre-allocated on each node ahead of demand. A value of 1 keeps
+      # one full prefix warm so new pods get an IP instantly without waiting on an
+      # EC2 API call, while avoiding over-reserving addresses. Increase it only for
+      # bursty scaling where many pods start at once (at the cost of reserving more
+      # IPs per node). Must be >= 1 when prefix delegation is enabled.
+      WARM_PREFIX_TARGET = tostring(var.eks.eks_addons.warm_prefix_target)
+    }
+  }) : null
+
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-vpc-cni-addon"
   })
