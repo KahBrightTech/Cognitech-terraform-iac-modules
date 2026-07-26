@@ -37,6 +37,84 @@ locals {
   admin_role_arn               = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
   network_role_arn             = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
   created_service_account_keys = var.eks.create_service_accounts && var.eks.service_accounts != null ? toset([for sa in var.eks.service_accounts : sa.key]) : toset([])
+  system_node_selector = {
+    "workload-type" = "system"
+  }
+  system_tolerations = [{
+    key      = "workload-type"
+    operator = "Equal"
+    value    = "system"
+    effect   = "NoSchedule"
+    }
+  ]
+  all_workload_node_tolerations = [{
+    key      = "workload-type"
+    operator = "Exists"
+    effect   = "NoSchedule"
+  }]
+
+  karpenter_enabled = var.eks.eks_addons != null && var.eks.eks_addons.enable_karpenter && var.eks.create_node_group
+  karpenter         = local.karpenter_enabled ? var.eks.eks_addons.karpenter : null
+
+  karpenter_interruption_queue_name = local.karpenter_enabled ? coalesce(local.karpenter.interruption_queue_name, aws_eks_cluster.eks_cluster.name) : null
+
+  karpenter_controller_role_arn = local.karpenter_enabled ? (
+    local.karpenter.controller_role_key != null ? module.iam_roles[local.karpenter.controller_role_key].iam_role_arn : local.karpenter.controller_role_arn
+  ) : null
+
+  karpenter_node_role_arn = local.karpenter_enabled ? (
+    local.karpenter.node_role_key != null ? module.iam_roles[local.karpenter.node_role_key].iam_role_arn : local.karpenter.node_role_arn
+  ) : null
+
+  karpenter_node_role_name = local.karpenter_enabled ? coalesce(
+    local.karpenter.node_role_name,
+    local.karpenter.node_role_key != null ? module.iam_roles[local.karpenter.node_role_key].aws_iam_role_name : null,
+    local.karpenter.node_role_arn != null ? element(split("/", local.karpenter.node_role_arn), length(split("/", local.karpenter.node_role_arn)) - 1) : null
+  ) : null
+
+  karpenter_interruption_events = {
+    spot_interruption = {
+      source      = ["aws.ec2"]
+      detail-type = ["EC2 Spot Instance Interruption Warning"]
+    }
+    rebalance_recommendation = {
+      source      = ["aws.ec2"]
+      detail-type = ["EC2 Instance Rebalance Recommendation"]
+    }
+    instance_state_change = {
+      source      = ["aws.ec2"]
+      detail-type = ["EC2 Instance State-change Notification"]
+    }
+    health_event = {
+      source      = ["aws.health"]
+      detail-type = ["AWS Health Event"]
+    }
+  }
+  karpenter_manifests_yaml = local.karpenter_enabled && local.karpenter.nodepool_manifest_file != null ? replace(
+    replace(
+      replace(
+        replace(
+          replace(
+            replace(
+              replace(
+                replace(
+                  file(local.karpenter.nodepool_manifest_file),
+                  "[[account_number]]", data.aws_caller_identity.current.account_id
+                ),
+                "[[account_name]]", var.common.account_name
+              ),
+              "[[account_name_abr]]", var.common.account_name_abr
+            ),
+            "[[region]]", data.aws_region.current.name
+          ),
+          "[[region_prefix]]", var.common.region_prefix
+        ),
+        "[[cluster_name]]", aws_eks_cluster.eks_cluster.name
+      ),
+      "[[node_role_name]]", coalesce(local.karpenter_node_role_name, "")
+    ),
+    "[[node_role_arn]]", coalesce(local.karpenter_node_role_arn, "")
+  ) : null
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -117,22 +195,16 @@ resource "aws_eks_addon" "vpc_cni" {
   addon_name                  = "vpc-cni"
   addon_version               = var.eks.eks_addons.vpc_cni_version
   resolve_conflicts_on_update = "PRESERVE"
-
-  # Prefix delegation lets each ENI allocate /28 IP prefixes (16 IPs at a time)
-  # instead of single secondary IPs, dramatically increasing pod density per node.
-  configuration_values = var.eks.eks_addons.enable_prefix_delegation ? jsonencode({
-    enableNetworkPolicy = "false"
-    env = {
-      ENABLE_PREFIX_DELEGATION = "true"
-      # WARM_PREFIX_TARGET controls how many spare /28 IP prefixes (16 IPs each) the
-      # VPC CNI keeps pre-allocated on each node ahead of demand. A value of 1 keeps
-      # one full prefix warm so new pods get an IP instantly without waiting on an
-      # EC2 API call, while avoiding over-reserving addresses. Increase it only for
-      # bursty scaling where many pods start at once (at the cost of reserving more
-      # IPs per node). Must be >= 1 when prefix delegation is enabled.
-      WARM_PREFIX_TARGET = tostring(var.eks.eks_addons.warm_prefix_target)
-    }
-  }) : null
+  configuration_values = jsonencode(merge(
+    { tolerations = local.all_workload_node_tolerations },
+    var.eks.eks_addons.enable_prefix_delegation ? {
+      enableNetworkPolicy = "false"
+      env = {
+        ENABLE_PREFIX_DELEGATION = "true"
+        WARM_PREFIX_TARGET       = tostring(var.eks.eks_addons.warm_prefix_target)
+      }
+    } : {}
+  ))
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-vpc-cni-addon"
@@ -145,6 +217,7 @@ resource "aws_eks_addon" "kube_proxy" {
   addon_name                  = "kube-proxy"
   addon_version               = var.eks.eks_addons.kube_proxy_version
   resolve_conflicts_on_update = "PRESERVE"
+  configuration_values        = jsonencode({ tolerations = local.all_workload_node_tolerations })
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-kube-proxy-addon"
@@ -160,6 +233,7 @@ resource "aws_eks_addon" "coredns" {
   addon_name                  = "coredns"
   addon_version               = var.eks.eks_addons.coredns_version
   resolve_conflicts_on_update = "PRESERVE"
+  configuration_values        = jsonencode({ nodeSelector = local.system_node_selector, tolerations = local.system_tolerations })
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-coredns-addon"
@@ -172,13 +246,13 @@ resource "aws_eks_addon" "coredns" {
 }
 
 resource "aws_eks_addon" "pod_identity_agent" {
-  count         = var.eks.eks_addons != null && var.eks.eks_addons.enable_pod_identity_agent && var.eks.create_node_group ? 1 : 0
-  cluster_name  = aws_eks_cluster.eks_cluster.name
-  addon_name    = "eks-pod-identity-agent"
-  addon_version = var.eks.eks_addons.pod_identity_agent_version
-
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_pod_identity_agent && var.eks.create_node_group ? 1 : 0
+  cluster_name                = aws_eks_cluster.eks_cluster.name
+  addon_name                  = "eks-pod-identity-agent"
+  addon_version               = var.eks.eks_addons.pod_identity_agent_version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
+  configuration_values        = jsonencode({ tolerations = local.all_workload_node_tolerations })
 
   depends_on = [
     module.eks_node_group,
@@ -199,6 +273,10 @@ resource "aws_eks_addon" "ebs_csi_driver" {
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
+  configuration_values = jsonencode({
+    controller = { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
+    node       = { tolerations = local.all_workload_node_tolerations }
+  })
 
   depends_on = [
     module.eks_node_group,
@@ -213,20 +291,16 @@ resource "aws_eks_addon" "ebs_csi_driver" {
 #--------------------------------------------------------------------
 resource "kubernetes_storage_class_v1" "gp3" {
   count = var.eks.eks_addons != null && var.eks.eks_addons.enable_ebs_csi_driver && var.eks.create_node_group ? 1 : 0
-
   metadata {
     name = "gp3"
   }
-
   storage_provisioner    = "ebs.csi.aws.com"
   volume_binding_mode    = "WaitForFirstConsumer"
   allow_volume_expansion = true
-
   parameters = {
     type   = "gp3"
     fsType = "ext4"
   }
-
   depends_on = [
     aws_eks_addon.ebs_csi_driver
   ]
@@ -244,6 +318,10 @@ resource "aws_eks_addon" "efs_csi_driver" {
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
+  configuration_values = jsonencode({
+    controller = { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
+    node       = { tolerations = local.all_workload_node_tolerations }
+  })
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-efs-csi-driver-addon"
@@ -269,6 +347,10 @@ resource "aws_eks_addon" "fsx_csi_driver" {
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
+  configuration_values = jsonencode({
+    controller = { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
+    node       = { tolerations = local.all_workload_node_tolerations }
+  })
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-fsx-csi-driver-addon"
@@ -288,7 +370,7 @@ resource "aws_eks_addon" "privateca_issuer" {
   addon_name                  = "aws-privateca-issuer"
   addon_version               = var.eks.eks_addons.privateca_issuer_version
   resolve_conflicts_on_update = "PRESERVE"
-
+  configuration_values        = jsonencode({ nodeSelector = local.system_node_selector, tolerations = local.system_tolerations })
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-privateca-issuer-addon"
   })
@@ -301,10 +383,9 @@ resource "aws_eks_addon" "privateca_issuer" {
 }
 
 resource "helm_release" "secrets_store_aws_provider" {
-  count     = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
-  name      = "secrets-provider-aws"
-  namespace = "kube-system"
-
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
+  name       = "secrets-provider-aws"
+  namespace  = "kube-system"
   repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
   chart      = "secrets-store-csi-driver-provider-aws"
   version    = var.eks.eks_addons.secrets_manager_csi_driver_aws_provider_version
@@ -314,7 +395,7 @@ resource "helm_release" "secrets_store_aws_provider" {
   force_update    = true
 
   values = [
-    yamlencode({
+    yamlencode(merge({
       secrets-store-csi-driver = {
         syncSecret = {
           enabled = true
@@ -322,7 +403,8 @@ resource "helm_release" "secrets_store_aws_provider" {
         enableSecretRotation = var.eks.eks_addons.enableSecretRotation
         rotationPollInterval = var.eks.eks_addons.rotationPollInterval
       }
-    })
+      }, { tolerations = local.all_workload_node_tolerations }
+    ))
   ]
 
   depends_on = [
@@ -348,7 +430,7 @@ resource "helm_release" "aws_load_balancer_controller" {
   force_update    = true
 
   values = [
-    yamlencode({
+    yamlencode(merge({
       clusterName = aws_eks_cluster.eks_cluster.name
       region      = data.aws_region.current.name
       serviceAccount = {
@@ -358,7 +440,7 @@ resource "helm_release" "aws_load_balancer_controller" {
           "eks.amazonaws.com/role-arn" = var.eks.eks_addons.aws_load_balancer_controller_role_key != null ? module.iam_roles[var.eks.eks_addons.aws_load_balancer_controller_role_key].iam_role_arn : var.eks.eks_addons.aws_load_balancer_controller_role_arn
         }
       }
-    })
+    }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }))
   ]
 
   depends_on = [
@@ -385,7 +467,7 @@ resource "helm_release" "cluster_autoscaler" {
   force_update    = true
 
   values = [
-    yamlencode({
+    yamlencode(merge({
       autoDiscovery = {
         clusterName = aws_eks_cluster.eks_cluster.name
       }
@@ -404,7 +486,7 @@ resource "helm_release" "cluster_autoscaler" {
         skip-nodes-with-system-pods = false
         expander                    = "least-waste"
       }
-    })
+    }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }))
   ]
 
   depends_on = [
@@ -412,6 +494,117 @@ resource "helm_release" "cluster_autoscaler" {
     module.iam_roles,
     aws_eks_addon.coredns,
     aws_eks_addon.pod_identity_agent
+  ]
+}
+
+#--------------------------------------------------------------------
+# Karpenter - SQS Interruption Queue
+#--------------------------------------------------------------------
+resource "aws_sqs_queue" "karpenter_interruption" {
+  count                     = local.karpenter_enabled ? 1 : 0
+  name                      = local.karpenter_interruption_queue_name
+  message_retention_seconds = 300
+  sqs_managed_sse_enabled   = true
+
+  tags = merge(var.common.tags, {
+    "Name" = local.karpenter_interruption_queue_name
+  })
+}
+
+resource "aws_sqs_queue_policy" "karpenter_interruption" {
+  count     = local.karpenter_enabled ? 1 : 0
+  queue_url = aws_sqs_queue.karpenter_interruption[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Id      = "KarpenterInterruptionQueuePolicy"
+    Statement = [
+      {
+        Sid    = "SqsWrite"
+        Effect = "Allow"
+        Principal = {
+          Service = ["events.amazonaws.com", "sqs.amazonaws.com"]
+        }
+        Action   = "sqs:SendMessage"
+        Resource = aws_sqs_queue.karpenter_interruption[0].arn
+      }
+    ]
+  })
+}
+
+#--------------------------------------------------------------------
+# Karpenter - EventBridge Rules for Interruption Handling
+#--------------------------------------------------------------------
+resource "aws_cloudwatch_event_rule" "karpenter_interruption" {
+  for_each    = local.karpenter_enabled ? local.karpenter_interruption_events : {}
+  name        = "${local.karpenter_interruption_queue_name}-${replace(each.key, "_", "-")}"
+  description = "Karpenter interruption handling - ${each.key}"
+
+  event_pattern = jsonencode({
+    source      = each.value.source
+    detail-type = each.value.detail-type
+  })
+
+  tags = var.common.tags
+}
+
+resource "aws_cloudwatch_event_target" "karpenter_interruption" {
+  for_each  = local.karpenter_enabled ? local.karpenter_interruption_events : {}
+  rule      = aws_cloudwatch_event_rule.karpenter_interruption[each.key].name
+  target_id = "KarpenterInterruptionQueue"
+  arn       = aws_sqs_queue.karpenter_interruption[0].arn
+}
+
+#--------------------------------------------------------------------
+# Karpenter - Node Access Entry
+#--------------------------------------------------------------------
+resource "aws_eks_access_entry" "karpenter_node" {
+  count         = local.karpenter_enabled ? 1 : 0
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  principal_arn = local.karpenter_node_role_arn
+  type          = "EC2_LINUX"
+}
+
+#--------------------------------------------------------------------
+# Karpenter (Helm) - Controller
+#--------------------------------------------------------------------
+resource "helm_release" "karpenter" {
+  count      = local.karpenter_enabled ? 1 : 0
+  name       = "karpenter"
+  namespace  = local.karpenter.namespace
+  repository = "oci://public.ecr.aws/karpenter"
+  chart      = "karpenter"
+  version    = local.karpenter.chart_version
+
+  cleanup_on_fail = true
+  replace         = true
+  force_update    = true
+
+  values = [
+    yamlencode(merge({
+      settings = {
+        clusterName       = aws_eks_cluster.eks_cluster.name
+        clusterEndpoint   = aws_eks_cluster.eks_cluster.endpoint
+        interruptionQueue = aws_sqs_queue.karpenter_interruption[0].name
+      }
+      serviceAccount = {
+        create = true
+        name   = "karpenter"
+        annotations = {
+          "eks.amazonaws.com/role-arn" = local.karpenter_controller_role_arn
+        }
+      }
+    }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }))
+  ]
+
+  depends_on = [
+    module.eks_node_group,
+    module.iam_roles,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent,
+    aws_eks_access_entry.karpenter_node,
+    aws_sqs_queue_policy.karpenter_interruption,
+    aws_cloudwatch_event_target.karpenter_interruption
   ]
 }
 
@@ -431,7 +624,7 @@ resource "helm_release" "external_dns" {
   force_update    = true
 
   values = [
-    yamlencode({
+    yamlencode(merge({
       provider = "aws"
       serviceAccount = {
         create = true
@@ -445,7 +638,7 @@ resource "helm_release" "external_dns" {
       domainFilters = var.eks.eks_addons.external_dns_domain_filters != null ? var.eks.eks_addons.external_dns_domain_filters : []
       sources       = var.eks.eks_addons.external_dns_sources != null ? var.eks.eks_addons.external_dns_sources : ["service", "ingress"]
       logLevel      = var.eks.eks_addons.external_dns_log_level != null ? var.eks.eks_addons.external_dns_log_level : "info"
-    })
+    }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }))
   ]
 
   depends_on = [
@@ -465,6 +658,7 @@ resource "aws_eks_addon" "metrics_server" {
   addon_name                  = "metrics-server"
   addon_version               = var.eks.eks_addons.metrics_server_version
   resolve_conflicts_on_update = "PRESERVE"
+  configuration_values        = jsonencode({ nodeSelector = local.system_node_selector, tolerations = local.system_tolerations })
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-metrics-server-addon"
@@ -486,6 +680,7 @@ resource "aws_eks_addon" "cloudwatch_observability" {
   addon_version               = var.eks.eks_addons.cloudwatch_observability_version
   resolve_conflicts_on_update = "PRESERVE"
   service_account_role_arn    = var.eks.eks_addons.cloudwatch_observability_role_key != null ? module.iam_roles[var.eks.eks_addons.cloudwatch_observability_role_key].iam_role_arn : var.eks.eks_addons.cloudwatch_observability_role_arn
+  configuration_values        = jsonencode({ tolerations = local.all_workload_node_tolerations })
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-cloudwatch-observability-addon"
@@ -518,7 +713,7 @@ resource "helm_release" "fluent_bit" {
   force_update     = true
 
   values = [
-    yamlencode({
+    yamlencode(merge({
       serviceAccount = {
         create = true
         name   = "fluent-bit"
@@ -535,7 +730,7 @@ resource "helm_release" "fluent_bit" {
           "    delivery_stream   ${var.eks.eks_addons.fluent_bit_firehose_delivery_stream}",
         ])
       } : {}
-    })
+    }, { tolerations = local.all_workload_node_tolerations }))
   ]
 
   depends_on = [
@@ -568,7 +763,7 @@ resource "helm_release" "kube_prometheus_stack" {
 
   values = [
     yamlencode({
-      grafana = {
+      grafana = merge({
         enabled = true
         service = {
           type = var.eks.eks_addons.grafana_service_type != null ? var.eks.eks_addons.grafana_service_type : "ClusterIP"
@@ -594,7 +789,8 @@ resource "helm_release" "kube_prometheus_stack" {
           size             = var.eks.eks_addons.grafana_persistence_size != null ? var.eks.eks_addons.grafana_persistence_size : "10Gi"
           storageClassName = var.eks.eks_addons.grafana_persistence_storage_class
         }
-      }
+        }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
+      )
       prometheus = {
         prometheusSpec = merge(
           {
@@ -614,8 +810,22 @@ resource "helm_release" "kube_prometheus_stack" {
                 }
               }
             }
-          } : {}
+          } : {},
+          { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
         )
+      }
+      prometheusOperator = {
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
+      }
+      alertmanager = {
+        alertmanagerSpec = {
+          nodeSelector = local.system_node_selector
+          tolerations  = local.system_tolerations
+        }
+      }
+      "prometheus-node-exporter" = {
+        tolerations = local.all_workload_node_tolerations
       }
     })
   ]

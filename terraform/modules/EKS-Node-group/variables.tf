@@ -28,6 +28,11 @@ variable "eks_node_group" {
     ami_type                  = optional(string)
     disk_size                 = optional(number)
     labels                    = optional(map(string), {})
+    taints = optional(list(object({
+      key    = string
+      value  = optional(string)
+      effect = string # NO_SCHEDULE, PREFER_NO_SCHEDULE, or NO_EXECUTE
+    })), [])
     tags                      = optional(map(string), {})
     version                   = optional(string)
     force_update_version      = optional(bool, false)

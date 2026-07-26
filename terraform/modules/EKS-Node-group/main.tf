@@ -32,6 +32,16 @@ resource "aws_eks_node_group" "eks_node_group" {
   ami_type  = var.eks_node_group.ami_type
   disk_size = var.eks_node_group.launch_template != null ? null : var.eks_node_group.disk_size
   labels    = var.eks_node_group.labels
+
+  dynamic "taint" {
+    for_each = var.eks_node_group.taints
+    content {
+      key    = taint.value.key
+      value  = taint.value.value
+      effect = taint.value.effect
+    }
+  }
+
   tags = merge(
     var.eks_node_group.tags,
     {

@@ -372,6 +372,49 @@ output "helm_fluent_bit" {
   } : null
 }
 
+output "helm_karpenter" {
+  description = "Karpenter controller Helm release information"
+  value = local.karpenter_enabled ? {
+    name       = try(helm_release.karpenter[0].name, null)
+    namespace  = try(helm_release.karpenter[0].namespace, null)
+    chart      = try(helm_release.karpenter[0].chart, null)
+    version    = try(helm_release.karpenter[0].version, null)
+    status     = try(helm_release.karpenter[0].status, null)
+    repository = try(helm_release.karpenter[0].repository, null)
+  } : null
+}
+
+#--------------------------------------------------------------------
+# Karpenter Outputs
+#--------------------------------------------------------------------
+output "karpenter_interruption_queue_name" {
+  description = "Name of the SQS queue Karpenter polls for interruption/rebalance events"
+  value       = local.karpenter_enabled ? aws_sqs_queue.karpenter_interruption[0].name : null
+}
+
+output "karpenter_interruption_queue_arn" {
+  description = "ARN of the SQS queue Karpenter polls for interruption/rebalance events"
+  value       = local.karpenter_enabled ? aws_sqs_queue.karpenter_interruption[0].arn : null
+}
+
+output "karpenter_node_role_arn" {
+  description = "ARN of the IAM role EC2 instances launched by Karpenter assume"
+  value       = local.karpenter_node_role_arn
+}
+
+output "karpenter_node_access_entry" {
+  description = "EC2_LINUX EKS access entry that lets Karpenter-launched nodes join the cluster"
+  value = local.karpenter_enabled ? {
+    principal_arn = try(aws_eks_access_entry.karpenter_node[0].principal_arn, null)
+    type          = try(aws_eks_access_entry.karpenter_node[0].type, null)
+  } : null
+}
+
+output "karpenter_manifests_yaml" {
+  description = "Rendered default EC2NodeClass + NodePool YAML - apply with `kubectl apply -f -` once the Karpenter controller Helm release is running. Not applied by Terraform itself; see main.tf's Karpenter section for why."
+  value       = local.karpenter_manifests_yaml
+}
+
 #--------------------------------------------------------------------
 # RBAC Outputs
 #--------------------------------------------------------------------
