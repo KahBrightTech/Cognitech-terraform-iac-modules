@@ -195,16 +195,21 @@ resource "aws_eks_addon" "vpc_cni" {
   addon_name                  = "vpc-cni"
   addon_version               = var.eks.eks_addons.vpc_cni_version
   resolve_conflicts_on_update = "PRESERVE"
-  configuration_values = jsonencode(merge(
-    { tolerations = local.all_workload_node_tolerations },
-    var.eks.eks_addons.enable_prefix_delegation ? {
-      enableNetworkPolicy = "false"
-      env = {
-        ENABLE_PREFIX_DELEGATION = "true"
-        WARM_PREFIX_TARGET       = tostring(var.eks.eks_addons.warm_prefix_target)
+  configuration_values = jsonencode({
+    for k, v in merge(
+      { tolerations = local.all_workload_node_tolerations },
+      var.eks.eks_addons.enable_prefix_delegation ? {
+        enableNetworkPolicy = "false"
+        env = {
+          ENABLE_PREFIX_DELEGATION = "true"
+          WARM_PREFIX_TARGET       = tostring(var.eks.eks_addons.warm_prefix_target)
+        }
+        } : {
+        enableNetworkPolicy = null
+        env                 = null
       }
-    } : {}
-  ))
+    ) : k => v if v != null
+  })
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-vpc-cni-addon"
@@ -729,7 +734,7 @@ resource "helm_release" "fluent_bit" {
           "    region            ${data.aws_region.current.name}",
           "    delivery_stream   ${var.eks.eks_addons.fluent_bit_firehose_delivery_stream}",
         ])
-      } : {}
+      } : null
     }, { tolerations = local.all_workload_node_tolerations }))
   ]
 
@@ -810,7 +815,7 @@ resource "helm_release" "kube_prometheus_stack" {
                 }
               }
             }
-          } : {},
+          } : { storageSpec = null },
           { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
         )
       }

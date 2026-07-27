@@ -4,6 +4,8 @@ metadata:
   name: default
 spec:
   amiFamily: AL2023
+  amiSelectorTerms:
+  - alias: al2023@latest
   role: "[[node_role_name]]"
   subnetSelectorTerms:
   - tags:

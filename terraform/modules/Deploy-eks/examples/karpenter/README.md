@@ -13,18 +13,30 @@ Unlike Cluster Autoscaler, Karpenter needs more than a Helm release:
 - An **SQS queue + 4 EventBridge rules** so Karpenter can react to spot interruption, instance rebalance, instance state-change, and AWS health events.
 - The `NodePool`/`EC2NodeClass` custom resources that tell Karpenter what to launch. These aren't applied by Terraform (their CRDs don't exist until the Helm release has actually run, which makes them awkward with `kubernetes_manifest` in the same apply) - instead you author them as a plain YAML file and the module reads + placeholder-substitutes it into an output.
 
+## NodePool vs. EC2NodeClass
+
+Every `karpenter-nodepool.yaml` in this repo defines two different custom resources, and they answer two different questions:
+
+- **`NodePool`** (`karpenter.sh/v1`, cloud-agnostic) - answers *"when should Karpenter provision a node, what shape should it be, and how should it manage that node's lifecycle?"* This is where `requirements` (instance category, capacity-type, arch), `limits` (total cpu/memory the pool can consume), and `disruption` (consolidation policy, `consolidateAfter`) live. You can have multiple `NodePool`s - e.g. one for general workloads, another for GPU workloads with different requirements/limits - and each references exactly one `EC2NodeClass` via `nodeClassRef`.
+- **`EC2NodeClass`** (`karpenter.k8s.aws/v1`, AWS-specific) - answers *"what does the actual EC2 instance look like?"* AMI (`amiFamily`/`amiSelectorTerms`), subnets, security groups, block device mappings (EBS volumes), the IAM role/instance profile nodes assume, and any extra tags. This is the provider-level launch config; a `NodePool` can't launch anything without one.
+
+In short: `NodePool` = scheduling/provisioning policy, `EC2NodeClass` = the infrastructure recipe for the instance itself. Multiple `NodePool`s can share one `EC2NodeClass` if they just need different scheduling rules on identical infrastructure; you only need a second `EC2NodeClass` when the underlying instance itself needs to differ (different AMI, different subnets, etc.) - see `prod_nodepool.yaml` in the network repo for an example of a renamed, pinned-AMI `EC2NodeClass`/`NodePool` pair.
+
 ## Keeping controller pods off Karpenter nodes
 
 The module hardcodes a `workload-type = system` label/toleration pair onto
-every controller-type Deployment it manages (coredns, csi driver
+every controller-type Deployment/StatefulSet it manages (coredns, csi driver
 controllers, load balancer controller, karpenter itself, cluster-autoscaler,
-external-dns, kube-prometheus-stack, metrics-server, privateca-issuer) - see
-`local.controller_scheduling` in `main.tf`. DaemonSets the module manages
+external-dns, grafana, prometheus, prometheus operator, alertmanager,
+metrics-server, privateca-issuer) via `local.system_node_selector` +
+`local.system_tolerations` in `main.tf`. DaemonSets the module manages
 (vpc-cni, kube-proxy, csi driver node plugins, pod-identity-agent,
-secrets-store-csi-driver-provider-aws, fluent-bit) only pick up the
-toleration via `local.daemonset_scheduling`, never the nodeSelector, since
-they must keep running on every node - including Karpenter ones. This isn't
-configurable per-environment; it's baked into the module.
+secrets-store-csi-driver-provider-aws, fluent-bit, cloudwatch node agent,
+prometheus node-exporter) only pick up `local.all_workload_node_tolerations`,
+never the nodeSelector, since they must keep running on every node -
+including Karpenter ones. This isn't configurable per-environment; it's
+baked into the module. See `../TAINTS_AND_TOLERATIONS.md` for the full
+component-by-component reference.
 
 For this to actually repel application pods onto Karpenter nodes, your
 static "system" node group needs the matching label and taint:
