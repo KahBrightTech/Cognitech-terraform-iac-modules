@@ -107,18 +107,26 @@ variable "eks" {
       # per node ahead of demand. 1 keeps one prefix warm for instant pod IP assignment
       # without over-reserving; raise only for bursty scaling. Only used when
       # enable_prefix_delegation = true.
-      warm_prefix_target                              = optional(number, 1)
-      enable_kube_proxy                               = optional(bool, false)
-      enable_coredns                                  = optional(bool, false)
-      enable_metrics_server                           = optional(bool, false)
-      enable_cloudwatch_observability                 = optional(bool, false)
-      enable_secrets_manager_csi_driver               = optional(bool, false)
-      enable_privateca_issuer                         = optional(bool, false)
-      enable_pod_identity_agent                       = optional(bool, false)
-      enable_ebs_csi_driver                           = optional(bool, false)
-      enable_efs_csi_driver                           = optional(bool, false)
-      enable_fsx_csi_driver                           = optional(bool, false)
-      enable_aws_load_balancer_controller             = optional(bool, false)
+      warm_prefix_target                  = optional(number, 1)
+      enable_kube_proxy                   = optional(bool, false)
+      enable_coredns                      = optional(bool, false)
+      enable_metrics_server               = optional(bool, false)
+      enable_cloudwatch_observability     = optional(bool, false)
+      enable_secrets_manager_csi_driver   = optional(bool, false)
+      enable_privateca_issuer             = optional(bool, false)
+      enable_pod_identity_agent           = optional(bool, false)
+      enable_ebs_csi_driver               = optional(bool, false)
+      enable_efs_csi_driver               = optional(bool, false)
+      enable_fsx_csi_driver               = optional(bool, false)
+      enable_aws_load_balancer_controller = optional(bool, false)
+      # Both may be true at once by design: Cluster Autoscaler only ever scales
+      # ASG-backed eks_node_groups (e.g. the static "system" node group), while
+      # Karpenter provisions raw EC2 instances directly and never creates an ASG.
+      # They don't share resources, so there's no scaling conflict, PROVIDED you
+      # scope Cluster Autoscaler's AWS auto-discovery tags
+      # (k8s.io/cluster-autoscaler/enabled, k8s.io/cluster-autoscaler/<cluster>)
+      # only onto the node group(s) you want it to manage - if you add another
+      # conventional (non-Karpenter) node group later, tag deliberately.
       enable_cluster_autoscaler                       = optional(bool, false)
       enable_karpenter                                = optional(bool, false)
       enable_external_dns                             = optional(bool, false)
@@ -348,14 +356,6 @@ variable "eks" {
     })))
   })
   default = null
-
-  validation {
-    condition = var.eks == null || !(
-      try(var.eks.eks_addons.enable_karpenter, false) &&
-      try(var.eks.eks_addons.enable_cluster_autoscaler, false)
-    )
-    error_message = "eks_addons.enable_karpenter and eks_addons.enable_cluster_autoscaler cannot both be true - both manage EC2 node lifecycle for the cluster and will fight each other's scaling decisions if run against the same nodes. Pick one (Karpenter is recommended for new clusters)."
-  }
 }
-# Namespace creation variables
+
 
