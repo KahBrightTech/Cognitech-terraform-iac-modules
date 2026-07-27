@@ -31,6 +31,39 @@ locals {
   }
 
   identity_pool_enabled = var.cognito.identity_pool != null && var.cognito.identity_pool.create
+
+  #--------------------------------------------------------------------
+  # Secrets Manager mirror (optional) - see var.cognito.secret
+  #--------------------------------------------------------------------
+  secret_enabled = try(var.cognito.secret.create, false)
+  secret_name    = local.secret_enabled ? coalesce(try(var.cognito.secret.name, null), "${local.user_pool_name}/cognito") : null
+
+  secret_user_pool_id_key     = try(var.cognito.secret.user_pool_id_key, "user_pool_id")
+  secret_region_key           = try(var.cognito.secret.region_key, "region")
+  secret_client_key_overrides = try(var.cognito.secret.clients, {})
+
+  # One map per client with its ID (and secret, if it has one) under either
+  # the caller's override key or the "<name>_client_id"/"<name>_client_secret"
+  # default, then merged into a single flat map for the secret payload.
+  secret_client_values = local.secret_enabled ? merge([
+    for name, client in aws_cognito_user_pool_client.this : merge(
+      {
+        (try(local.secret_client_key_overrides[name].client_id_key, null) != null ? local.secret_client_key_overrides[name].client_id_key : "${name}_client_id") = client.id
+      },
+      client.generate_secret ? {
+        (try(local.secret_client_key_overrides[name].client_secret_key, null) != null ? local.secret_client_key_overrides[name].client_secret_key : "${name}_client_secret") = client.client_secret
+      } : {}
+    )
+  ]...) : {}
+
+  secret_payload = local.secret_enabled ? merge(
+    {
+      (local.secret_user_pool_id_key) = aws_cognito_user_pool.this.id
+      (local.secret_region_key)       = data.aws_region.current.name
+    },
+    local.secret_client_values,
+    try(var.cognito.secret.additional_values, {})
+  ) : {}
 }
 
 #--------------------------------------------------------------------
@@ -329,6 +362,27 @@ resource "aws_cognito_identity_pool" "this" {
   tags = merge(var.common.tags, var.cognito.tags, {
     "Name" = coalesce(var.cognito.identity_pool.name, "${local.user_pool_name}-identity-pool")
   })
+}
+
+#--------------------------------------------------------------------
+# Secrets Manager mirror (optional) - see var.cognito.secret
+#--------------------------------------------------------------------
+resource "aws_secretsmanager_secret" "this" {
+  count = local.secret_enabled ? 1 : 0
+
+  name                    = local.secret_name
+  description             = coalesce(try(var.cognito.secret.description, null), "Cognito user pool config for ${local.user_pool_name}")
+  recovery_window_in_days = try(var.cognito.secret.recovery_window_in_days, 30)
+  tags = merge(var.common.tags, var.cognito.tags, {
+    "Name" = local.secret_name
+  })
+}
+
+resource "aws_secretsmanager_secret_version" "this" {
+  count = local.secret_enabled ? 1 : 0
+
+  secret_id     = aws_secretsmanager_secret.this[0].id
+  secret_string = jsonencode(local.secret_payload)
 }
 
 resource "aws_cognito_identity_pool_roles_attachment" "this" {

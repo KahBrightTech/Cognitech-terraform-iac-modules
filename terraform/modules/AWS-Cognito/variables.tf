@@ -193,6 +193,22 @@ variable "cognito" {
     })), [])
 
     #--------------------------------------------------------------------
+    # Secrets Manager mirror (optional)
+    #--------------------------------------------------------------------
+    secret = optional(object({
+      create           = optional(bool, false)
+      name             = optional(string, null)
+      description      = optional(string, null)
+      user_pool_id_key = optional(string, "user_pool_id")
+      region_key       = optional(string, "region")
+      clients = optional(map(object({
+        client_id_key     = optional(string, null)
+        client_secret_key = optional(string, null)
+      })), {})
+      additional_values = optional(map(string), {})
+    }), null)
+
+    #--------------------------------------------------------------------
     # Identity Pool (federated identities / AWS credential vending)
     #--------------------------------------------------------------------
     identity_pool = optional(object({
