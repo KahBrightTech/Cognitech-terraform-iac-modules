@@ -60,6 +60,16 @@ output "identity_providers" {
   }
 }
 
+output "secret_name" {
+  description = "Name of the Secrets Manager secret holding the pool ID, region, and client ID(s)/secret(s)"
+  value       = aws_secretsmanager_secret.this.name
+}
+
+output "secret_arn" {
+  description = "ARN of the Secrets Manager secret holding the pool ID, region, and client ID(s)/secret(s)"
+  value       = aws_secretsmanager_secret.this.arn
+}
+
 output "identity_pool_id" {
   description = "ID of the Cognito identity pool, if created"
   value       = try(aws_cognito_identity_pool.this[0].id, null)
@@ -70,12 +80,3 @@ output "identity_pool_arn" {
   value       = try(aws_cognito_identity_pool.this[0].arn, null)
 }
 
-output "secret_name" {
-  description = "Name of the Secrets Manager secret holding the pool/client config, if cognito.secret.create = true"
-  value       = try(aws_secretsmanager_secret.this[0].name, null)
-}
-
-output "secret_arn" {
-  description = "ARN of the Secrets Manager secret holding the pool/client config, if created"
-  value       = try(aws_secretsmanager_secret.this[0].arn, null)
-}

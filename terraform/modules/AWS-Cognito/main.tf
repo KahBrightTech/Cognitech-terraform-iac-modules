@@ -32,30 +32,33 @@ locals {
   #--------------------------------------------------------------------
   # Secrets Manager mirror (optional) - see var.cognito.secret
   #--------------------------------------------------------------------
-  secret_enabled = try(var.cognito.secret.create, false)
-  secret_name    = local.secret_enabled ? coalesce(try(var.cognito.secret.name, null), "${local.user_pool_name}/cognito") : null
+  secret_cfg     = var.cognito.secret
+  secret_enabled = try(local.secret_cfg.create, false)
+  secret_name    = local.secret_enabled ? coalesce(try(local.secret_cfg.name, null), "${local.user_pool_name}/cognito") : null
 
-  secret_user_pool_id_key     = try(var.cognito.secret.user_pool_id_key, "user_pool_id")
-  secret_region_key           = try(var.cognito.secret.region_key, "region")
-  secret_client_key_overrides = try(var.cognito.secret.clients, {})
-  secret_client_values = local.secret_enabled ? merge([
+  secret_pool_id_key      = coalesce(try(local.secret_cfg.user_pool_id_key, null), "user_pool_id")
+  secret_region_key       = coalesce(try(local.secret_cfg.region_key, null), "region")
+  secret_client_overrides = try(local.secret_cfg.clients, {})
+  secret_client_keys = {
+    for name, client in aws_cognito_user_pool_client.this : name => {
+      id_key     = coalesce(try(local.secret_client_overrides[name].client_id_key, null), "${name}_client_id")
+      secret_key = coalesce(try(local.secret_client_overrides[name].client_secret_key, null), "${name}_client_secret")
+    }
+  }
+  secret_client_values = merge([
     for name, client in aws_cognito_user_pool_client.this : merge(
-      {
-        (try(local.secret_client_key_overrides[name].client_id_key, null) != null ? local.secret_client_key_overrides[name].client_id_key : "${name}_client_id") = client.id
-      },
-      client.generate_secret ? {
-        (try(local.secret_client_key_overrides[name].client_secret_key, null) != null ? local.secret_client_key_overrides[name].client_secret_key : "${name}_client_secret") = client.client_secret
-      } : {}
+      { (local.secret_client_keys[name].id_key) = client.id },
+      client.generate_secret ? { (local.secret_client_keys[name].secret_key) = client.client_secret } : {}
     )
-  ]...) : {}
+  ]...)
 
   secret_payload = local.secret_enabled ? merge(
     {
-      (local.secret_user_pool_id_key) = aws_cognito_user_pool.this.id
-      (local.secret_region_key)       = data.aws_region.current.name
+      (local.secret_pool_id_key) = aws_cognito_user_pool.this.id
+      (local.secret_region_key)  = data.aws_region.current.name
     },
     local.secret_client_values,
-    try(var.cognito.secret.additional_values, {})
+    try(local.secret_cfg.additional_values, {})
   ) : {}
 }
 
@@ -358,25 +361,12 @@ resource "aws_cognito_identity_pool" "this" {
 }
 
 #--------------------------------------------------------------------
-# Secrets Manager mirror (optional) - see var.cognito.secret
-#
-# Like the RDS module's aws_secretsmanager_secret.rds_credentials (which
-# only pulls from the fully-created aws_db_instance.instance[0]), this is
-# split into the secret container + a secret_version that holds the actual
-# payload. The payload itself already forces correct ordering for the pool
-# and clients, since it reads their real, post-create attributes
-# (aws_cognito_user_pool.this.id, aws_cognito_user_pool_client.this[*].id).
-# The explicit depends_on below goes further: it holds both the secret and
-# its version until every other Cognito resource in this module - resource
-# servers, identity providers, the hosted UI domain, user groups, and
-# Lambda trigger permissions - has finished too, even though none of those
-# feed the payload directly. That guarantees the secret is always the last
-# thing this module creates, not just "as soon as the pool/clients exist."
+# Secrets Manager 
 #--------------------------------------------------------------------
 resource "aws_secretsmanager_secret" "this" {
   count = local.secret_enabled ? 1 : 0
 
-  name                    = local.secret_name
+  name_prefix             = local.secret_name
   description             = coalesce(try(var.cognito.secret.description, null), "Cognito user pool config for ${local.user_pool_name}")
   kms_key_id              = try(var.cognito.secret.kms_key_id, null)
   recovery_window_in_days = try(var.cognito.secret.recovery_window_in_days, 30)

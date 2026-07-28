@@ -12,7 +12,6 @@ This Terraform module creates an AWS Cognito User Pool along with its supporting
 - Optional user groups
 - Optional identity providers for federation (Google, Facebook, Login with Amazon, Sign in with Apple, SAML, OIDC)
 - Optional Identity Pool with IAM role attachment for authenticated/unauthenticated access
-- Optional mirror of the pool ID, region, and each client's ID/secret into a single AWS Secrets Manager secret, with configurable JSON key names
 
 ## Usage
 
@@ -166,48 +165,6 @@ cognito = {
 
 **HIPAA note:** Cognito is on AWS's list of HIPAA-eligible services, but eligibility isn't the same as compliance. If this app will handle PHI, you need a signed AWS Business Associate Addendum (BAA) on the account, should avoid putting PHI directly into Cognito attributes (which end up in JWT claims), and should pair this with CloudTrail logging and your org's usual HIPAA controls. Confirm the specifics with your compliance/legal team rather than relying on this module alone.
 
-## Mirroring Config to Secrets Manager
-
-Most consumers of this module need to hand `user_pool_id` / a client's `id` / the region to a running app somehow (env vars, a Kubernetes Secret, etc.). Instead of scraping several `terraform output`s by hand, set `cognito.secret.create = true` and the module writes them into one Secrets Manager secret as JSON right after the pool/client are created:
-
-```hcl
-cognito = {
-  name = "my-app-users"
-  # ... pool/client config as above ...
-
-  clients = [
-    { name = "web-app", generate_secret = false }
-  ]
-
-  secret = {
-    create = true
-    name   = "my-app/cognito" # defaults to "<user_pool_name>/cognito" if omitted
-
-    # Rename the default JSON keys to whatever your app expects.
-    user_pool_id_key = "VITE_COGNITO_USER_POOL_ID"
-    region_key        = "VITE_COGNITO_REGION"
-    clients = {
-      "web-app" = { client_id_key = "VITE_COGNITO_CLIENT_ID" }
-    }
-
-    # Anything else your app needs alongside the auth values.
-    additional_values = {
-      VITE_API_BASE_URL = "https://api.example.com"
-    }
-  }
-}
-```
-
-Without `user_pool_id_key` / `region_key` / per-client key overrides, the secret uses generic keys: `user_pool_id`, `region`, and `"<client_name>_client_id"` (plus `"<client_name>_client_secret"` for clients with `generate_secret = true`). Every configured client is included by default - list a client under `secret.clients` only if you want to rename its keys.
-
-Read it back with:
-
-```bash
-aws secretsmanager get-secret-value --secret-id "$(terraform output -raw secret_name)" --query SecretString --output text
-```
-
-`recovery_window_in_days` defaults to AWS's standard 30; set it to `0` in dev if you want `terraform destroy` to delete the secret immediately instead of scheduling it.
-
 ## Federated Identity Provider Example
 
 ```hcl
@@ -261,7 +218,6 @@ identity_providers = [
 | user_groups                   | List of user pool groups                                                          | list(object) | []               | no       |
 | identity_providers            | List of federated identity providers                                              | list(object) | []               | no       |
 | identity_pool                 | Optional Identity Pool configuration                                              | object       | null             | no       |
-| secret                        | Optional Secrets Manager mirror of the pool ID, region, and client ID(s)/secret(s) | object       | null             | no       |
 | tags                          | Additional tags merged with`common.tags`                                        | map(string)  | {}               | no       |
 
 See `variables.tf` for the full nested schema and per-field defaults.
@@ -282,8 +238,6 @@ See `variables.tf` for the full nested schema and per-field defaults.
 | identity_providers                       | Map of identity provider name to provider name         |
 | identity_pool_id                         | ID of the Identity Pool, if created                    |
 | identity_pool_arn                        | ARN of the Identity Pool, if created                   |
-| secret_name                              | Name of the Secrets Manager secret, if created (`cognito.secret.create = true`) |
-| secret_arn                               | ARN of the Secrets Manager secret, if created           |
 
 ## Requirements
 
@@ -303,5 +257,4 @@ See `variables.tf` for the full nested schema and per-field defaults.
 - `alias_attributes` and `username_attributes` cannot both be set — choose one strategy.
 - When `mfa_configuration` is `ON` or `OPTIONAL`, configure `sms_configuration` and/or set `software_token_mfa_enabled = true` so users have an MFA method available.
 - A custom hosted UI domain requires an ACM certificate issued in `us-east-1`, regardless of the user pool's region.
-- `clients[].client_secret` and the `clients` output are marked sensitive; reference them via `terraform output -json clients`, or set `cognito.secret.create = true` to have the module write them into Secrets Manager itself.
-- The Secrets Manager mirror (`cognito.secret`) is all-or-nothing per client: a client is included with default key names unless you override its keys under `secret.clients`; there's no per-client opt-out short of using `additional_values`/reading the `clients` output directly instead.
+- `clients[].client_secret` and the `clients` output are marked sensitive; reference them via `terraform output -json clients`.
