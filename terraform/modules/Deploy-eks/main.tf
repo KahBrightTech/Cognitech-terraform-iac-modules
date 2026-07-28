@@ -47,10 +47,19 @@ locals {
     effect   = "NoSchedule"
     }
   ]
+  # Tolerates literally every taint, not just workload-type=system. This has
+  # to be a true catch-all: it's used by the CNI and kube-proxy DaemonSets
+  # (among others) below, and those are what make a node Ready in the first
+  # place. A brand-new or not-yet-initialized node carries taints like
+  # node.kubernetes.io/not-ready, node.cloudprovider.kubernetes.io/uninitialized,
+  # etc. - if the CNI pod doesn't tolerate those, it can never schedule,
+  # the node can never report its network as ready, and the not-ready taint
+  # never clears: a permanent chicken-and-egg deadlock. Omitting both `key`
+  # and `effect` (only `operator = "Exists"`) is the standard Kubernetes
+  # idiom for "tolerate everything" and matches what AWS's own default
+  # vpc-cni/kube-proxy manifests ship with.
   all_workload_node_tolerations = [{
-    key      = "workload-type"
     operator = "Exists"
-    effect   = "NoSchedule"
   }]
 
   karpenter_enabled = var.eks.eks_addons != null && var.eks.eks_addons.enable_karpenter && var.eks.create_node_group
