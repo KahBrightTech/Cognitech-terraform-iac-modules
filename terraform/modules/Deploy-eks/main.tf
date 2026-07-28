@@ -88,7 +88,7 @@ locals {
       detail-type = ["AWS Health Event"]
     }
   }
-  karpenter_manifests_yaml = local.karpenter_enabled && local.karpenter.nodepool_manifest_file != null ? replace(
+  karpenter_manifests_yaml = local.karpenter_enabled && try(local.karpenter.nodepool_manifest_file, null) != null ? replace(
     replace(
       replace(
         replace(
