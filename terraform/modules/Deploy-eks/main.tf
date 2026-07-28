@@ -688,7 +688,12 @@ resource "aws_eks_addon" "cloudwatch_observability" {
   addon_version               = var.eks.eks_addons.cloudwatch_observability_version
   resolve_conflicts_on_update = "PRESERVE"
   service_account_role_arn    = var.eks.eks_addons.cloudwatch_observability_role_key != null ? module.iam_roles[var.eks.eks_addons.cloudwatch_observability_role_key].iam_role_arn : var.eks.eks_addons.cloudwatch_observability_role_arn
-  configuration_values        = jsonencode({ tolerations = local.all_workload_node_tolerations })
+  configuration_values = jsonencode({
+    tolerations = local.all_workload_node_tolerations
+    manager = {
+      tolerations = local.all_workload_node_tolerations
+    }
+  })
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-cloudwatch-observability-addon"
@@ -825,6 +830,12 @@ resource "helm_release" "kube_prometheus_stack" {
       prometheusOperator = {
         nodeSelector = local.system_node_selector
         tolerations  = local.system_tolerations
+        admissionWebhooks = {
+          patch = {
+            nodeSelector = local.system_node_selector
+            tolerations  = local.system_tolerations
+          }
+        }
       }
       alertmanager = {
         alertmanagerSpec = {
