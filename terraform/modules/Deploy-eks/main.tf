@@ -47,17 +47,6 @@ locals {
     effect   = "NoSchedule"
     }
   ]
-  # Tolerates literally every taint, not just workload-type=system. This has
-  # to be a true catch-all: it's used by the CNI and kube-proxy DaemonSets
-  # (among others) below, and those are what make a node Ready in the first
-  # place. A brand-new or not-yet-initialized node carries taints like
-  # node.kubernetes.io/not-ready, node.cloudprovider.kubernetes.io/uninitialized,
-  # etc. - if the CNI pod doesn't tolerate those, it can never schedule,
-  # the node can never report its network as ready, and the not-ready taint
-  # never clears: a permanent chicken-and-egg deadlock. Omitting both `key`
-  # and `effect` (only `operator = "Exists"`) is the standard Kubernetes
-  # idiom for "tolerate everything" and matches what AWS's own default
-  # vpc-cni/kube-proxy manifests ship with.
   all_workload_node_tolerations = [{
     operator = "Exists"
   }]
@@ -231,7 +220,12 @@ resource "aws_eks_addon" "kube_proxy" {
   addon_name                  = "kube-proxy"
   addon_version               = var.eks.eks_addons.kube_proxy_version
   resolve_conflicts_on_update = "PRESERVE"
-  configuration_values        = jsonencode({ tolerations = local.all_workload_node_tolerations })
+  # No configuration_values here on purpose: the kube-proxy addon's
+  # configurationValues JSON schema doesn't accept a "tolerations" key at
+  # all (AWS rejects it with a schema validation error on create, unlike
+  # vpc-cni, which does support it). kube-proxy's own default manifest
+  # already tolerates every taint unconditionally, so it needs no override
+  # to run on every node - including the tainted system node group.
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key}-kube-proxy-addon"

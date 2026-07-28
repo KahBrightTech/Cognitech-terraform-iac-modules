@@ -12,9 +12,6 @@ locals {
   resource_servers_map   = { for rs in var.cognito.resource_servers : rs.identifier => rs }
   user_groups_map        = { for g in var.cognito.user_groups : g.name => g }
   identity_providers_map = { for idp in var.cognito.identity_providers : idp.provider_name => idp }
-
-  # Flatten the lambda_config object into a map of {TriggerName = function_arn} for any trigger that is set,
-  # so that Cognito can be granted invoke permission on each configured function.
   lambda_triggers = var.cognito.lambda_config == null ? {} : {
     for k, v in {
       CreateAuthChallenge         = var.cognito.lambda_config.create_auth_challenge
@@ -41,10 +38,6 @@ locals {
   secret_user_pool_id_key     = try(var.cognito.secret.user_pool_id_key, "user_pool_id")
   secret_region_key           = try(var.cognito.secret.region_key, "region")
   secret_client_key_overrides = try(var.cognito.secret.clients, {})
-
-  # One map per client with its ID (and secret, if it has one) under either
-  # the caller's override key or the "<name>_client_id"/"<name>_client_secret"
-  # default, then merged into a single flat map for the secret payload.
   secret_client_values = local.secret_enabled ? merge([
     for name, client in aws_cognito_user_pool_client.this : merge(
       {
@@ -366,16 +359,42 @@ resource "aws_cognito_identity_pool" "this" {
 
 #--------------------------------------------------------------------
 # Secrets Manager mirror (optional) - see var.cognito.secret
+#
+# Like the RDS module's aws_secretsmanager_secret.rds_credentials (which
+# only pulls from the fully-created aws_db_instance.instance[0]), this is
+# split into the secret container + a secret_version that holds the actual
+# payload. The payload itself already forces correct ordering for the pool
+# and clients, since it reads their real, post-create attributes
+# (aws_cognito_user_pool.this.id, aws_cognito_user_pool_client.this[*].id).
+# The explicit depends_on below goes further: it holds both the secret and
+# its version until every other Cognito resource in this module - resource
+# servers, identity providers, the hosted UI domain, user groups, and
+# Lambda trigger permissions - has finished too, even though none of those
+# feed the payload directly. That guarantees the secret is always the last
+# thing this module creates, not just "as soon as the pool/clients exist."
 #--------------------------------------------------------------------
 resource "aws_secretsmanager_secret" "this" {
   count = local.secret_enabled ? 1 : 0
 
   name                    = local.secret_name
   description             = coalesce(try(var.cognito.secret.description, null), "Cognito user pool config for ${local.user_pool_name}")
+  kms_key_id              = try(var.cognito.secret.kms_key_id, null)
   recovery_window_in_days = try(var.cognito.secret.recovery_window_in_days, 30)
   tags = merge(var.common.tags, var.cognito.tags, {
     "Name" = local.secret_name
   })
+
+  depends_on = [
+    aws_cognito_user_pool.this,
+    aws_cognito_user_pool_client.this,
+    aws_cognito_resource_server.this,
+    aws_cognito_identity_provider.this,
+    aws_cognito_user_pool_domain.this,
+    aws_cognito_user_group.this,
+    aws_lambda_permission.triggers,
+    aws_cognito_identity_pool.this,
+    aws_cognito_identity_pool_roles_attachment.this,
+  ]
 }
 
 resource "aws_secretsmanager_secret_version" "this" {
@@ -383,6 +402,18 @@ resource "aws_secretsmanager_secret_version" "this" {
 
   secret_id     = aws_secretsmanager_secret.this[0].id
   secret_string = jsonencode(local.secret_payload)
+
+  depends_on = [
+    aws_cognito_user_pool.this,
+    aws_cognito_user_pool_client.this,
+    aws_cognito_resource_server.this,
+    aws_cognito_identity_provider.this,
+    aws_cognito_user_pool_domain.this,
+    aws_cognito_user_group.this,
+    aws_lambda_permission.triggers,
+    aws_cognito_identity_pool.this,
+    aws_cognito_identity_pool_roles_attachment.this,
+  ]
 }
 
 resource "aws_cognito_identity_pool_roles_attachment" "this" {

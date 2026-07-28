@@ -143,16 +143,18 @@ variable "cognito" {
       idp_identifiers   = optional(list(string), [])
     })))
     secret = optional(object({
-      create           = optional(bool, false)
-      name             = optional(string, null)
-      description      = optional(string, null)
+      create      = optional(bool, false)
+      name        = optional(string, null) 
+      description = optional(string, null) 
       user_pool_id_key = optional(string, "user_pool_id")
-      region_key       = optional(string, "region")
+      region_key = optional(string, "region")
       clients = optional(map(object({
-        client_id_key     = optional(string, null)
+        client_id_key     = optional(string, null) 
         client_secret_key = optional(string, null)
       })), {})
       additional_values = optional(map(string), {})
+      kms_key_id              = optional(string, null) 
+      recovery_window_in_days = optional(number, 30)  
     }))
     identity_pool = optional(object({
       create                           = optional(bool, false)
