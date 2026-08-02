@@ -12,15 +12,13 @@ variable "common" {
 variable "cognito" {
   description = "AWS Cognito user pool, clients, domain, and identity pool configuration."
   type = object({
-    name = string # Base name for the user pool (will be prefixed with account_name-region_prefix)
-
+    name                       = string                       # Base name for the user pool (will be prefixed with account_name-region_prefix)
     deletion_protection        = optional(string, "INACTIVE") # ACTIVE or INACTIVE
     alias_attributes           = optional(list(string), null) # e.g. ["email", "phone_number", "preferred_username"] - mutually exclusive with username_attributes
     username_attributes        = optional(list(string), null) # e.g. ["email"] or ["phone_number"] - mutually exclusive with alias_attributes
     auto_verified_attributes   = optional(list(string), ["email"])
     mfa_configuration          = optional(string, "OFF") # OFF, ON, OPTIONAL
     software_token_mfa_enabled = optional(bool, false)
-
     username_configuration = optional(object({
       case_sensitive = optional(bool, false)
     }))
