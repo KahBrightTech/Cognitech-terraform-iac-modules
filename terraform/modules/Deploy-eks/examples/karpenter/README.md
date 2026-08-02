@@ -6,6 +6,8 @@ This example deploys an EKS cluster with a minimal static node group (just enoug
 
 Karpenter watches for unschedulable pods and launches right-sized EC2 instances directly (no Auto Scaling Group in the loop), consolidating/terminating underutilized nodes as workloads shrink. It replaces Cluster Autoscaler - **enable one or the other, not both** (`eks_addons.enable_karpenter` and `eks_addons.enable_cluster_autoscaler` are mutually exclusive; the module will fail `terraform plan` if both are `true`, since they'd both try to manage EC2 capacity for the same pending pods).
 
+Use a Karpenter chart version that matches your Kubernetes version. For Kubernetes 1.36, Karpenter 1.1.1 is too old and the controller will panic on startup; this example pins `chart_version = "1.13.0"` as the new baseline and callers should override it deliberately if they run a different supported version.
+
 Unlike Cluster Autoscaler, Karpenter needs more than a Helm release:
 
 - A **node IAM role** that trusts `ec2.amazonaws.com` (not the OIDC provider like every other addon's role in this module) - the instances Karpenter launches assume this.
@@ -88,7 +90,7 @@ eks_addons = {
   enable_karpenter = true
 
   karpenter = {
-    chart_version           = "1.1.1"
+    chart_version           = "1.13.0"
     controller_role_key     = "karpenter_controller" # references iam_roles below
     node_role_key           = "karpenter_node"        # references iam_roles below
     interruption_queue_name = "my-cluster"

@@ -14,10 +14,10 @@ terraform {
 }
 
 locals {
-  common_vars = read_terragrunt_config(find_in_parent_folders("common.hcl"))
-  common      = local.common_vars.locals.common
-  account_id  = get_aws_account_id()
-  region      = get_aws_region()
+  common_vars  = read_terragrunt_config(find_in_parent_folders("common.hcl"))
+  common       = local.common_vars.locals.common
+  account_id   = get_aws_account_id()
+  region       = get_aws_region()
   cluster_name = "my-cluster" # must match what you substitute into karpenter-controller-policy.json
 }
 
@@ -34,13 +34,13 @@ inputs = {
     version                 = "1.32"
     oidc_thumbprint         = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
 
-    create_node_group        = true # required - hosts the Karpenter controller pod
-    create_service_accounts  = true # required - Karpenter and its node role both need IRSA
+    create_node_group       = true # required - hosts the Karpenter controller pod
+    create_service_accounts = true # required - Karpenter and its node role both need IRSA
 
     eks_addons = {
-      enable_vpc_cni     = true
-      enable_kube_proxy  = true
-      enable_coredns     = true
+      enable_vpc_cni            = true
+      enable_kube_proxy         = true
+      enable_coredns            = true
       enable_pod_identity_agent = true
 
       # Karpenter - NOT enable_cluster_autoscaler; the module will fail plan
@@ -55,7 +55,7 @@ inputs = {
       # scheduler can only place them on Karpenter-provisioned nodes.
 
       karpenter = {
-        chart_version           = "1.1.1"
+        chart_version           = "1.13.0"
         controller_role_key     = "karpenter_controller"
         node_role_key           = "karpenter_node"
         interruption_queue_name = local.cluster_name
@@ -80,10 +80,10 @@ inputs = {
         }
       },
       {
-        key                   = "karpenter_node"
-        name                  = "karpenter-node-role"
-        assume_role_policy    = "${get_terragrunt_dir()}/karpenter-node-trust-policy.json"
-        create_custom_policy  = false
+        key                  = "karpenter_node"
+        name                 = "karpenter-node-role"
+        assume_role_policy   = "${get_terragrunt_dir()}/karpenter-node-trust-policy.json"
+        create_custom_policy = false
         managed_policy_arns = [
           "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
           "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
@@ -107,7 +107,7 @@ inputs = {
 
         vpc_security_group_keys = ["eks_cluster_sg_id"]
 
-        ami_config = {}
+        ami_config       = {}
         volume_size      = 30
         root_device_name = "/dev/xvda"
       }
@@ -115,10 +115,10 @@ inputs = {
 
     eks_node_groups = [
       {
-        key                  = "system"
-        node_group_name      = "system"
-        launch_template_key  = "system"
-        subnet_ids           = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
+        key                 = "system"
+        node_group_name     = "system"
+        launch_template_key = "system"
+        subnet_ids          = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
 
         desired_size = 1
         min_size     = 1

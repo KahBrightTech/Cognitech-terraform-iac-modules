@@ -146,7 +146,7 @@ variable "eks" {
       cluster_autoscaler_role_arn                     = optional(string)
       cluster_autoscaler_role_key                     = optional(string)
       karpenter = optional(object({
-        chart_version           = optional(string, "1.1.1")
+        chart_version           = optional(string, "1.13.0")
         namespace               = optional(string, "kube-system")
         controller_role_key     = optional(string)
         controller_role_arn     = optional(string)
