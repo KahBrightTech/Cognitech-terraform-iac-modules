@@ -49,16 +49,16 @@ locals {
   secret_payload = local.secret_enabled ? {
     for key, value in merge(
       {
-        VITE_COGNITO_USER_POOL_ID  = aws_cognito_user_pool.this.id
-        VITE_COGNITO_REGION        = data.aws_region.current.region
+        COGNITO_USER_POOL_ID       = aws_cognito_user_pool.this.id
+        COGNITO_REGION             = data.aws_region.current.region
         COGNITO_USER_POOL_ARN      = aws_cognito_user_pool.this.arn
         COGNITO_USER_POOL_NAME     = aws_cognito_user_pool.this.name
         COGNITO_USER_POOL_ENDPOINT = aws_cognito_user_pool.this.endpoint
       },
       local.secret_primary_client_name != null ? {
-        COGNITO_PRIMARY_CLIENT_NAME = local.secret_primary_client_name
-        VITE_COGNITO_CLIENT_ID      = try(aws_cognito_user_pool_client.this[local.secret_primary_client_name].id, null)
-        VITE_COGNITO_CLIENT_SECRET  = try(aws_cognito_user_pool_client.this[local.secret_primary_client_name].client_secret, null)
+        COGNITO_PRIMARY_CLIENT_NAME   = local.secret_primary_client_name
+        COGNITO_PRIMARY_CLIENT_ID     = try(aws_cognito_user_pool_client.this[local.secret_primary_client_name].id, null)
+        COGNITO_PRIMARY_CLIENT_SECRET = try(aws_cognito_user_pool_client.this[local.secret_primary_client_name].client_secret, null)
       } : {},
       try(aws_cognito_user_pool_domain.this[0].domain, null) != null ? {
         COGNITO_DOMAIN = aws_cognito_user_pool_domain.this[0].domain
