@@ -8,10 +8,16 @@ locals {
   name_prefix    = "${var.common.account_name}-${var.common.region_prefix}"
   user_pool_name = "${local.name_prefix}-${var.cognito.name}"
 
-  clients_map            = { for c in var.cognito.clients : c.name => c }
-  resource_servers_map   = { for rs in var.cognito.resource_servers : rs.identifier => rs }
-  user_groups_map        = { for g in var.cognito.user_groups : g.name => g }
-  identity_providers_map = { for idp in var.cognito.identity_providers : idp.provider_name => idp }
+  clients            = coalesce(var.cognito.clients, [])
+  resource_servers   = coalesce(var.cognito.resource_servers, [])
+  user_groups        = coalesce(var.cognito.user_groups, [])
+  identity_providers = coalesce(var.cognito.identity_providers, [])
+  schema_attributes  = coalesce(var.cognito.schema_attributes, [])
+
+  clients_map            = { for c in local.clients : c.name => c }
+  resource_servers_map   = { for rs in local.resource_servers : rs.identifier => rs }
+  user_groups_map        = { for g in local.user_groups : g.name => g }
+  identity_providers_map = { for idp in local.identity_providers : idp.provider_name => idp }
   lambda_triggers = var.cognito.lambda_config == null ? {} : {
     for k, v in {
       CreateAuthChallenge         = var.cognito.lambda_config.create_auth_challenge
@@ -27,7 +33,7 @@ locals {
     } : k => v if v != null
   }
 
-  identity_pool_enabled = var.cognito.identity_pool != null && var.cognito.identity_pool.create
+  identity_pool_enabled = try(var.cognito.identity_pool.create, false)
 
   #--------------------------------------------------------------------
   # Secrets Manager mirror (optional) - see var.cognito.secret
@@ -37,7 +43,7 @@ locals {
   secret_name    = local.secret_enabled ? coalesce(try(local.secret_cfg.name, null), "${local.user_pool_name}/cognito") : null
   secret_primary_client_name = local.secret_enabled ? coalesce(
     try(local.secret_cfg.primary_client_name, null),
-    try(var.cognito.clients[0].name, null)
+    try(local.clients[0].name, null)
   ) : null
 
   secret_payload = local.secret_enabled ? {
@@ -156,7 +162,7 @@ resource "aws_cognito_user_pool" "this" {
   }
 
   dynamic "schema" {
-    for_each = var.cognito.schema_attributes
+    for_each = local.schema_attributes
     content {
       name                     = schema.value.name
       attribute_data_type      = schema.value.attribute_data_type
@@ -338,18 +344,18 @@ resource "aws_cognito_user_group" "this" {
 resource "aws_cognito_identity_pool" "this" {
   count = local.identity_pool_enabled ? 1 : 0
 
-  identity_pool_name               = coalesce(var.cognito.identity_pool.name, "${local.user_pool_name}-identity-pool")
-  allow_unauthenticated_identities = var.cognito.identity_pool.allow_unauthenticated_identities
-  allow_classic_flow               = var.cognito.identity_pool.allow_classic_flow
+  identity_pool_name               = coalesce(try(var.cognito.identity_pool.name, null), "${local.user_pool_name}-identity-pool")
+  allow_unauthenticated_identities = try(var.cognito.identity_pool.allow_unauthenticated_identities, false)
+  allow_classic_flow               = try(var.cognito.identity_pool.allow_classic_flow, false)
 
   dynamic "cognito_identity_providers" {
     for_each = concat(
       [for name, c in aws_cognito_user_pool_client.this : {
         client_id               = c.id
         provider_name           = aws_cognito_user_pool.this.endpoint
-        server_side_token_check = var.cognito.identity_pool.server_side_token_check
+        server_side_token_check = try(var.cognito.identity_pool.server_side_token_check, false)
       }],
-      var.cognito.identity_pool.additional_cognito_providers
+      try(var.cognito.identity_pool.additional_cognito_providers, [])
     )
     content {
       client_id               = cognito_identity_providers.value.client_id
@@ -359,7 +365,7 @@ resource "aws_cognito_identity_pool" "this" {
   }
 
   tags = merge(var.common.tags, var.cognito.tags, {
-    "Name" = coalesce(var.cognito.identity_pool.name, "${local.user_pool_name}-identity-pool")
+    "Name" = coalesce(try(var.cognito.identity_pool.name, null), "${local.user_pool_name}-identity-pool")
   })
 }
 
@@ -411,14 +417,14 @@ resource "aws_secretsmanager_secret_version" "this" {
 
 resource "aws_cognito_identity_pool_roles_attachment" "this" {
   count = local.identity_pool_enabled && (
-    var.cognito.identity_pool.authenticated_role_arn != null ||
-    var.cognito.identity_pool.unauthenticated_role_arn != null
+    try(var.cognito.identity_pool.authenticated_role_arn, null) != null ||
+    try(var.cognito.identity_pool.unauthenticated_role_arn, null) != null
   ) ? 1 : 0
 
   identity_pool_id = aws_cognito_identity_pool.this[0].id
 
   roles = merge(
-    var.cognito.identity_pool.authenticated_role_arn != null ? { "authenticated" = var.cognito.identity_pool.authenticated_role_arn } : {},
-    var.cognito.identity_pool.unauthenticated_role_arn != null ? { "unauthenticated" = var.cognito.identity_pool.unauthenticated_role_arn } : {}
+    try(var.cognito.identity_pool.authenticated_role_arn, null) != null ? { "authenticated" = var.cognito.identity_pool.authenticated_role_arn } : {},
+    try(var.cognito.identity_pool.unauthenticated_role_arn, null) != null ? { "unauthenticated" = var.cognito.identity_pool.unauthenticated_role_arn } : {}
   )
 }
