@@ -758,15 +758,16 @@ resource "helm_release" "fluent_bit" {
 # Grafana + Prometheus (Helm) - Tier 4: Observability
 #--------------------------------------------------------------------
 resource "helm_release" "kube_prometheus_stack" {
-  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_kube_prometheus_stack && var.eks.create_node_group ? 1 : 0
-  name       = "kube-prometheus-stack"
-  namespace  = var.eks.eks_addons.grafana_namespace != null ? var.eks.eks_addons.grafana_namespace : "monitoring"
-  repository = "https://prometheus-community.github.io/helm-charts"
-  chart      = "kube-prometheus-stack"
-  version    = var.eks.eks_addons.kube_prometheus_stack_version
-  timeout    = var.eks.eks_addons.kube_prometheus_stack_timeout != null ? var.eks.eks_addons.kube_prometheus_stack_timeout : 900
-  wait       = true
-  atomic     = true
+  count           = var.eks.eks_addons != null && var.eks.eks_addons.enable_kube_prometheus_stack && var.eks.create_node_group ? 1 : 0
+  name            = "kube-prometheus-stack"
+  namespace       = var.eks.eks_addons.grafana_namespace != null ? var.eks.eks_addons.grafana_namespace : "monitoring"
+  repository      = "https://prometheus-community.github.io/helm-charts"
+  chart           = "kube-prometheus-stack"
+  version         = var.eks.eks_addons.kube_prometheus_stack_version
+  timeout         = var.eks.eks_addons.kube_prometheus_stack_timeout != null ? var.eks.eks_addons.kube_prometheus_stack_timeout : 900
+  wait            = true
+  atomic          = true
+  upgrade_install = var.eks.eks_addons.kube_prometheus_stack_upgrade_install
 
   max_history      = 5
   create_namespace = true
