@@ -831,11 +831,19 @@ resource "helm_release" "kube_prometheus_stack" {
         nodeSelector = local.system_node_selector
         tolerations  = local.system_tolerations
         admissionWebhooks = {
+          deployment = {
+            nodeSelector = local.system_node_selector
+            tolerations  = local.system_tolerations
+          }
           patch = {
             nodeSelector = local.system_node_selector
             tolerations  = local.system_tolerations
           }
         }
+      }
+      "kube-state-metrics" = {
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
       }
       alertmanager = {
         alertmanagerSpec = {

@@ -62,12 +62,12 @@ output "identity_providers" {
 
 output "secret_name" {
   description = "Name of the Secrets Manager secret holding the pool ID, region, and client ID(s)/secret(s)"
-  value       = aws_secretsmanager_secret.this.name
+  value       = try(aws_secretsmanager_secret.this[0].name, null)
 }
 
 output "secret_arn" {
   description = "ARN of the Secrets Manager secret holding the pool ID, region, and client ID(s)/secret(s)"
-  value       = aws_secretsmanager_secret.this.arn
+  value       = try(aws_secretsmanager_secret.this[0].arn, null)
 }
 
 output "identity_pool_id" {

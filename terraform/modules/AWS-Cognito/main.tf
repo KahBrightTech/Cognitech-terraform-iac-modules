@@ -35,31 +35,34 @@ locals {
   secret_cfg     = var.cognito.secret
   secret_enabled = try(local.secret_cfg.create, false)
   secret_name    = local.secret_enabled ? coalesce(try(local.secret_cfg.name, null), "${local.user_pool_name}/cognito") : null
+  secret_primary_client_name = local.secret_enabled ? coalesce(
+    try(local.secret_cfg.primary_client_name, null),
+    try(var.cognito.clients[0].name, null)
+  ) : null
 
-  secret_pool_id_key      = coalesce(try(local.secret_cfg.user_pool_id_key, null), "user_pool_id")
-  secret_region_key       = coalesce(try(local.secret_cfg.region_key, null), "region")
-  secret_client_overrides = try(local.secret_cfg.clients, {})
-  secret_client_keys = {
-    for name, client in aws_cognito_user_pool_client.this : name => {
-      id_key     = coalesce(try(local.secret_client_overrides[name].client_id_key, null), "${name}_client_id")
-      secret_key = coalesce(try(local.secret_client_overrides[name].client_secret_key, null), "${name}_client_secret")
-    }
-  }
-  secret_client_values = merge([
-    for name, client in aws_cognito_user_pool_client.this : merge(
-      { (local.secret_client_keys[name].id_key) = client.id },
-      client.generate_secret ? { (local.secret_client_keys[name].secret_key) = client.client_secret } : {}
-    )
-  ]...)
-
-  secret_payload = local.secret_enabled ? merge(
-    {
-      (local.secret_pool_id_key) = aws_cognito_user_pool.this.id
-      (local.secret_region_key)  = data.aws_region.current.name
-    },
-    local.secret_client_values,
-    try(local.secret_cfg.additional_values, {})
-  ) : {}
+  secret_payload = local.secret_enabled ? {
+    for key, value in merge(
+      {
+        VITE_COGNITO_USER_POOL_ID  = aws_cognito_user_pool.this.id
+        VITE_COGNITO_REGION        = data.aws_region.current.region
+        COGNITO_USER_POOL_ARN      = aws_cognito_user_pool.this.arn
+        COGNITO_USER_POOL_NAME     = aws_cognito_user_pool.this.name
+        COGNITO_USER_POOL_ENDPOINT = aws_cognito_user_pool.this.endpoint
+      },
+      local.secret_primary_client_name != null ? {
+        COGNITO_PRIMARY_CLIENT_NAME = local.secret_primary_client_name
+        VITE_COGNITO_CLIENT_ID      = try(aws_cognito_user_pool_client.this[local.secret_primary_client_name].id, null)
+        VITE_COGNITO_CLIENT_SECRET  = try(aws_cognito_user_pool_client.this[local.secret_primary_client_name].client_secret, null)
+      } : {},
+      try(aws_cognito_user_pool_domain.this[0].domain, null) != null ? {
+        COGNITO_DOMAIN = aws_cognito_user_pool_domain.this[0].domain
+      } : {},
+      local.identity_pool_enabled ? {
+        COGNITO_IDENTITY_POOL_ID = try(aws_cognito_identity_pool.this[0].id, null)
+      } : {},
+      try(local.secret_cfg.additional_values, {})
+    ) : key => value if value != null
+  } : {}
 }
 
 #--------------------------------------------------------------------

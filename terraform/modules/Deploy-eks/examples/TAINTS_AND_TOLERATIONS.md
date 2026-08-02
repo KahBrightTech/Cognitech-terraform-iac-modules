@@ -45,6 +45,9 @@ toleration for this taint at all, so the scheduler places them only on untainted
 | Grafana | Yes | Yes | No |
 | Prometheus | Yes | Yes | No |
 | Prometheus Operator | Yes | Yes | No |
+| Prometheus Operator webhook patch job | Yes | Yes | No |
+| Prometheus Operator webhook deployment | Yes | Yes | No |
+| kube-state-metrics | Yes | Yes | No |
 | Prometheus node exporter | No | All-node toleration | Yes |
 | Alertmanager | Yes | Yes | No |
 

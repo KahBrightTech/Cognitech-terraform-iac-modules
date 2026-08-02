@@ -12,6 +12,7 @@ This Terraform module creates an AWS Cognito User Pool along with its supporting
 - Optional user groups
 - Optional identity providers for federation (Google, Facebook, Login with Amazon, Sign in with Apple, SAML, OIDC)
 - Optional Identity Pool with IAM role attachment for authenticated/unauthenticated access
+- Optional AWS Secrets Manager secret with frontend-ready Cognito values
 
 ## Usage
 
@@ -93,9 +94,34 @@ module "cognito" {
       allow_unauthenticated_identities  = false
       authenticated_role_arn            = "arn:aws:iam::123456789012:role/cognito-authenticated-role"
     }
+
+    secret = {
+      create              = true
+      primary_client_name = "web-app"
+    }
   }
 }
 ```
+
+## Secret Format
+
+When `cognito.secret.create = true`, the module stores a JSON payload in AWS Secrets Manager similar to:
+
+```json
+{
+  "VITE_COGNITO_USER_POOL_ID": "us-east-1_abc123xyz",
+  "VITE_COGNITO_CLIENT_ID": "6exampleclientid",
+  "VITE_COGNITO_CLIENT_SECRET": "generated-client-secret-if-enabled",
+  "VITE_COGNITO_REGION": "us-east-1",
+  "COGNITO_PRIMARY_CLIENT_NAME": "web-app",
+  "COGNITO_USER_POOL_ARN": "arn:aws:cognito-idp:us-east-1:123456789012:userpool/us-east-1_abc123xyz",
+  "COGNITO_USER_POOL_NAME": "myaccount-us-east-1-my-app-users",
+  "COGNITO_USER_POOL_ENDPOINT": "cognito-idp.us-east-1.amazonaws.com/us-east-1_abc123xyz",
+  "COGNITO_DOMAIN": "myaccount-my-app"
+}
+```
+
+The `VITE_*` keys are fixed so they can be referenced directly from Kubernetes/Helm secrets like `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, and `VITE_COGNITO_REGION`.
 
 ## Managing User Logins (e.g. a Patient/Provider Healthcare App)
 
@@ -218,6 +244,7 @@ identity_providers = [
 | user_groups                   | List of user pool groups                                                          | list(object) | []               | no       |
 | identity_providers            | List of federated identity providers                                              | list(object) | []               | no       |
 | identity_pool                 | Optional Identity Pool configuration                                              | object       | null             | no       |
+| secret                        | Optional Secrets Manager configuration for frontend/backend Cognito values         | object       | {}               | no       |
 | tags                          | Additional tags merged with`common.tags`                                        | map(string)  | {}               | no       |
 
 See `variables.tf` for the full nested schema and per-field defaults.

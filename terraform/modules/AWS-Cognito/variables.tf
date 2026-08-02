@@ -156,6 +156,15 @@ variable "cognito" {
         server_side_token_check = optional(bool, false)
       })), [])
     }))
+    secret = optional(object({
+      create                  = optional(bool, false)
+      name                    = optional(string, null)
+      description             = optional(string, null)
+      kms_key_id              = optional(string, null)
+      recovery_window_in_days = optional(number, 30)
+      primary_client_name     = optional(string, null)
+      additional_values       = optional(map(string), {})
+    }), {})
 
     tags = optional(map(string), {})
   })
