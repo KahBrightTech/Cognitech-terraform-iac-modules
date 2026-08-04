@@ -197,7 +197,7 @@ resource "aws_eks_addon" "vpc_cni" {
     for k, v in merge(
       { tolerations = local.all_workload_node_tolerations },
       var.eks.eks_addons.enable_prefix_delegation ? {
-        enableNetworkPolicy = "false"
+        enableNetworkPolicy = "true"
         env = {
           ENABLE_PREFIX_DELEGATION = "true"
           WARM_PREFIX_TARGET       = tostring(var.eks.eks_addons.warm_prefix_target)
