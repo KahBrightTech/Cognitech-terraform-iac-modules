@@ -113,6 +113,10 @@ locals {
     ),
     "[[node_role_arn]]", coalesce(local.karpenter_node_role_arn, "")
   ) : null
+  karpenter_manifest_documents = local.karpenter_manifests_yaml != null ? [
+    for document in split("\n---\n", local.karpenter_manifests_yaml) : trimspace(document)
+    if trimspace(document) != ""
+  ] : []
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -613,6 +617,22 @@ resource "helm_release" "karpenter" {
     aws_eks_access_entry.karpenter_node,
     aws_sqs_queue_policy.karpenter_interruption,
     aws_cloudwatch_event_target.karpenter_interruption
+  ]
+}
+
+#--------------------------------------------------------------------
+# Karpenter - NodeClass and NodePool manifests
+#--------------------------------------------------------------------
+resource "kubernetes_manifest" "karpenter_objects" {
+  for_each = {
+    for document in local.karpenter_manifest_documents :
+    "${yamldecode(document).kind}/${yamldecode(document).metadata.name}" => yamldecode(document)
+  }
+
+  manifest = each.value
+
+  depends_on = [
+    helm_release.karpenter
   ]
 }
 
