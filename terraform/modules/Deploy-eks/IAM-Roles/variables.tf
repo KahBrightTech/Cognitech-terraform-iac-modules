@@ -28,6 +28,7 @@ variable "iam_role" {
       description   = optional(string)
       policy        = optional(string)
       path          = optional(string, "/")
+      cluster_name  = optional(string)
       custom_policy = optional(bool, true)
     }))
   })

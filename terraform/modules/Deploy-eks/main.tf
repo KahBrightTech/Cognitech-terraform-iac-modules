@@ -1064,6 +1064,12 @@ module "iam_roles" {
   iam_role = merge(
     each.value,
     {
+      policy = each.value.policy != null ? merge(
+        each.value.policy,
+        {
+          cluster_name = aws_eks_cluster.eks_cluster.name
+        }
+      ) : null
       assume_role_policy = each.value.assume_role_policy != null ? jsonencode(jsondecode(file(each.value.assume_role_policy))) : jsonencode({
         Version = "2012-10-17"
         Statement = [
