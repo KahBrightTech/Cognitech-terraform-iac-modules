@@ -6,6 +6,7 @@ variable "common" {
     account_name     = string
     region_prefix    = string
     account_name_abr = optional(string, "")
+    environment_abr  = optional(string, "")
   })
 }
 

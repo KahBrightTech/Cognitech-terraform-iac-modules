@@ -96,10 +96,13 @@ locals {
             replace(
               replace(
                 replace(
-                  file(local.karpenter.nodepool_manifest_file),
-                  "[[account_number]]", data.aws_caller_identity.current.account_id
+                  replace(
+                    file(local.karpenter.nodepool_manifest_file),
+                    "[[account_number]]", data.aws_caller_identity.current.account_id
+                  ),
+                  "[[account_name]]", var.common.account_name
                 ),
-                "[[account_name]]", var.common.account_name
+                "[[environment_abr]]", var.common.environment_abr
               ),
               "[[account_name_abr]]", var.common.account_name_abr
             ),
