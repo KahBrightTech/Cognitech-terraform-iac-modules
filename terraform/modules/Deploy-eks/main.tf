@@ -70,18 +70,22 @@ locals {
     local.karpenter.node_role_arn != null ? element(split("/", local.karpenter.node_role_arn), length(split("/", local.karpenter.node_role_arn)) - 1) : null
   ) : null
 
-  eks_node_group_role_arns = [
-    for node_group in try(var.eks.eks_node_groups, []) : coalesce(
-      try(node_group.node_role_arn, null),
-      try(node_group.node_role_key, null) != null ? module.iam_roles[node_group.node_role_key].iam_role_arn : null
-    )
-    if coalesce(
-      try(node_group.node_role_arn, null),
-      try(node_group.node_role_key, null) != null ? module.iam_roles[node_group.node_role_key].iam_role_arn : null
-    ) != null
+  eks_node_group_role_input_arns = [
+    for node_group in try(var.eks.eks_node_groups, []) : node_group.node_role_arn
+    if try(node_group.node_role_arn, null) != null
   ]
 
-  create_karpenter_node_access_entry = local.karpenter_enabled && !contains(local.eks_node_group_role_arns, local.karpenter_node_role_arn)
+  eks_node_group_role_keys = [
+    for node_group in try(var.eks.eks_node_groups, []) : node_group.node_role_key
+    if try(node_group.node_role_key, null) != null
+  ]
+
+  karpenter_node_role_matches_node_group = local.karpenter_enabled && (
+    contains(local.eks_node_group_role_input_arns, try(local.karpenter.node_role_arn, null)) ||
+    contains(local.eks_node_group_role_keys, try(local.karpenter.node_role_key, null))
+  )
+
+  create_karpenter_node_access_entry = local.karpenter_enabled && !local.karpenter_node_role_matches_node_group
 
   karpenter_interruption_events = {
     spot_interruption = {
