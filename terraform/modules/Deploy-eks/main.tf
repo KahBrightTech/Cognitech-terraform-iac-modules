@@ -70,6 +70,19 @@ locals {
     local.karpenter.node_role_arn != null ? element(split("/", local.karpenter.node_role_arn), length(split("/", local.karpenter.node_role_arn)) - 1) : null
   ) : null
 
+  eks_node_group_role_arns = [
+    for node_group in try(var.eks.eks_node_groups, []) : coalesce(
+      try(node_group.node_role_arn, null),
+      try(node_group.node_role_key, null) != null ? module.iam_roles[node_group.node_role_key].iam_role_arn : null
+    )
+    if coalesce(
+      try(node_group.node_role_arn, null),
+      try(node_group.node_role_key, null) != null ? module.iam_roles[node_group.node_role_key].iam_role_arn : null
+    ) != null
+  ]
+
+  create_karpenter_node_access_entry = local.karpenter_enabled && !contains(local.eks_node_group_role_arns, local.karpenter_node_role_arn)
+
   karpenter_interruption_events = {
     spot_interruption = {
       source      = ["aws.ec2"]
@@ -574,7 +587,7 @@ resource "aws_cloudwatch_event_target" "karpenter_interruption" {
 # Karpenter - Node Access Entry
 #--------------------------------------------------------------------
 resource "aws_eks_access_entry" "karpenter_node" {
-  count         = local.karpenter_enabled ? 1 : 0
+  count         = local.create_karpenter_node_access_entry ? 1 : 0
   cluster_name  = aws_eks_cluster.eks_cluster.name
   principal_arn = local.karpenter_node_role_arn
   type          = "EC2_LINUX"
