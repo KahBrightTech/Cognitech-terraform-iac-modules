@@ -84,8 +84,8 @@ locals {
   karpenter_node_role_input_key = local.karpenter_enabled ? try(local.karpenter.node_role_key, null) : null
 
   karpenter_node_role_matches_node_group = local.karpenter_enabled && (
-    (local.karpenter_node_role_input_arn != null && contains(local.eks_node_group_role_input_arns, local.karpenter_node_role_input_arn)) ||
-    (local.karpenter_node_role_input_key != null && contains(local.eks_node_group_role_keys, local.karpenter_node_role_input_key))
+    (local.karpenter_node_role_input_arn != null ? contains(local.eks_node_group_role_input_arns, local.karpenter_node_role_input_arn) : false) ||
+    (local.karpenter_node_role_input_key != null ? contains(local.eks_node_group_role_keys, local.karpenter_node_role_input_key) : false)
   )
 
   create_karpenter_node_access_entry = local.karpenter_enabled && !local.karpenter_node_role_matches_node_group
