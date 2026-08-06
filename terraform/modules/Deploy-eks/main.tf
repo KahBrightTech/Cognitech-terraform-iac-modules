@@ -626,13 +626,13 @@ resource "helm_release" "karpenter" {
 #--------------------------------------------------------------------
 # Karpenter - NodeClass and NodePool manifests
 #--------------------------------------------------------------------
-resource "kubernetes_manifest" "karpenter_objects" {
+resource "kubectl_manifest" "karpenter_objects" {
   for_each = {
     for document in local.karpenter_manifest_documents :
-    "${yamldecode(document).kind}/${yamldecode(document).metadata.name}" => yamldecode(document)
+    "${yamldecode(document).kind}/${yamldecode(document).metadata.name}" => document
   }
 
-  manifest = each.value
+  yaml_body = each.value
 
   depends_on = [
     helm_release.karpenter
