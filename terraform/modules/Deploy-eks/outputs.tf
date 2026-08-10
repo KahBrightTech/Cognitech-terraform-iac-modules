@@ -352,7 +352,7 @@ output "helm_nginx_ingress" {
 
 output "helm_gateway_api" {
   description = "NGINX Gateway Fabric Helm release information"
-  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_ingress && var.eks.create_node_group && length(keys(try(var.eks.eks_addons.ingress.gateway_api, {}))) > 0 ? {
+  value = local.gateway_api_enabled ? {
     name       = try(helm_release.gateway_api[0].name, null)
     namespace  = try(helm_release.gateway_api[0].namespace, null)
     chart      = try(helm_release.gateway_api[0].chart, null)
