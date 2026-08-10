@@ -79,6 +79,9 @@ inputs = {
 
             # These values are AWS IDs, not names.
             nlb_name            = "example-nginx-public-nlb"
+            ssl_cert_arn        = "arn:aws:acm:us-east-1:123456789012:certificate/example-public-cert"
+            ssl_policy          = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+            ssl_ports           = ["443"]
             subnet_ids          = dependency.vpc.outputs.private_subnet_ids
             security_group_keys = ["ingress-public-nlb"]
 
@@ -102,6 +105,9 @@ inputs = {
             ingress_class_name  = "internal-nginx"
             replica_count       = 2
             nlb_name            = "example-nginx-internal-nlb"
+            ssl_cert_arn        = "arn:aws:acm:us-east-1:123456789012:certificate/example-internal-cert"
+            ssl_policy          = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+            ssl_ports           = ["443"]
             subnet_ids          = dependency.vpc.outputs.private_subnet_ids
             security_group_keys = ["ingress-internal-nlb"]
             service_annotations = {

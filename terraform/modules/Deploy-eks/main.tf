@@ -144,6 +144,9 @@ locals {
     replica_count = 2
     scheme        = "internet-facing"
     target_type   = "ip"
+    ssl_cert_arn  = null
+    ssl_policy    = null
+    ssl_ports     = []
   }
 
   gateway_api_defaults = {
@@ -157,6 +160,9 @@ locals {
     scheme              = "internet-facing"
     target_type         = "ip"
     nlb_name            = null
+    ssl_cert_arn        = null
+    ssl_policy          = null
+    ssl_ports           = []
     subnet_ids          = []
     security_group_keys = []
     security_group_ids  = []
@@ -219,6 +225,14 @@ locals {
       try(ingress.security_group_ids, [])
     )
   }
+  nginx_ingress_tls_secret_map = {
+    for ingress in local.nginx_ingress_configs : ingress.name => merge(
+      ingress.tls_secret,
+      {
+        namespace = coalesce(try(ingress.tls_secret.namespace, null), ingress.namespace)
+      }
+    ) if try(ingress.tls_secret, null) != null
+  }
   nginx_ingress_map = {
     for ingress in local.nginx_ingress_configs : ingress.name => ingress
   }
@@ -234,6 +248,15 @@ locals {
       } : {},
       length(local.nginx_ingress_security_group_ids[ingress.name]) > 0 ? {
         "service.beta.kubernetes.io/aws-load-balancer-security-groups" = join(",", local.nginx_ingress_security_group_ids[ingress.name])
+      } : {},
+      ingress.ssl_cert_arn != null ? {
+        "service.beta.kubernetes.io/aws-load-balancer-ssl-cert" = ingress.ssl_cert_arn
+      } : {},
+      ingress.ssl_policy != null ? {
+        "service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy" = ingress.ssl_policy
+      } : {},
+      length(ingress.ssl_ports) > 0 ? {
+        "service.beta.kubernetes.io/aws-load-balancer-ssl-ports" = join(",", ingress.ssl_ports)
       } : {},
       ingress.nlb_name != null ? {
         "service.beta.kubernetes.io/aws-load-balancer-name" = ingress.nlb_name
@@ -261,6 +284,15 @@ locals {
     } : {},
     length(local.gateway_api_security_group_ids) > 0 ? {
       "service.beta.kubernetes.io/aws-load-balancer-security-groups" = join(",", local.gateway_api_security_group_ids)
+    } : {},
+    local.gateway_api_config.ssl_cert_arn != null ? {
+      "service.beta.kubernetes.io/aws-load-balancer-ssl-cert" = local.gateway_api_config.ssl_cert_arn
+    } : {},
+    local.gateway_api_config.ssl_policy != null ? {
+      "service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy" = local.gateway_api_config.ssl_policy
+    } : {},
+    length(local.gateway_api_config.ssl_ports) > 0 ? {
+      "service.beta.kubernetes.io/aws-load-balancer-ssl-ports" = join(",", local.gateway_api_config.ssl_ports)
     } : {},
     local.gateway_api_config.nlb_name != null ? {
       "service.beta.kubernetes.io/aws-load-balancer-name" = local.gateway_api_config.nlb_name
@@ -634,6 +666,9 @@ resource "helm_release" "nginx_ingress" {
       controller = {
         replicaCount = each.value.replica_count
         ingressClass = each.value.ingress_class_name
+        extraArgs = contains(keys(local.nginx_ingress_tls_secret_map), each.key) ? {
+          default-ssl-certificate = "${local.nginx_ingress_tls_secret_map[each.key].namespace}/${local.nginx_ingress_tls_secret_map[each.key].name}"
+        } : null
         ingressClassResource = {
           name            = each.value.ingress_class_name
           enabled         = true
@@ -656,6 +691,27 @@ resource "helm_release" "nginx_ingress" {
     aws_eks_addon.coredns,
     aws_eks_addon.pod_identity_agent,
     helm_release.aws_load_balancer_controller
+  ]
+}
+
+resource "kubernetes_secret_v1" "nginx_ingress_tls_secret" {
+  for_each = local.nginx_ingress_tls_secret_map
+
+  metadata {
+    name      = each.value.name
+    namespace = each.value.namespace
+  }
+
+  data = {
+    "tls.crt" = each.value.certificate
+    "tls.key" = each.value.private_key
+  }
+
+  type = "kubernetes.io/tls"
+
+  depends_on = [
+    aws_eks_cluster.eks_cluster,
+    helm_release.nginx_ingress
   ]
 }
 

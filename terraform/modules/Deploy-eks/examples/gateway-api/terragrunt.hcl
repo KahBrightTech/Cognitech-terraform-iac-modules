@@ -80,6 +80,9 @@ inputs = {
 
           # These values are AWS IDs, not names.
           nlb_name            = "example-gateway-api-nlb"
+          ssl_cert_arn        = "arn:aws:acm:us-east-1:123456789012:certificate/example-gateway-cert"
+          ssl_policy          = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+          ssl_ports           = ["443"]
           subnet_ids          = dependency.vpc.outputs.private_subnet_ids
           security_group_keys = ["gateway-api-nlb"]
 
