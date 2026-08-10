@@ -168,7 +168,7 @@ variable "eks" {
           security_group_ids  = optional(list(string), [])
           service_annotations = optional(map(string), {})
           values              = optional(list(any), [])
-        }), {})
+        }))
       }), {})
       karpenter = optional(object({
         chart_version           = optional(string, "1.13.0")
@@ -385,7 +385,7 @@ variable "eks" {
   validation {
     condition = var.eks.eks_addons == null || !var.eks.eks_addons.enable_ingress || !(
       length(try(var.eks.eks_addons.ingress.nginx, [])) > 0 &&
-      length(keys(try(var.eks.eks_addons.ingress.gateway_api, {}))) > 0
+      try(var.eks.eks_addons.ingress.gateway_api, null) != null
     )
     error_message = "Configure only one ingress controller block at a time: either eks.eks_addons.ingress.nginx or eks.eks_addons.ingress.gateway_api."
   }

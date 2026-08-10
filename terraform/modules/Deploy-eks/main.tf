@@ -27,7 +27,6 @@ locals {
   ])
 
   access_entries_map = { for entry in local.access_entries : entry.key => entry }
-
   # Filtered map — only entries that have a policy_arn
   access_policies_map = {
     for k, v in local.access_entries_map : k => v
