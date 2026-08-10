@@ -140,12 +140,6 @@ locals {
     if trimspace(document) != ""
   ] : []
 
-  ingress_enabled       = var.eks.eks_addons != null && var.eks.eks_addons.enable_ingress && var.eks.create_node_group
-  nginx_ingress_input   = local.ingress_enabled ? try(var.eks.eks_addons.ingress.nginx, []) : []
-  gateway_api_input     = local.ingress_enabled && try(var.eks.eks_addons.ingress.gateway_api, null) != null ? var.eks.eks_addons.ingress.gateway_api : {}
-  nginx_ingress_enabled = local.ingress_enabled && length(local.nginx_ingress_input) > 0
-  gateway_api_enabled   = local.ingress_enabled && length(keys(local.gateway_api_input)) > 0
-
   nginx_ingress_defaults = {
     replica_count = 2
     scheme        = "internet-facing"
@@ -169,6 +163,28 @@ locals {
     service_annotations = {}
     values              = []
   }
+
+  ingress_enabled     = var.eks.eks_addons != null && var.eks.eks_addons.enable_ingress && var.eks.create_node_group
+  nginx_ingress_input = local.ingress_enabled ? try(var.eks.eks_addons.ingress.nginx, []) : []
+  gateway_api_input = {
+    version             = try(var.eks.eks_addons.ingress.gateway_api.version, local.gateway_api_defaults.version)
+    release_name        = try(var.eks.eks_addons.ingress.gateway_api.release_name, local.gateway_api_defaults.release_name)
+    namespace           = try(var.eks.eks_addons.ingress.gateway_api.namespace, local.gateway_api_defaults.namespace)
+    gateway_class_name  = try(var.eks.eks_addons.ingress.gateway_api.gateway_class_name, local.gateway_api_defaults.gateway_class_name)
+    controller_name     = try(var.eks.eks_addons.ingress.gateway_api.controller_name, local.gateway_api_defaults.controller_name)
+    nginx_replicas      = try(var.eks.eks_addons.ingress.gateway_api.nginx_replicas, local.gateway_api_defaults.nginx_replicas)
+    fabric_replicas     = try(var.eks.eks_addons.ingress.gateway_api.fabric_replicas, local.gateway_api_defaults.fabric_replicas)
+    scheme              = try(var.eks.eks_addons.ingress.gateway_api.scheme, local.gateway_api_defaults.scheme)
+    target_type         = try(var.eks.eks_addons.ingress.gateway_api.target_type, local.gateway_api_defaults.target_type)
+    nlb_name            = try(var.eks.eks_addons.ingress.gateway_api.nlb_name, local.gateway_api_defaults.nlb_name)
+    subnet_ids          = try(var.eks.eks_addons.ingress.gateway_api.subnet_ids, local.gateway_api_defaults.subnet_ids)
+    security_group_keys = try(var.eks.eks_addons.ingress.gateway_api.security_group_keys, local.gateway_api_defaults.security_group_keys)
+    security_group_ids  = try(var.eks.eks_addons.ingress.gateway_api.security_group_ids, local.gateway_api_defaults.security_group_ids)
+    service_annotations = try(var.eks.eks_addons.ingress.gateway_api.service_annotations, local.gateway_api_defaults.service_annotations)
+    values              = try(var.eks.eks_addons.ingress.gateway_api.values, local.gateway_api_defaults.values)
+  }
+  nginx_ingress_enabled = local.ingress_enabled && length(local.nginx_ingress_input) > 0
+  gateway_api_enabled   = local.ingress_enabled && try(var.eks.eks_addons.ingress.gateway_api, null) != null
 
   ingress_config = local.ingress_enabled ? merge(
     {
