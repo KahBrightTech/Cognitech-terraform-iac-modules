@@ -142,7 +142,7 @@ locals {
 
   ingress_enabled       = var.eks.eks_addons != null && var.eks.eks_addons.enable_ingress && var.eks.create_node_group
   nginx_ingress_input   = local.ingress_enabled ? try(var.eks.eks_addons.ingress.nginx, []) : []
-  gateway_api_input     = local.ingress_enabled ? try(var.eks.eks_addons.ingress.gateway_api, {}) : {}
+  gateway_api_input     = local.ingress_enabled && try(var.eks.eks_addons.ingress.gateway_api, null) != null ? var.eks.eks_addons.ingress.gateway_api : {}
   nginx_ingress_enabled = local.ingress_enabled && length(local.nginx_ingress_input) > 0
   gateway_api_enabled   = local.ingress_enabled && length(keys(local.gateway_api_input)) > 0
 
