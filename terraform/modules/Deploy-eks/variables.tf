@@ -136,7 +136,6 @@ variable "eks" {
       cluster_autoscaler_role_arn                     = optional(string)
       cluster_autoscaler_role_key                     = optional(string)
       ingress = optional(object({
-        type = optional(string, "nginx")
         nginx = optional(list(object({
           name                = string
           version             = optional(string, "4.11.2")
@@ -382,6 +381,15 @@ variable "eks" {
       }))
     })))
   })
+
+  validation {
+    condition = var.eks.eks_addons == null || !var.eks.eks_addons.enable_ingress || !(
+      length(try(var.eks.eks_addons.ingress.nginx, [])) > 0 &&
+      length(keys(try(var.eks.eks_addons.ingress.gateway_api, {}))) > 0
+    )
+    error_message = "Configure only one ingress controller block at a time: either eks.eks_addons.ingress.nginx or eks.eks_addons.ingress.gateway_api."
+  }
+
   default = null
 }
 

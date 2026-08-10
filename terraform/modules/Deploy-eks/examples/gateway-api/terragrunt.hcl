@@ -69,8 +69,6 @@ inputs = {
       enable_ingress                        = true
 
       ingress = {
-        type = "gateway_api"
-
         gateway_api = {
           version            = "2.6.7"
           release_name       = "ngf"

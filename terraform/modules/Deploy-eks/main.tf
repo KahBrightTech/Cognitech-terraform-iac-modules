@@ -142,7 +142,14 @@ locals {
   ] : []
 
   ingress_enabled = var.eks.eks_addons != null && var.eks.eks_addons.enable_ingress && var.eks.create_node_group
-  ingress_type    = local.ingress_enabled ? coalesce(var.eks.eks_addons.ingress.type, "nginx") : null
+  raw_ingress_config = local.ingress_enabled ? var.eks.eks_addons.ingress : {
+    nginx       = []
+    gateway_api = {}
+  }
+  nginx_ingress_input   = try(local.raw_ingress_config.nginx, [])
+  gateway_api_input     = try(local.raw_ingress_config.gateway_api, {})
+  nginx_ingress_enabled = local.ingress_enabled && length(local.nginx_ingress_input) > 0
+  gateway_api_enabled   = local.ingress_enabled && length(keys(local.gateway_api_input)) > 0
 
   nginx_ingress_defaults = {
     replica_count = 2
@@ -170,21 +177,19 @@ locals {
 
   ingress_config = local.ingress_enabled ? merge(
     {
-      type        = local.ingress_type
       gateway_api = local.gateway_api_defaults
     },
-    var.eks.eks_addons.ingress,
+    local.raw_ingress_config,
     {
       gateway_api = merge(
         local.gateway_api_defaults,
-        var.eks.eks_addons.ingress.gateway_api
+        local.gateway_api_input
       )
     }
   ) : null
 
-  nginx_ingress_enabled = local.ingress_enabled && local.ingress_config.type == "nginx"
   nginx_ingress_configs = local.nginx_ingress_enabled ? [
-    for ingress in var.eks.eks_addons.ingress.nginx : merge(
+    for ingress in local.nginx_ingress_input : merge(
       local.nginx_ingress_defaults,
       ingress,
       {
@@ -226,8 +231,7 @@ locals {
     )
   }
 
-  gateway_api_enabled = local.ingress_enabled && local.ingress_config.type == "gateway_api"
-  gateway_api_config  = local.gateway_api_enabled ? local.ingress_config.gateway_api : null
+  gateway_api_config = local.gateway_api_enabled ? local.ingress_config.gateway_api : null
   gateway_api_security_group_ids = local.gateway_api_enabled ? concat(
     [
       for sg_key in try(local.gateway_api_config.security_group_keys, []) :

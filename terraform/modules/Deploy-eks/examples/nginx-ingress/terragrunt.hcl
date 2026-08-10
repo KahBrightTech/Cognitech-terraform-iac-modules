@@ -68,8 +68,6 @@ inputs = {
       enable_ingress                        = true
 
       ingress = {
-        type = "nginx"
-
         nginx = [
           {
             name               = "public"
