@@ -336,6 +336,32 @@ output "helm_aws_load_balancer_controller" {
   } : null
 }
 
+output "helm_nginx_ingress" {
+  description = "NGINX ingress controller Helm releases keyed by ingress controller name"
+  value = {
+    for k, v in helm_release.nginx_ingress : k => {
+      name       = v.name
+      namespace  = v.namespace
+      chart      = v.chart
+      version    = v.version
+      status     = v.status
+      repository = v.repository
+    }
+  }
+}
+
+output "helm_gateway_api" {
+  description = "NGINX Gateway Fabric Helm release information"
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_ingress && var.eks.create_node_group && coalesce(var.eks.eks_addons.ingress.type, "nginx") == "gateway_api" ? {
+    name       = try(helm_release.gateway_api[0].name, null)
+    namespace  = try(helm_release.gateway_api[0].namespace, null)
+    chart      = try(helm_release.gateway_api[0].chart, null)
+    version    = try(helm_release.gateway_api[0].version, null)
+    status     = try(helm_release.gateway_api[0].status, null)
+    repository = try(helm_release.gateway_api[0].repository, null)
+  } : null
+}
+
 output "helm_secrets_store_aws_provider" {
   description = "Secrets Store AWS Provider Helm release information"
   value = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? {

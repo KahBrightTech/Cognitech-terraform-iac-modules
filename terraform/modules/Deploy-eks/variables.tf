@@ -102,32 +102,21 @@ variable "eks" {
     create_service_accounts = optional(bool, false)
     enable_eks_pia          = optional(bool, false)
     eks_addons = optional(object({
-      enable_vpc_cni           = optional(bool, false)
-      enable_prefix_delegation = optional(bool, false)
-      # Number of spare /28 IP prefixes (16 IPs each) the VPC CNI keeps pre-allocated
-      # per node ahead of demand. 1 keeps one prefix warm for instant pod IP assignment
-      # without over-reserving; raise only for bursty scaling. Only used when
-      # enable_prefix_delegation = true.
-      warm_prefix_target                  = optional(number, 1)
-      enable_kube_proxy                   = optional(bool, false)
-      enable_coredns                      = optional(bool, false)
-      enable_metrics_server               = optional(bool, false)
-      enable_cloudwatch_observability     = optional(bool, false)
-      enable_secrets_manager_csi_driver   = optional(bool, false)
-      enable_privateca_issuer             = optional(bool, false)
-      enable_pod_identity_agent           = optional(bool, false)
-      enable_ebs_csi_driver               = optional(bool, false)
-      enable_efs_csi_driver               = optional(bool, false)
-      enable_fsx_csi_driver               = optional(bool, false)
-      enable_aws_load_balancer_controller = optional(bool, false)
-      # Both may be true at once by design: Cluster Autoscaler only ever scales
-      # ASG-backed eks_node_groups (e.g. the static "system" node group), while
-      # Karpenter provisions raw EC2 instances directly and never creates an ASG.
-      # They don't share resources, so there's no scaling conflict, PROVIDED you
-      # scope Cluster Autoscaler's AWS auto-discovery tags
-      # (k8s.io/cluster-autoscaler/enabled, k8s.io/cluster-autoscaler/<cluster>)
-      # only onto the node group(s) you want it to manage - if you add another
-      # conventional (non-Karpenter) node group later, tag deliberately.
+      enable_vpc_cni                                  = optional(bool, false)
+      enable_prefix_delegation                        = optional(bool, false)
+      warm_prefix_target                              = optional(number, 1)
+      enable_kube_proxy                               = optional(bool, false)
+      enable_coredns                                  = optional(bool, false)
+      enable_metrics_server                           = optional(bool, false)
+      enable_cloudwatch_observability                 = optional(bool, false)
+      enable_secrets_manager_csi_driver               = optional(bool, false)
+      enable_privateca_issuer                         = optional(bool, false)
+      enable_pod_identity_agent                       = optional(bool, false)
+      enable_ebs_csi_driver                           = optional(bool, false)
+      enable_efs_csi_driver                           = optional(bool, false)
+      enable_fsx_csi_driver                           = optional(bool, false)
+      enable_aws_load_balancer_controller             = optional(bool, false)
+      enable_ingress                                  = optional(bool, false)
       enable_cluster_autoscaler                       = optional(bool, false)
       enable_karpenter                                = optional(bool, false)
       enable_external_dns                             = optional(bool, false)
@@ -146,6 +135,42 @@ variable "eks" {
       cluster_autoscaler_version                      = optional(string)
       cluster_autoscaler_role_arn                     = optional(string)
       cluster_autoscaler_role_key                     = optional(string)
+      ingress = optional(object({
+        type = optional(string, "nginx")
+        nginx = optional(list(object({
+          name                = string
+          version             = optional(string, "4.11.2")
+          release_name        = optional(string)
+          namespace           = optional(string)
+          ingress_class_name  = optional(string)
+          replica_count       = optional(number, 2)
+          scheme              = optional(string, "internet-facing")
+          target_type         = optional(string, "ip")
+          nlb_name            = optional(string)
+          subnet_ids          = optional(list(string), [])
+          security_group_keys = optional(list(string), [])
+          security_group_ids  = optional(list(string), [])
+          service_annotations = optional(map(string), {})
+          values              = optional(list(any), [])
+        })), [])
+        gateway_api = optional(object({
+          version             = optional(string, "2.6.7")
+          release_name        = optional(string, "ngf")
+          namespace           = optional(string, "nginx-gateway")
+          gateway_class_name  = optional(string, "nginx")
+          controller_name     = optional(string, "gateway.nginx.org/nginx-gateway-controller")
+          nginx_replicas      = optional(number, 2)
+          fabric_replicas     = optional(number, 1)
+          scheme              = optional(string, "internet-facing")
+          target_type         = optional(string, "ip")
+          nlb_name            = optional(string)
+          subnet_ids          = optional(list(string), [])
+          security_group_keys = optional(list(string), [])
+          security_group_ids  = optional(list(string), [])
+          service_annotations = optional(map(string), {})
+          values              = optional(list(any), [])
+        }), {})
+      }), {})
       karpenter = optional(object({
         chart_version           = optional(string, "1.13.0")
         namespace               = optional(string, "kube-system")

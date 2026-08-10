@@ -140,6 +140,118 @@ locals {
     for document in split("\n---\n", local.karpenter_manifests_yaml) : trimspace(document)
     if trimspace(document) != ""
   ] : []
+
+  ingress_enabled = var.eks.eks_addons != null && var.eks.eks_addons.enable_ingress && var.eks.create_node_group
+  ingress_type    = local.ingress_enabled ? coalesce(var.eks.eks_addons.ingress.type, "nginx") : null
+
+  nginx_ingress_defaults = {
+    replica_count = 2
+    scheme        = "internet-facing"
+    target_type   = "ip"
+  }
+
+  gateway_api_defaults = {
+    version             = "2.6.7"
+    release_name        = "ngf"
+    namespace           = "nginx-gateway"
+    gateway_class_name  = "nginx"
+    controller_name     = "gateway.nginx.org/nginx-gateway-controller"
+    nginx_replicas      = 2
+    fabric_replicas     = 1
+    scheme              = "internet-facing"
+    target_type         = "ip"
+    nlb_name            = null
+    subnet_ids          = []
+    security_group_keys = []
+    security_group_ids  = []
+    service_annotations = {}
+    values              = []
+  }
+
+  ingress_config = local.ingress_enabled ? merge(
+    {
+      type        = local.ingress_type
+      gateway_api = local.gateway_api_defaults
+    },
+    var.eks.eks_addons.ingress,
+    {
+      gateway_api = merge(
+        local.gateway_api_defaults,
+        var.eks.eks_addons.ingress.gateway_api
+      )
+    }
+  ) : null
+
+  nginx_ingress_enabled = local.ingress_enabled && local.ingress_config.type == "nginx"
+  nginx_ingress_configs = local.nginx_ingress_enabled ? [
+    for ingress in var.eks.eks_addons.ingress.nginx : merge(
+      local.nginx_ingress_defaults,
+      ingress,
+      {
+        release_name       = coalesce(ingress.release_name, ingress.name)
+        namespace          = coalesce(ingress.namespace, "ingress-${ingress.name}")
+        ingress_class_name = coalesce(ingress.ingress_class_name, ingress.name)
+      }
+    )
+  ] : []
+  nginx_ingress_security_group_ids = {
+    for ingress in local.nginx_ingress_configs : ingress.name => concat(
+      [
+        for sg_key in try(ingress.security_group_keys, []) :
+        sg_key == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : module.security_group[sg_key].security_group_id
+      ],
+      try(ingress.security_group_ids, [])
+    )
+  }
+  nginx_ingress_map = {
+    for ingress in local.nginx_ingress_configs : ingress.name => ingress
+  }
+  nginx_ingress_service_annotations = {
+    for ingress in local.nginx_ingress_configs : ingress.name => merge(
+      {
+        "service.beta.kubernetes.io/aws-load-balancer-type"            = "external"
+        "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type" = ingress.target_type
+        "service.beta.kubernetes.io/aws-load-balancer-scheme"          = ingress.scheme
+      },
+      length(ingress.subnet_ids) > 0 ? {
+        "service.beta.kubernetes.io/aws-load-balancer-subnets" = join(",", ingress.subnet_ids)
+      } : {},
+      length(local.nginx_ingress_security_group_ids[ingress.name]) > 0 ? {
+        "service.beta.kubernetes.io/aws-load-balancer-security-groups" = join(",", local.nginx_ingress_security_group_ids[ingress.name])
+      } : {},
+      ingress.nlb_name != null ? {
+        "service.beta.kubernetes.io/aws-load-balancer-name" = ingress.nlb_name
+      } : {},
+      ingress.service_annotations
+    )
+  }
+
+  gateway_api_enabled = local.ingress_enabled && local.ingress_config.type == "gateway_api"
+  gateway_api_config  = local.gateway_api_enabled ? local.ingress_config.gateway_api : null
+  gateway_api_security_group_ids = local.gateway_api_enabled ? concat(
+    [
+      for sg_key in try(local.gateway_api_config.security_group_keys, []) :
+      sg_key == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : module.security_group[sg_key].security_group_id
+    ],
+    try(local.gateway_api_config.security_group_ids, [])
+  ) : []
+  gateway_api_service_annotations = local.gateway_api_enabled ? merge(
+    {
+      "service.beta.kubernetes.io/aws-load-balancer-type"            = "external"
+      "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type" = local.gateway_api_config.target_type
+      "service.beta.kubernetes.io/aws-load-balancer-scheme"          = local.gateway_api_config.scheme
+    },
+    length(local.gateway_api_config.subnet_ids) > 0 ? {
+      "service.beta.kubernetes.io/aws-load-balancer-subnets" = join(",", local.gateway_api_config.subnet_ids)
+    } : {},
+    length(local.gateway_api_security_group_ids) > 0 ? {
+      "service.beta.kubernetes.io/aws-load-balancer-security-groups" = join(",", local.gateway_api_security_group_ids)
+    } : {},
+    local.gateway_api_config.nlb_name != null ? {
+      "service.beta.kubernetes.io/aws-load-balancer-name" = local.gateway_api_config.nlb_name
+    } : {},
+    local.gateway_api_config.service_annotations
+  ) : {}
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -483,6 +595,100 @@ resource "helm_release" "aws_load_balancer_controller" {
     module.iam_roles,
     aws_eks_addon.coredns,
     aws_eks_addon.pod_identity_agent
+  ]
+}
+
+#--------------------------------------------------------------------
+# NGINX Ingress Controller (Helm) - Tier 3
+#--------------------------------------------------------------------
+resource "helm_release" "nginx_ingress" {
+  for_each   = local.nginx_ingress_enabled ? local.nginx_ingress_map : {}
+  name       = each.value.release_name
+  namespace  = each.value.namespace
+  repository = "https://kubernetes.github.io/ingress-nginx"
+  chart      = "ingress-nginx"
+  version    = each.value.version
+
+  cleanup_on_fail  = true
+  replace          = true
+  force_update     = true
+  create_namespace = true
+
+  values = concat([
+    yamlencode({
+      controller = {
+        replicaCount = each.value.replica_count
+        ingressClass = each.value.ingress_class_name
+        ingressClassResource = {
+          name            = each.value.ingress_class_name
+          enabled         = true
+          default         = false
+          controllerValue = "k8s.io/${each.value.ingress_class_name}-ingress-nginx"
+        }
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
+        service = {
+          type                  = "LoadBalancer"
+          externalTrafficPolicy = "Local"
+          annotations           = local.nginx_ingress_service_annotations[each.key]
+        }
+      }
+    })
+  ], [for value in each.value.values : yamlencode(value)])
+
+  depends_on = [
+    module.eks_node_group,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent,
+    helm_release.aws_load_balancer_controller
+  ]
+}
+
+#--------------------------------------------------------------------
+# NGINX Gateway Fabric (Helm) - Tier 3
+#--------------------------------------------------------------------
+resource "helm_release" "gateway_api" {
+  count      = local.gateway_api_enabled ? 1 : 0
+  name       = local.gateway_api_config.release_name
+  namespace  = local.gateway_api_config.namespace
+  repository = "oci://ghcr.io/nginx/charts"
+  chart      = "nginx-gateway-fabric"
+  version    = local.gateway_api_config.version
+
+  cleanup_on_fail  = true
+  replace          = true
+  force_update     = true
+  create_namespace = true
+
+  values = concat([
+    yamlencode({
+      nginxGateway = {
+        gatewayClassName      = local.gateway_api_config.gateway_class_name
+        gatewayControllerName = local.gateway_api_config.controller_name
+        replicas              = local.gateway_api_config.fabric_replicas
+        nodeSelector          = local.system_node_selector
+        tolerations           = local.system_tolerations
+      }
+      nginx = {
+        replicas = local.gateway_api_config.nginx_replicas
+        pod = {
+          nodeSelector = local.system_node_selector
+          tolerations  = local.system_tolerations
+        }
+        service = {
+          type                  = "LoadBalancer"
+          externalTrafficPolicy = "Local"
+          annotations           = local.gateway_api_service_annotations
+        }
+      }
+    })
+  ], [for value in local.gateway_api_config.values : yamlencode(value)])
+
+  depends_on = [
+    module.eks_node_group,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent,
+    helm_release.aws_load_balancer_controller
   ]
 }
 
