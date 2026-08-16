@@ -142,6 +142,7 @@ locals {
 
   nginx_ingress_defaults = {
     replica_count = 2
+    timeout       = 900
     scheme        = "internet-facing"
     target_type   = "ip"
     ssl_cert_arn  = null
@@ -659,6 +660,7 @@ resource "helm_release" "nginx_ingress" {
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart      = "ingress-nginx"
   version    = each.value.version
+  timeout    = each.value.timeout
 
   cleanup_on_fail  = true
   replace          = true
@@ -1226,6 +1228,11 @@ resource "helm_release" "kubecost" {
         server = {
           nodeSelector = local.system_node_selector
           tolerations  = local.system_tolerations
+          global = {
+            external_labels = {
+              cluster_id = aws_eks_cluster.eks_cluster.name
+            }
+          }
         }
       }
     })

@@ -139,6 +139,7 @@ variable "eks" {
         nginx = optional(list(object({
           name               = string
           version            = optional(string, "4.11.2")
+          timeout            = optional(number, 900)
           release_name       = optional(string)
           namespace          = optional(string)
           ingress_class_name = optional(string)
@@ -239,7 +240,7 @@ variable "eks" {
       prometheus_persistence_size           = optional(string)
       prometheus_persistence_storage_class  = optional(string)
       enable_kubecost                       = optional(bool, false)
-      kubecost_version                      = optional(string, "2.9.7")
+      kubecost_version                      = optional(string, "2.8.7")
       kubecost_namespace                    = optional(string, "kubecost")
       kubecost_timeout                      = optional(number, 900)
       kubecost_values                       = optional(list(any), [])
