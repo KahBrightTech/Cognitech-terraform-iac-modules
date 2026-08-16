@@ -1190,6 +1190,7 @@ resource "helm_release" "kube_prometheus_stack" {
     aws_eks_addon.pod_identity_agent,
     aws_eks_addon.metrics_server,
     aws_eks_addon.ebs_csi_driver,
+    kubernetes_storage_class_v1.gp3,
     helm_release.aws_load_balancer_controller
   ]
 }
@@ -1212,37 +1213,56 @@ resource "helm_release" "kubecost" {
   cleanup_on_fail  = true
 
   values = concat([
-    yamlencode({
-      global = {
-        clusterId = aws_eks_cluster.eks_cluster.name
-      }
-      kubecostFrontend = {
-        nodeSelector = local.system_node_selector
-        tolerations  = local.system_tolerations
-      }
-      kubecostModel = {
-        nodeSelector = local.system_node_selector
-        tolerations  = local.system_tolerations
-      }
-      prometheus = {
-        server = {
+    yamlencode(merge(
+      {},
+      coalesce(var.eks.eks_addons.kubecost_storage_class, var.eks.eks_addons.prometheus_persistence_storage_class) != null ? {
+        persistentVolume = {
+          storageClass = coalesce(var.eks.eks_addons.kubecost_storage_class, var.eks.eks_addons.prometheus_persistence_storage_class)
+        }
+      } : {}
+    )),
+    yamlencode(merge(
+      {
+        global = {
+          clusterId = aws_eks_cluster.eks_cluster.name
+        }
+        kubecostFrontend = {
           nodeSelector = local.system_node_selector
           tolerations  = local.system_tolerations
-          global = {
-            external_labels = {
-              cluster_id = aws_eks_cluster.eks_cluster.name
-            }
-          }
         }
-      }
-    })
+        kubecostModel = {
+          nodeSelector = local.system_node_selector
+          tolerations  = local.system_tolerations
+        }
+        prometheus = {
+          server = merge(
+            {
+              nodeSelector = local.system_node_selector
+              tolerations  = local.system_tolerations
+              global = {
+                external_labels = {
+                  cluster_id = aws_eks_cluster.eks_cluster.name
+                }
+              }
+            },
+            var.eks.eks_addons.prometheus_persistence_storage_class != null ? {
+              persistentVolume = {
+                storageClass = var.eks.eks_addons.prometheus_persistence_storage_class
+              }
+            } : {}
+          )
+        }
+      },
+      {}
+    ))
   ], var.eks.eks_addons.kubecost_values)
 
   depends_on = [
     module.eks_node_group,
     aws_eks_addon.coredns,
     aws_eks_addon.metrics_server,
-    aws_eks_addon.ebs_csi_driver
+    aws_eks_addon.ebs_csi_driver,
+    kubernetes_storage_class_v1.gp3
   ]
 }
 
