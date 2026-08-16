@@ -672,7 +672,7 @@ resource "helm_release" "nginx_ingress" {
         ingressClass = each.value.ingress_class_name
         extraArgs = contains(keys(local.nginx_ingress_tls_secret_map), each.key) ? {
           default-ssl-certificate = "${local.nginx_ingress_tls_secret_map[each.key].namespace}/${local.nginx_ingress_tls_secret_map[each.key].name}"
-        } : null
+        } : {}
         ingressClassResource = {
           name            = each.value.ingress_class_name
           enabled         = true
@@ -1211,6 +1211,9 @@ resource "helm_release" "kubecost" {
 
   values = concat([
     yamlencode({
+      global = {
+        clusterId = aws_eks_cluster.eks_cluster.name
+      }
       kubecostFrontend = {
         nodeSelector = local.system_node_selector
         tolerations  = local.system_tolerations
