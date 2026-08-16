@@ -1189,6 +1189,50 @@ resource "helm_release" "kube_prometheus_stack" {
 }
 
 #--------------------------------------------------------------------
+# Kubecost (Helm) - Tier 4: Observability
+#--------------------------------------------------------------------
+resource "helm_release" "kubecost" {
+  count            = var.eks.eks_addons != null && var.eks.eks_addons.enable_kubecost && var.eks.create_node_group ? 1 : 0
+  name             = "kubecost"
+  namespace        = var.eks.eks_addons.kubecost_namespace
+  repository       = "https://kubecost.github.io/cost-analyzer/"
+  chart            = "cost-analyzer"
+  version          = var.eks.eks_addons.kubecost_version
+  timeout          = var.eks.eks_addons.kubecost_timeout
+  wait             = true
+  atomic           = true
+  max_history      = 5
+  create_namespace = true
+  cleanup_on_fail  = true
+
+  values = concat([
+    yamlencode({
+      kubecostFrontend = {
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
+      }
+      kubecostModel = {
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
+      }
+      prometheus = {
+        server = {
+          nodeSelector = local.system_node_selector
+          tolerations  = local.system_tolerations
+        }
+      }
+    })
+  ], var.eks.eks_addons.kubecost_values)
+
+  depends_on = [
+    module.eks_node_group,
+    aws_eks_addon.coredns,
+    aws_eks_addon.metrics_server,
+    aws_eks_addon.ebs_csi_driver
+  ]
+}
+
+#--------------------------------------------------------------------
 # Key Pair Resource for EKS EC2 Node Group
 #--------------------------------------------------------------------
 

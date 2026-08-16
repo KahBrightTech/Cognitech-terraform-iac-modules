@@ -410,6 +410,18 @@ output "helm_karpenter" {
   } : null
 }
 
+output "helm_kubecost" {
+  description = "Kubecost Helm release information"
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_kubecost && var.eks.create_node_group ? {
+    name       = try(helm_release.kubecost[0].name, null)
+    namespace  = try(helm_release.kubecost[0].namespace, null)
+    chart      = try(helm_release.kubecost[0].chart, null)
+    version    = try(helm_release.kubecost[0].version, null)
+    status     = try(helm_release.kubecost[0].status, null)
+    repository = try(helm_release.kubecost[0].repository, null)
+  } : null
+}
+
 #--------------------------------------------------------------------
 # Karpenter Outputs
 #--------------------------------------------------------------------
