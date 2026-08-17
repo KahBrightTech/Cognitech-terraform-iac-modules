@@ -1226,6 +1226,12 @@ resource "helm_release" "kubecost" {
         global = {
           clusterId = aws_eks_cluster.eks_cluster.name
         }
+        ingress = {
+          enabled     = var.eks.eks_addons.kubecost_ingress_enabled
+          className   = var.eks.eks_addons.kubecost_ingress_class_name
+          annotations = var.eks.eks_addons.kubecost_ingress_annotations
+          hosts       = var.eks.eks_addons.kubecost_ingress_hosts
+        }
         kubecostFrontend = {
           nodeSelector = local.system_node_selector
           tolerations  = local.system_tolerations
