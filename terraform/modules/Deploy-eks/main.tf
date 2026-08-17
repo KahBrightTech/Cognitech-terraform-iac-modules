@@ -1236,6 +1236,7 @@ resource "helm_release" "kubecost" {
         ingress = {
           enabled     = var.eks.eks_addons.kubecost_ingress_enabled
           className   = var.eks.eks_addons.kubecost_ingress_class_name
+          pathType    = "Prefix"
           annotations = var.eks.eks_addons.kubecost_ingress_annotations
           hosts       = var.eks.eks_addons.kubecost_ingress_hosts
         }
