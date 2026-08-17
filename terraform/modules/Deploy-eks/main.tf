@@ -1223,6 +1223,13 @@ resource "helm_release" "kubecost" {
     )),
     yamlencode(merge(
       {
+        serviceAccount = {
+          create = true
+          name   = "kubecost"
+          annotations = {
+            "eks.amazonaws.com/role-arn" = var.eks.eks_addons.kubecost_role_key != null ? module.iam_roles[var.eks.eks_addons.kubecost_role_key].iam_role_arn : var.eks.eks_addons.kubecost_role_arn
+          }
+        }
         global = {
           clusterId = aws_eks_cluster.eks_cluster.name
         }

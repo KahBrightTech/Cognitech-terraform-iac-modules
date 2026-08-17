@@ -244,6 +244,8 @@ variable "eks" {
       kubecost_namespace                    = optional(string, "kubecost")
       kubecost_timeout                      = optional(number, 900)
       kubecost_storage_class                = optional(string)
+      kubecost_role_arn                     = optional(string)
+      kubecost_role_key                     = optional(string)
       kubecost_ingress_enabled              = optional(bool, false)
       kubecost_ingress_class_name           = optional(string)
       kubecost_ingress_hosts                = optional(list(string), [])
