@@ -345,6 +345,7 @@ locals {
     length(local.argocd_ingress_security_group_ids) > 0 ? {
       "alb.ingress.kubernetes.io/security-groups" = join(",", local.argocd_ingress_security_group_ids)
     } : {},
+    try(var.eks.eks_addons.argocd_ingress_annotations_file, null) != null ? yamldecode(file(var.eks.eks_addons.argocd_ingress_annotations_file)) : {},
     var.eks.eks_addons.argocd_ingress_annotations
   ) : {}
 

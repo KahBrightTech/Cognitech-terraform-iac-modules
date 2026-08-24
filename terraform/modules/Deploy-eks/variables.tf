@@ -287,6 +287,7 @@ variable "eks" {
       argocd_ingress_subnet_ids             = optional(list(string), [])
       argocd_ingress_security_group_ids     = optional(list(string), [])
       argocd_ingress_security_group_keys    = optional(list(string), [])
+      argocd_ingress_annotations_file       = optional(string)
       argocd_ingress_annotations            = optional(map(string), {})
       argocd_values                         = optional(list(any), [])
     }))
