@@ -1,0 +1,224 @@
+# ArgoCD Terragrunt Configuration
+# This example deploys ArgoCD through the Deploy-eks module and exposes the UI/API
+# behind an internet-facing Application Load Balancer managed by the AWS Load Balancer Controller.
+
+terraform {
+  source = "../../"
+}
+
+include "root" {
+  path = find_in_parent_folders()
+}
+
+# Dependencies - adjust paths as needed
+dependency "eks" {
+  config_path = "../eks-cluster"
+
+  mock_outputs = {
+    cluster_name      = "mock-cluster"
+    cluster_role_arn  = "arn:aws:iam::123456789012:role/mock-eks-cluster-role"
+    cluster_endpoint  = "https://mock-endpoint.eks.amazonaws.com"
+    oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/MOCK"
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+dependency "vpc" {
+  config_path = "../vpc"
+
+  mock_outputs = {
+    vpc_id             = "vpc-mock123"
+    public_subnet_ids  = ["subnet-mockpub1", "subnet-mockpub2"]
+    private_subnet_ids = ["subnet-mock1", "subnet-mock2", "subnet-mock3"]
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+}
+
+locals {
+  common_vars = read_terragrunt_config(find_in_parent_folders("common.hcl"))
+  common      = local.common_vars.locals.common
+  account_id  = get_aws_account_id()
+}
+
+inputs = {
+  common = local.common
+
+  eks = {
+    key      = "argocd"
+    name     = dependency.eks.outputs.cluster_name
+    role_arn = dependency.eks.outputs.cluster_role_arn
+
+    # Cluster network configuration
+    subnet_ids              = dependency.vpc.outputs.private_subnet_ids
+    endpoint_private_access = true
+    endpoint_public_access  = true
+
+    # Cluster configuration
+    version                                     = "1.32"
+    oidc_thumbprint                             = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = false
+
+    # Required for Helm-based controllers
+    create_node_group       = true
+    create_service_accounts = true
+
+    eks_addons = {
+      # ArgoCD's ingress is rendered as an ALB Ingress, so the controller must be installed.
+      enable_aws_load_balancer_controller   = true
+      aws_load_balancer_controller_version  = "1.8.1"
+      aws_load_balancer_controller_role_key = "aws-lb-controller"
+
+      enable_argocd       = true
+      argocd_version      = "8.1.2"
+      argocd_release_name = "argocd"
+      argocd_namespace    = "argocd"
+      argocd_timeout      = 900
+      argocd_ha_enabled   = false
+
+      # ALB terminates TLS, so the ArgoCD server runs in insecure (plain HTTP) mode.
+      argocd_server_insecure = true
+      argocd_server_replicas = 2
+
+      # bcrypt hash of the initial admin password (omit to use the auto-generated secret)
+      # argocd_admin_password_bcrypt = "$2a$10$replace-with-your-own-bcrypt-hash"
+
+      argocd_ingress_enabled     = true
+      argocd_ingress_class_name  = "alb"
+      argocd_ingress_host        = "argocd.example.com"
+      argocd_ingress_extra_hosts = []
+      argocd_ingress_scheme      = "internet-facing"
+      argocd_ingress_target_type = "ip"
+      argocd_alb_name            = "example-argocd-alb"
+      argocd_ingress_group_name  = "example-platform"
+
+      # These values are AWS IDs, not names.
+      argocd_certificate_arn             = "arn:aws:acm:us-east-1:123456789012:certificate/example-argocd-cert"
+      argocd_ssl_policy                  = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+      argocd_ingress_subnet_ids          = dependency.vpc.outputs.public_subnet_ids
+      argocd_ingress_security_group_keys = ["argocd-alb"]
+
+      argocd_ingress_annotations = {
+        "alb.ingress.kubernetes.io/load-balancer-attributes" = "idle_timeout.timeout_seconds=600"
+      }
+
+      # Extra Helm values merged on top of the module defaults.
+      argocd_values = [
+        {
+          configs = {
+            cm = {
+              "timeout.reconciliation" = "180s"
+              url                      = "https://argocd.example.com"
+            }
+          }
+        }
+      ]
+
+      # Enable these only if this stack is also responsible for them.
+      enable_vpc_cni    = false
+      enable_kube_proxy = false
+      enable_coredns    = false
+    }
+
+    iam_roles = {
+      aws-lb-controller = {
+        key                       = "aws-lb-controller"
+        name                      = "${local.common.account_name}-${local.common.region_prefix}-eks-aws-lb-controller"
+        description               = "IAM role for AWS Load Balancer Controller with IRSA"
+        service_account_namespace = "kube-system"
+        service_account_name      = "aws-load-balancer-controller"
+        managed_policy_arns = [
+          "arn:aws:iam::${local.account_id}:policy/AWSLoadBalancerControllerIAMPolicy"
+        ]
+      }
+    }
+
+    service_accounts = [
+      {
+        key       = "aws-lb-controller"
+        name      = "aws-load-balancer-controller"
+        namespace = "kube-system"
+        role_key  = "aws-lb-controller"
+      }
+    ]
+
+    access_entries = {}
+
+    key_pair = {
+      name               = "${local.common.account_name}-${local.common.region_prefix}-argocd-keypair"
+      secret_name        = "argocd-keypair"
+      secret_description = "SSH key pair for the ArgoCD example node group"
+    }
+
+    security_groups = [
+      {
+        key         = "argocd-alb"
+        name        = "argocd-alb"
+        description = "Security group attached to the ArgoCD ALB"
+        vpc_id      = dependency.vpc.outputs.vpc_id
+        vpc_name    = "shared"
+        security_group_ingress_rules = [
+          {
+            description = "Allow HTTPS from corporate networks"
+            from_port   = 443
+            to_port     = 443
+            protocol    = "tcp"
+            cidr_blocks = ["10.0.0.0/8"]
+          },
+          {
+            description = "Allow HTTP for the redirect to HTTPS"
+            from_port   = 80
+            to_port     = 80
+            protocol    = "tcp"
+            cidr_blocks = ["10.0.0.0/8"]
+          }
+        ]
+        security_group_egress_rules = [
+          {
+            description = "Allow all outbound traffic"
+            from_port   = 0
+            to_port     = 0
+            protocol    = "-1"
+            cidr_blocks = ["0.0.0.0/0"]
+          }
+        ]
+      }
+    ]
+
+    launch_templates = [{
+      key           = "argocd"
+      name          = "argocd"
+      instance_type = "t3.medium"
+      volume_size   = 50
+
+      ami_config = {
+        os_release_date  = "latest"
+        os_base_packages = "standard"
+      }
+
+      vpc_security_group_keys = ["eks_cluster_sg_id"]
+    }]
+
+    eks_node_groups = [{
+      key                 = "argocd"
+      node_group_name     = "argocd"
+      launch_template_key = "argocd"
+      subnet_ids          = dependency.vpc.outputs.private_subnet_ids
+
+      desired_size = 2
+      max_size     = 4
+      min_size     = 2
+
+      # ArgoCD components are pinned to the system nodes by the module.
+      labels = {
+        "workload-type" = "system"
+      }
+
+      taints = [{
+        key    = "workload-type"
+        value  = "system"
+        effect = "NO_SCHEDULE"
+      }]
+    }]
+  }
+}

@@ -36,6 +36,7 @@ inputs = {
     domain_name       = "example.com"
     validation_method = "DNS"
     name              = "example-cert"
+    zone_name         = "example.com"
   }
   
   common = {
@@ -67,6 +68,7 @@ inputs = {
     domain_name       = "example.com"
     validation_method = "DNS"
     name              = "wildcard-cert"
+    zone_name         = "example.com"
     subject_alternative_names = [
       "*.example.com",
       "api.example.com",
@@ -119,6 +121,7 @@ inputs = {
     domain_name       = "dev.example.com"
     validation_method = "DNS"
     name              = "dev-cert"
+    zone_name         = "example.com"
   }
   
   common = {
@@ -148,6 +151,7 @@ inputs = {
     domain_name       = "example.com"
     validation_method = "DNS"
     name              = "prod-cert"
+    zone_name         = "example.com"
   }
   
   common = {
@@ -189,6 +193,7 @@ inputs = {
     domain_name       = "example.com"
     validation_method = "DNS"
     name              = "example-cert"
+    zone_name         = "example.com"
   }
   
   common = {
@@ -203,6 +208,37 @@ inputs = {
 }
 ```
 
+### Optional: Publish certificate metadata to AWS Secrets Manager
+
+This module can optionally create a Secrets Manager secret and write certificate metadata for downstream consumers.
+
+```hcl
+inputs = {
+  certificate = {
+    domain_name       = "littledoctor.prod.novutechnologies.net"
+    validation_method = "DNS"
+    name              = "littledoctor-prod"
+    zone_name         = "prod.novutechnologies.net"
+  }
+
+  secrets_manager = {
+    enabled = true
+    name    = "infogrid/littledoctor/acm-public-cert"
+  }
+
+  common = {
+    account_name  = "production"
+    region_prefix = "use1"
+    tags = {
+      Environment = "production"
+      Project     = "littledoctor"
+    }
+  }
+}
+```
+
+Note: ACM-issued public certificate private keys are managed by AWS ACM and are not exportable.
+
 ## Input Variables
 
 | Name | Description | Type | Default | Required |
@@ -211,7 +247,14 @@ inputs = {
 | certificate.domain_name | Domain name for the certificate | `string` | n/a | yes |
 | certificate.validation_method | Validation method (DNS or EMAIL) | `string` | n/a | yes |
 | certificate.name | Name identifier for the certificate | `string` | n/a | yes |
+| certificate.zone_name | Public Route 53 zone used for DNS validation | `string` | n/a | yes |
 | certificate.subject_alternative_names | Additional domain names | `list(string)` | `[]` | no |
+| secrets_manager | Optional Secrets Manager configuration object | `object` | `{}` | no |
+| secrets_manager.enabled | Whether to create a secret | `bool` | `false` | no |
+| secrets_manager.name | Explicit secret name (auto-generated when omitted) | `string` | `null` | no |
+| secrets_manager.description | Secret description | `string` | `Metadata for ACM public certificate` | no |
+| secrets_manager.kms_key_id | KMS key id/arn for secret encryption | `string` | `null` | no |
+| secrets_manager.recovery_window_in_days | Recovery window for secret deletion | `number` | `7` | no |
 | common | Common configuration object | `object` | n/a | yes |
 | common.account_name | Account name for resource naming | `string` | n/a | yes |
 | common.region_prefix | Region prefix for resource naming | `string` | n/a | yes |
@@ -221,10 +264,11 @@ inputs = {
 
 | Name | Description |
 |------|-------------|
-| certificate_arn | ARN of the ACM certificate |
-| certificate_domain_name | Domain name of the certificate |
-| certificate_status | Status of the certificate |
-| validation_record_fqdns | List of FQDNs for validation records |
+| arn | ARN of the ACM certificate |
+| domain_name | Domain name of the certificate |
+| name | Name/id of the ACM certificate |
+| secret_arn | ARN of optional Secrets Manager secret |
+| secret_name | Name of optional Secrets Manager secret |
 
 ## Deployment Commands
 

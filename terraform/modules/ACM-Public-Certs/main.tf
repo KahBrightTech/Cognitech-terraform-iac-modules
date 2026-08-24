@@ -12,9 +12,19 @@ data "aws_route53_zone" "zone" {
 #--------------------------------------------------------------------
 # Locals
 #--------------------------------------------------------------------
+locals {
+  secrets_manager_cfg = try(var.certificate.secrets_manager, var.secrets_manager, {})
+  create_cert_secret  = try(local.secrets_manager_cfg.enabled, false)
+  cert_secret_name = coalesce(
+    try(local.secrets_manager_cfg.name, null),
+    format("%s/%s/%s/acm-cert", var.common.account_name, var.common.region_prefix, var.certificate.name)
+  )
+}
+
 resource "aws_acm_certificate" "main" {
-  domain_name       = var.certificate.domain_name
-  validation_method = var.certificate.validation_method
+  domain_name               = var.certificate.domain_name
+  validation_method         = var.certificate.validation_method
+  subject_alternative_names = var.certificate.subject_alternative_names
 
   tags = merge(var.common.tags,
     {
@@ -47,4 +57,35 @@ resource "aws_route53_record" "record" {
 resource "aws_acm_certificate_validation" "validation" {
   certificate_arn         = aws_acm_certificate.main.arn
   validation_record_fqdns = [for record in aws_route53_record.record : record.fqdn]
+}
+
+resource "aws_secretsmanager_secret" "acm_certificate" {
+  count = local.create_cert_secret ? 1 : 0
+
+  name                    = local.cert_secret_name
+  description             = local.secrets_manager_cfg.description
+  kms_key_id              = try(local.secrets_manager_cfg.kms_key_id, null)
+  recovery_window_in_days = local.secrets_manager_cfg.recovery_window_in_days
+
+  tags = merge(var.common.tags,
+    {
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.certificate.name}-acm-metadata"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "acm_certificate" {
+  count     = local.create_cert_secret ? 1 : 0
+  secret_id = aws_secretsmanager_secret.acm_certificate[0].id
+  secret_string = jsonencode({
+    certificate_arn         = aws_acm_certificate.main.arn
+    certificate_domain_name = aws_acm_certificate.main.domain_name
+    certificate_status      = aws_acm_certificate.main.status
+    validation_record_fqdns = [for record in aws_route53_record.record : record.fqdn]
+    private_key_managed_by  = "AWS ACM"
+    private_key_exportable  = false
+    note                    = "ACM-issued public certificate private keys are not exportable."
+  })
+
+  depends_on = [aws_acm_certificate_validation.validation]
 }

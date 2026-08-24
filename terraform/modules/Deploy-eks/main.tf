@@ -304,6 +304,49 @@ locals {
     try(local.gateway_api_config.service_annotations_file, null) != null ? yamldecode(file(local.gateway_api_config.service_annotations_file)) : {},
     local.gateway_api_config.service_annotations
   ) : {}
+
+  argocd_enabled         = var.eks.eks_addons != null && var.eks.eks_addons.enable_argocd && var.eks.create_node_group
+  argocd_ingress_enabled = local.argocd_enabled && var.eks.eks_addons.argocd_ingress_enabled
+
+  argocd_ingress_security_group_ids = local.argocd_enabled ? concat(
+    [
+      for sg_key in var.eks.eks_addons.argocd_ingress_security_group_keys :
+      sg_key == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : module.security_group[sg_key].security_group_id
+    ],
+    var.eks.eks_addons.argocd_ingress_security_group_ids
+  ) : []
+
+  argocd_ingress_annotations = local.argocd_ingress_enabled ? merge(
+    {
+      "alb.ingress.kubernetes.io/scheme"           = var.eks.eks_addons.argocd_ingress_scheme
+      "alb.ingress.kubernetes.io/target-type"      = var.eks.eks_addons.argocd_ingress_target_type
+      "alb.ingress.kubernetes.io/backend-protocol" = var.eks.eks_addons.argocd_server_insecure ? "HTTP" : "HTTPS"
+      "alb.ingress.kubernetes.io/listen-ports" = var.eks.eks_addons.argocd_certificate_arn != null ? jsonencode([
+        { HTTP = 80 }, { HTTPS = 443 }
+      ]) : jsonencode([{ HTTP = 80 }])
+      "alb.ingress.kubernetes.io/healthcheck-path" = "/healthz"
+    },
+    var.eks.eks_addons.argocd_certificate_arn != null ? {
+      "alb.ingress.kubernetes.io/certificate-arn" = var.eks.eks_addons.argocd_certificate_arn
+      "alb.ingress.kubernetes.io/ssl-redirect"    = "443"
+    } : {},
+    var.eks.eks_addons.argocd_ssl_policy != null ? {
+      "alb.ingress.kubernetes.io/ssl-policy" = var.eks.eks_addons.argocd_ssl_policy
+    } : {},
+    var.eks.eks_addons.argocd_ingress_group_name != null ? {
+      "alb.ingress.kubernetes.io/group.name" = var.eks.eks_addons.argocd_ingress_group_name
+    } : {},
+    var.eks.eks_addons.argocd_alb_name != null ? {
+      "alb.ingress.kubernetes.io/load-balancer-name" = var.eks.eks_addons.argocd_alb_name
+    } : {},
+    length(var.eks.eks_addons.argocd_ingress_subnet_ids) > 0 ? {
+      "alb.ingress.kubernetes.io/subnets" = join(",", var.eks.eks_addons.argocd_ingress_subnet_ids)
+    } : {},
+    length(local.argocd_ingress_security_group_ids) > 0 ? {
+      "alb.ingress.kubernetes.io/security-groups" = join(",", local.argocd_ingress_security_group_ids)
+    } : {},
+    var.eks.eks_addons.argocd_ingress_annotations
+  ) : {}
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -1679,4 +1722,85 @@ resource "kubernetes_resource_quota_v1" "resource_quota" {
   }
 
   depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace]
+}
+
+#--------------------------------------------------------------------
+# ArgoCD (Helm) - Tier 5: GitOps - exposed through an ALB
+#--------------------------------------------------------------------
+resource "helm_release" "argocd" {
+  count      = local.argocd_enabled ? 1 : 0
+  name       = var.eks.eks_addons.argocd_release_name
+  namespace  = var.eks.eks_addons.argocd_namespace
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argo-cd"
+  version    = var.eks.eks_addons.argocd_version
+  timeout    = var.eks.eks_addons.argocd_timeout
+
+  wait             = true
+  atomic           = true
+  max_history      = 5
+  create_namespace = true
+  cleanup_on_fail  = true
+
+  values = concat([
+    yamlencode({
+      global = {
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
+      }
+      configs = {
+        # ArgoCD terminates TLS at the ALB, so UI/gRPC traffic arrives as plain HTTP.
+        params = {
+          "server.insecure" = var.eks.eks_addons.argocd_server_insecure
+        }
+        secret = var.eks.eks_addons.argocd_admin_password_bcrypt != null ? {
+          argocdServerAdminPassword = var.eks.eks_addons.argocd_admin_password_bcrypt
+        } : {}
+      }
+      "redis-ha" = {
+        enabled = var.eks.eks_addons.argocd_ha_enabled
+      }
+      controller = {
+        replicas = var.eks.eks_addons.argocd_ha_enabled ? 2 : 1
+      }
+      repoServer = {
+        replicas = var.eks.eks_addons.argocd_ha_enabled ? 2 : 1
+      }
+      applicationSet = {
+        replicas = var.eks.eks_addons.argocd_ha_enabled ? 2 : 1
+      }
+      server = {
+        replicas = var.eks.eks_addons.argocd_server_replicas
+        service = {
+          type = "ClusterIP"
+        }
+        ingress = {
+          enabled          = local.argocd_ingress_enabled
+          controller       = "aws"
+          ingressClassName = var.eks.eks_addons.argocd_ingress_class_name
+          hostname         = var.eks.eks_addons.argocd_ingress_host
+          path             = "/"
+          pathType         = "Prefix"
+          annotations      = local.argocd_ingress_annotations
+          extraHosts = [
+            for host in var.eks.eks_addons.argocd_ingress_extra_hosts : {
+              name = host
+              path = "/"
+            }
+          ]
+          aws = {
+            serviceType            = "ClusterIP"
+            backendProtocolVersion = "GRPC"
+          }
+        }
+      }
+    })
+  ], var.eks.eks_addons.argocd_values)
+
+  depends_on = [
+    module.eks_node_group,
+    aws_eks_addon.coredns,
+    aws_eks_addon.pod_identity_agent,
+    helm_release.aws_load_balancer_controller
+  ]
 }
