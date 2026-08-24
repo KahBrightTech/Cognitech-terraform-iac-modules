@@ -117,6 +117,7 @@ variable "eks" {
       enable_fsx_csi_driver                           = optional(bool, false)
       enable_aws_load_balancer_controller             = optional(bool, false)
       enable_ingress                                  = optional(bool, false)
+      enable_cert_manager                             = optional(bool, false)
       enable_cluster_autoscaler                       = optional(bool, false)
       enable_karpenter                                = optional(bool, false)
       enable_external_dns                             = optional(bool, false)
@@ -132,9 +133,22 @@ variable "eks" {
       fsx_csi_driver_version                          = optional(string)
       secrets_manager_csi_driver_aws_provider_version = optional(string)
       aws_load_balancer_controller_version            = optional(string)
+      cert_manager_version                            = optional(string)
       cluster_autoscaler_version                      = optional(string)
       cluster_autoscaler_role_arn                     = optional(string)
       cluster_autoscaler_role_key                     = optional(string)
+      cert_manager = optional(object({
+        namespace              = optional(string, "cert-manager")
+        install_crds           = optional(bool, true)
+        create_cluster_issuer  = optional(bool, false)
+        cluster_issuer_name    = optional(string, "letsencrypt-prod-route53")
+        cluster_issuer_email   = optional(string)
+        cluster_issuer_server  = optional(string, "https://acme-v02.api.letsencrypt.org/directory")
+        route53_region         = optional(string)
+        route53_hosted_zone_id = optional(string)
+        route53_role_key       = optional(string)
+        route53_role_arn       = optional(string)
+      }), {})
       ingress = optional(object({
         nginx = optional(list(object({
           name               = string

@@ -347,6 +347,12 @@ locals {
     } : {},
     var.eks.eks_addons.argocd_ingress_annotations
   ) : {}
+
+  cert_manager_route53_role_arn = var.eks.eks_addons != null && try(var.eks.eks_addons.cert_manager, null) != null ? (
+    try(var.eks.eks_addons.cert_manager.route53_role_key, null) != null
+    ? module.iam_roles[var.eks.eks_addons.cert_manager.route53_role_key].iam_role_arn
+    : try(var.eks.eks_addons.cert_manager.route53_role_arn, null)
+  ) : null
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -1803,4 +1809,91 @@ resource "helm_release" "argocd" {
     aws_eks_addon.pod_identity_agent,
     helm_release.aws_load_balancer_controller
   ]
+}
+
+#--------------------------------------------------------------------
+# cert-manager (Helm) - Optional in-cluster certificate management
+#--------------------------------------------------------------------
+resource "helm_release" "cert_manager" {
+  count = (
+    var.eks.create_node_group
+    && var.eks.eks_addons != null
+    && try(var.eks.eks_addons.enable_cert_manager, false)
+  ) ? 1 : 0
+
+  name       = "cert-manager"
+  namespace  = try(var.eks.eks_addons.cert_manager.namespace, "cert-manager")
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  version    = try(var.eks.eks_addons.cert_manager_version, "v1.16.2")
+  timeout    = 900
+
+  wait             = true
+  atomic           = true
+  max_history      = 5
+  create_namespace = true
+  cleanup_on_fail  = true
+
+  values = [
+    yamlencode({
+      crds = {
+        enabled = try(var.eks.eks_addons.cert_manager.install_crds, true)
+      }
+      nodeSelector = local.system_node_selector
+      tolerations  = local.system_tolerations
+    })
+  ]
+
+  depends_on = [
+    module.eks_node_group,
+    aws_eks_addon.coredns
+  ]
+}
+
+resource "kubectl_manifest" "cert_manager_cluster_issuer" {
+  count = (
+    var.eks.create_node_group
+    && var.eks.eks_addons != null
+    && try(var.eks.eks_addons.enable_cert_manager, false)
+    && try(var.eks.eks_addons.cert_manager.create_cluster_issuer, false)
+  ) ? 1 : 0
+
+  yaml_body = yamlencode({
+    apiVersion = "cert-manager.io/v1"
+    kind       = "ClusterIssuer"
+    metadata = {
+      name = try(var.eks.eks_addons.cert_manager.cluster_issuer_name, "letsencrypt-prod-route53")
+    }
+    spec = {
+      acme = merge(
+        {
+          email  = var.eks.eks_addons.cert_manager.cluster_issuer_email
+          server = try(var.eks.eks_addons.cert_manager.cluster_issuer_server, "https://acme-v02.api.letsencrypt.org/directory")
+          privateKeySecretRef = {
+            name = "${try(var.eks.eks_addons.cert_manager.cluster_issuer_name, "letsencrypt-prod-route53")}-account-key"
+          }
+          solvers = [
+            {
+              dns01 = {
+                route53 = merge(
+                  {
+                    region = coalesce(try(var.eks.eks_addons.cert_manager.route53_region, null), data.aws_region.current.name)
+                  },
+                  try(var.eks.eks_addons.cert_manager.route53_hosted_zone_id, null) != null ? {
+                    hostedZoneID = var.eks.eks_addons.cert_manager.route53_hosted_zone_id
+                  } : {},
+                  local.cert_manager_route53_role_arn != null ? {
+                    role = local.cert_manager_route53_role_arn
+                  } : {}
+                )
+              }
+            }
+          ]
+        },
+        {}
+      )
+    }
+  })
+
+  depends_on = [helm_release.cert_manager, module.iam_roles]
 }
