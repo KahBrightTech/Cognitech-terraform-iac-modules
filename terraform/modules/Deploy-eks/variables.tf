@@ -577,10 +577,10 @@ variable "eks" {
     error_message = "Configure only one ingress controller block at a time: either eks.ingress.nginx or eks.ingress.gateway_api."
   }
 
-  validation {
-    condition     = !(var.eks.compute.karpenter.enabled && var.eks.compute.cluster_autoscaler.enabled)
-    error_message = "Configure only one autoscaler at a time: either eks.compute.karpenter or eks.compute.cluster_autoscaler."
-  }
+  # validation {
+  #   condition     = !(var.eks.compute.karpenter.enabled && var.eks.compute.cluster_autoscaler.enabled)
+  #   error_message = "Configure only one autoscaler at a time: either eks.compute.karpenter or eks.compute.cluster_autoscaler."
+  # }
 
   default = null
 }
