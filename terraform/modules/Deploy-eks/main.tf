@@ -1957,7 +1957,8 @@ resource "kubectl_manifest" "awx_instance" {
     spec = {
       for k, v in merge(
         {
-          service_type = var.eks.addons.awx_operator.service_type
+          service_type         = var.eks.addons.awx_operator.service_type
+          service_account_name = var.eks.addons.awx_operator.instance_service_account_name
         },
         var.eks.addons.awx_operator.ingress_enabled ? {
           ingress_type        = "ingress"
