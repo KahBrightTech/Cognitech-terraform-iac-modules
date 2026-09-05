@@ -50,8 +50,8 @@ locals {
     operator = "Exists"
   }]
 
-  karpenter_enabled = var.eks.compute.karpenter.enabled && var.eks.compute.create_node_group
-  karpenter         = local.karpenter_enabled ? var.eks.compute.karpenter : null
+  karpenter_enabled = var.eks.eks_addons != null && var.eks.eks_addons.enable_karpenter && var.eks.create_node_group
+  karpenter         = local.karpenter_enabled ? var.eks.eks_addons.karpenter : null
 
   karpenter_interruption_queue_name = local.karpenter_enabled ? coalesce(local.karpenter.interruption_queue_name, aws_eks_cluster.eks_cluster.name) : null
 
@@ -70,12 +70,12 @@ locals {
   ) : null
 
   eks_node_group_role_input_arns = [
-    for node_group in try(var.eks.compute.eks_node_groups, []) : node_group.node_role_arn
+    for node_group in try(var.eks.eks_node_groups, []) : node_group.node_role_arn
     if try(node_group.node_role_arn, null) != null
   ]
 
   eks_node_group_role_keys = [
-    for node_group in try(var.eks.compute.eks_node_groups, []) : node_group.node_role_key
+    for node_group in try(var.eks.eks_node_groups, []) : node_group.node_role_key
     if try(node_group.node_role_key, null) != null
   ]
 
@@ -149,6 +149,7 @@ locals {
     ssl_policy    = null
     ssl_ports     = []
   }
+
   gateway_api_defaults = {
     version                  = "2.6.7"
     release_name             = "ngf"
@@ -171,37 +172,34 @@ locals {
     values                   = []
   }
 
-  ingress_enabled     = var.eks.ingress.enabled && var.eks.compute.create_node_group
-  nginx_ingress_input = local.ingress_enabled ? var.eks.ingress.nginx : []
+  ingress_enabled     = var.eks.eks_addons != null && var.eks.eks_addons.enable_ingress && var.eks.create_node_group
+  nginx_ingress_input = local.ingress_enabled ? try(var.eks.eks_addons.ingress.nginx, []) : []
   gateway_api_input = {
-    version                  = try(var.eks.ingress.gateway_api.version, local.gateway_api_defaults.version)
-    release_name             = try(var.eks.ingress.gateway_api.release_name, local.gateway_api_defaults.release_name)
-    namespace                = try(var.eks.ingress.gateway_api.namespace, local.gateway_api_defaults.namespace)
-    gateway_class_name       = try(var.eks.ingress.gateway_api.gateway_class_name, local.gateway_api_defaults.gateway_class_name)
-    controller_name          = try(var.eks.ingress.gateway_api.controller_name, local.gateway_api_defaults.controller_name)
-    nginx_replicas           = try(var.eks.ingress.gateway_api.nginx_replicas, local.gateway_api_defaults.nginx_replicas)
-    fabric_replicas          = try(var.eks.ingress.gateway_api.fabric_replicas, local.gateway_api_defaults.fabric_replicas)
-    scheme                   = try(var.eks.ingress.gateway_api.scheme, local.gateway_api_defaults.scheme)
-    target_type              = try(var.eks.ingress.gateway_api.target_type, local.gateway_api_defaults.target_type)
-    nlb_name                 = try(var.eks.ingress.gateway_api.nlb_name, local.gateway_api_defaults.nlb_name)
-    subnet_ids               = try(var.eks.ingress.gateway_api.subnet_ids, local.gateway_api_defaults.subnet_ids)
-    security_group_keys      = try(var.eks.ingress.gateway_api.security_group_keys, local.gateway_api_defaults.security_group_keys)
-    security_group_ids       = try(var.eks.ingress.gateway_api.security_group_ids, local.gateway_api_defaults.security_group_ids)
-    service_annotations      = try(var.eks.ingress.gateway_api.service_annotations, local.gateway_api_defaults.service_annotations)
-    service_annotations_file = try(var.eks.ingress.gateway_api.service_annotations_file, local.gateway_api_defaults.service_annotations_file)
-    values                   = try(var.eks.ingress.gateway_api.values, local.gateway_api_defaults.values)
+    version                  = try(var.eks.eks_addons.ingress.gateway_api.version, local.gateway_api_defaults.version)
+    release_name             = try(var.eks.eks_addons.ingress.gateway_api.release_name, local.gateway_api_defaults.release_name)
+    namespace                = try(var.eks.eks_addons.ingress.gateway_api.namespace, local.gateway_api_defaults.namespace)
+    gateway_class_name       = try(var.eks.eks_addons.ingress.gateway_api.gateway_class_name, local.gateway_api_defaults.gateway_class_name)
+    controller_name          = try(var.eks.eks_addons.ingress.gateway_api.controller_name, local.gateway_api_defaults.controller_name)
+    nginx_replicas           = try(var.eks.eks_addons.ingress.gateway_api.nginx_replicas, local.gateway_api_defaults.nginx_replicas)
+    fabric_replicas          = try(var.eks.eks_addons.ingress.gateway_api.fabric_replicas, local.gateway_api_defaults.fabric_replicas)
+    scheme                   = try(var.eks.eks_addons.ingress.gateway_api.scheme, local.gateway_api_defaults.scheme)
+    target_type              = try(var.eks.eks_addons.ingress.gateway_api.target_type, local.gateway_api_defaults.target_type)
+    nlb_name                 = try(var.eks.eks_addons.ingress.gateway_api.nlb_name, local.gateway_api_defaults.nlb_name)
+    subnet_ids               = try(var.eks.eks_addons.ingress.gateway_api.subnet_ids, local.gateway_api_defaults.subnet_ids)
+    security_group_keys      = try(var.eks.eks_addons.ingress.gateway_api.security_group_keys, local.gateway_api_defaults.security_group_keys)
+    security_group_ids       = try(var.eks.eks_addons.ingress.gateway_api.security_group_ids, local.gateway_api_defaults.security_group_ids)
+    service_annotations      = try(var.eks.eks_addons.ingress.gateway_api.service_annotations, local.gateway_api_defaults.service_annotations)
+    service_annotations_file = try(var.eks.eks_addons.ingress.gateway_api.service_annotations_file, local.gateway_api_defaults.service_annotations_file)
+    values                   = try(var.eks.eks_addons.ingress.gateway_api.values, local.gateway_api_defaults.values)
   }
   nginx_ingress_enabled = local.ingress_enabled && length(local.nginx_ingress_input) > 0
-  gateway_api_enabled   = local.ingress_enabled && try(var.eks.ingress.gateway_api, null) != null
+  gateway_api_enabled   = local.ingress_enabled && try(var.eks.eks_addons.ingress.gateway_api, null) != null
 
   ingress_config = local.ingress_enabled ? merge(
     {
       gateway_api = local.gateway_api_defaults
     },
-    {
-      nginx       = var.eks.ingress.nginx
-      gateway_api = var.eks.ingress.gateway_api
-    },
+    try(var.eks.eks_addons.ingress, {}),
     {
       gateway_api = merge(
         local.gateway_api_defaults,
@@ -307,55 +305,55 @@ locals {
     local.gateway_api_config.service_annotations
   ) : {}
 
-  argocd_enabled         = var.eks.ingress.argocd.enabled && var.eks.compute.create_node_group
-  argocd_ingress_enabled = local.argocd_enabled && var.eks.ingress.argocd.ingress_enabled
+  argocd_enabled         = var.eks.eks_addons != null && var.eks.eks_addons.enable_argocd && var.eks.create_node_group
+  argocd_ingress_enabled = local.argocd_enabled && var.eks.eks_addons.argocd_ingress_enabled
 
   argocd_ingress_security_group_ids = local.argocd_enabled ? concat(
     [
-      for sg_key in var.eks.ingress.argocd.ingress_security_group_keys :
+      for sg_key in var.eks.eks_addons.argocd_ingress_security_group_keys :
       sg_key == "eks_cluster_sg_id" ? aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id : module.security_group[sg_key].security_group_id
     ],
-    var.eks.ingress.argocd.ingress_security_group_ids
+    var.eks.eks_addons.argocd_ingress_security_group_ids
   ) : []
 
   argocd_ingress_annotations = local.argocd_ingress_enabled ? merge(
     {
-      "alb.ingress.kubernetes.io/scheme"           = var.eks.ingress.argocd.ingress_scheme
-      "alb.ingress.kubernetes.io/target-type"      = var.eks.ingress.argocd.ingress_target_type
-      "alb.ingress.kubernetes.io/backend-protocol" = var.eks.ingress.argocd.server_insecure ? "HTTP" : "HTTPS"
-      "alb.ingress.kubernetes.io/listen-ports" = var.eks.ingress.argocd.certificate_arn != null ? jsonencode([
+      "alb.ingress.kubernetes.io/scheme"           = var.eks.eks_addons.argocd_ingress_scheme
+      "alb.ingress.kubernetes.io/target-type"      = var.eks.eks_addons.argocd_ingress_target_type
+      "alb.ingress.kubernetes.io/backend-protocol" = var.eks.eks_addons.argocd_server_insecure ? "HTTP" : "HTTPS"
+      "alb.ingress.kubernetes.io/listen-ports" = var.eks.eks_addons.argocd_certificate_arn != null ? jsonencode([
         { HTTP = 80 }, { HTTPS = 443 }
       ]) : jsonencode([{ HTTP = 80 }])
       "alb.ingress.kubernetes.io/healthcheck-path" = "/healthz"
     },
-    var.eks.ingress.argocd.certificate_arn != null ? {
-      "alb.ingress.kubernetes.io/certificate-arn" = var.eks.ingress.argocd.certificate_arn
+    var.eks.eks_addons.argocd_certificate_arn != null ? {
+      "alb.ingress.kubernetes.io/certificate-arn" = var.eks.eks_addons.argocd_certificate_arn
       "alb.ingress.kubernetes.io/ssl-redirect"    = "443"
     } : {},
-    var.eks.ingress.argocd.ssl_policy != null ? {
-      "alb.ingress.kubernetes.io/ssl-policy" = var.eks.ingress.argocd.ssl_policy
+    var.eks.eks_addons.argocd_ssl_policy != null ? {
+      "alb.ingress.kubernetes.io/ssl-policy" = var.eks.eks_addons.argocd_ssl_policy
     } : {},
-    var.eks.ingress.argocd.ingress_group_name != null ? {
-      "alb.ingress.kubernetes.io/group.name" = var.eks.ingress.argocd.ingress_group_name
+    var.eks.eks_addons.argocd_ingress_group_name != null ? {
+      "alb.ingress.kubernetes.io/group.name" = var.eks.eks_addons.argocd_ingress_group_name
     } : {},
-    var.eks.ingress.argocd.alb_name != null ? {
-      "alb.ingress.kubernetes.io/load-balancer-name" = var.eks.ingress.argocd.alb_name
+    var.eks.eks_addons.argocd_alb_name != null ? {
+      "alb.ingress.kubernetes.io/load-balancer-name" = var.eks.eks_addons.argocd_alb_name
     } : {},
-    length(var.eks.ingress.argocd.ingress_subnet_ids) > 0 ? {
-      "alb.ingress.kubernetes.io/subnets" = join(",", var.eks.ingress.argocd.ingress_subnet_ids)
+    length(var.eks.eks_addons.argocd_ingress_subnet_ids) > 0 ? {
+      "alb.ingress.kubernetes.io/subnets" = join(",", var.eks.eks_addons.argocd_ingress_subnet_ids)
     } : {},
     length(local.argocd_ingress_security_group_ids) > 0 ? {
       "alb.ingress.kubernetes.io/security-groups" = join(",", local.argocd_ingress_security_group_ids)
     } : {},
-    try(var.eks.ingress.argocd.ingress_annotations_file, null) != null ? yamldecode(file(var.eks.ingress.argocd.ingress_annotations_file)) : {},
-    var.eks.ingress.argocd.ingress_annotations
+    try(var.eks.eks_addons.argocd_ingress_annotations_file, null) != null ? yamldecode(file(var.eks.eks_addons.argocd_ingress_annotations_file)) : {},
+    var.eks.eks_addons.argocd_ingress_annotations
   ) : {}
 
-  cert_manager_route53_role_arn = (
-    var.eks.addons.cert_manager.route53_role_key != null
-    ? module.iam_roles[var.eks.addons.cert_manager.route53_role_key].iam_role_arn
-    : var.eks.addons.cert_manager.route53_role_arn
-  )
+  cert_manager_route53_role_arn = var.eks.eks_addons != null && try(var.eks.eks_addons.cert_manager, null) != null ? (
+    try(var.eks.eks_addons.cert_manager.route53_role_key, null) != null
+    ? module.iam_roles[var.eks.eks_addons.cert_manager.route53_role_key].iam_role_arn
+    : try(var.eks.eks_addons.cert_manager.route53_role_arn, null)
+  ) : null
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -379,7 +377,6 @@ resource "aws_eks_cluster" "eks_cluster" {
     authentication_mode                         = var.eks.authentication_mode
     bootstrap_cluster_creator_admin_permissions = var.eks.bootstrap_cluster_creator_admin_permissions
   }
-  # NOTE: compute/ingress/addons groups configured below govern node groups, ingress controllers, and cluster addons.
 
   kubernetes_network_config {
     service_ipv4_cidr = var.eks.service_ipv4_cidr
@@ -432,19 +429,19 @@ resource "aws_iam_openid_connect_provider" "eks_oidc" {
 # EKS Addons - Tier 1: Core Networking (Install First)
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "vpc_cni" {
-  count                       = var.eks.addons.vpc_cni.enabled ? 1 : 0
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_vpc_cni ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "vpc-cni"
-  addon_version               = var.eks.addons.vpc_cni.version
+  addon_version               = var.eks.eks_addons.vpc_cni_version
   resolve_conflicts_on_update = "PRESERVE"
   configuration_values = jsonencode({
     for k, v in merge(
       { tolerations = local.all_workload_node_tolerations },
-      var.eks.addons.vpc_cni.enable_prefix_delegation ? {
+      var.eks.eks_addons.enable_prefix_delegation ? {
         enableNetworkPolicy = "true"
         env = {
           ENABLE_PREFIX_DELEGATION = "true"
-          WARM_PREFIX_TARGET       = tostring(var.eks.addons.vpc_cni.warm_prefix_target)
+          WARM_PREFIX_TARGET       = tostring(var.eks.eks_addons.warm_prefix_target)
         }
         } : {
         enableNetworkPolicy = null
@@ -459,10 +456,10 @@ resource "aws_eks_addon" "vpc_cni" {
 }
 
 resource "aws_eks_addon" "kube_proxy" {
-  count                       = var.eks.addons.kube_proxy.enabled ? 1 : 0
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_kube_proxy ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "kube-proxy"
-  addon_version               = var.eks.addons.kube_proxy.version
+  addon_version               = var.eks.eks_addons.kube_proxy_version
   resolve_conflicts_on_update = "PRESERVE"
   # No configuration_values here on purpose: the kube-proxy addon's
   # configurationValues JSON schema doesn't accept a "tolerations" key at
@@ -480,10 +477,10 @@ resource "aws_eks_addon" "kube_proxy" {
 # EKS Addons - Tier 2: After Node Groups
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "coredns" {
-  count                       = var.eks.addons.coredns.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_coredns && var.eks.create_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "coredns"
-  addon_version               = var.eks.addons.coredns.version
+  addon_version               = var.eks.eks_addons.coredns_version
   resolve_conflicts_on_update = "PRESERVE"
   configuration_values        = jsonencode({ nodeSelector = local.system_node_selector, tolerations = local.system_tolerations })
 
@@ -498,10 +495,10 @@ resource "aws_eks_addon" "coredns" {
 }
 
 resource "aws_eks_addon" "pod_identity_agent" {
-  count                       = var.eks.addons.pod_identity_agent.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_pod_identity_agent && var.eks.create_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "eks-pod-identity-agent"
-  addon_version               = var.eks.addons.pod_identity_agent.version
+  addon_version               = var.eks.eks_addons.pod_identity_agent_version
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
   configuration_values        = jsonencode({ tolerations = local.all_workload_node_tolerations })
@@ -517,11 +514,11 @@ resource "aws_eks_addon" "pod_identity_agent" {
 # EKS Addons - Tier 3: Infrastructure Controllers
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "ebs_csi_driver" {
-  count                    = var.eks.addons.ebs_csi_driver.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count                    = var.eks.eks_addons != null && var.eks.eks_addons.enable_ebs_csi_driver && var.eks.create_node_group ? 1 : 0
   cluster_name             = aws_eks_cluster.eks_cluster.name
   addon_name               = "aws-ebs-csi-driver"
-  addon_version            = var.eks.addons.ebs_csi_driver.version
-  service_account_role_arn = var.eks.addons.ebs_csi_driver.role_key != null ? module.iam_roles[var.eks.addons.ebs_csi_driver.role_key].iam_role_arn : var.eks.addons.ebs_csi_driver.role_arn
+  addon_version            = var.eks.eks_addons.ebs_csi_driver_version
+  service_account_role_arn = var.eks.eks_addons.ebs_csi_driver_role_key != null ? module.iam_roles[var.eks.eks_addons.ebs_csi_driver_role_key].iam_role_arn : var.eks.eks_addons.ebs_csi_driver_role_arn
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
@@ -542,7 +539,7 @@ resource "aws_eks_addon" "ebs_csi_driver" {
 # GP3 Storage Class for EBS CSI Driver
 #--------------------------------------------------------------------
 resource "kubernetes_storage_class_v1" "gp3" {
-  count = var.eks.addons.ebs_csi_driver.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count = var.eks.eks_addons != null && var.eks.eks_addons.enable_ebs_csi_driver && var.eks.create_node_group ? 1 : 0
   metadata {
     name = "gp3"
   }
@@ -562,11 +559,11 @@ resource "kubernetes_storage_class_v1" "gp3" {
 # EFS CSI Driver
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "efs_csi_driver" {
-  count                    = var.eks.addons.efs_csi_driver.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count                    = var.eks.eks_addons != null && var.eks.eks_addons.enable_efs_csi_driver && var.eks.create_node_group ? 1 : 0
   cluster_name             = aws_eks_cluster.eks_cluster.name
   addon_name               = "aws-efs-csi-driver"
-  addon_version            = var.eks.addons.efs_csi_driver.version
-  service_account_role_arn = var.eks.addons.efs_csi_driver.role_key != null ? module.iam_roles[var.eks.addons.efs_csi_driver.role_key].iam_role_arn : var.eks.addons.efs_csi_driver.role_arn
+  addon_version            = var.eks.eks_addons.efs_csi_driver_version
+  service_account_role_arn = var.eks.eks_addons.efs_csi_driver_role_key != null ? module.iam_roles[var.eks.eks_addons.efs_csi_driver_role_key].iam_role_arn : var.eks.eks_addons.efs_csi_driver_role_arn
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
@@ -591,11 +588,11 @@ resource "aws_eks_addon" "efs_csi_driver" {
 # FSx CSI Driver
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "fsx_csi_driver" {
-  count                    = var.eks.addons.fsx_csi_driver.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count                    = var.eks.eks_addons != null && var.eks.eks_addons.enable_fsx_csi_driver && var.eks.create_node_group ? 1 : 0
   cluster_name             = aws_eks_cluster.eks_cluster.name
   addon_name               = "aws-fsx-csi-driver"
-  addon_version            = var.eks.addons.fsx_csi_driver.version
-  service_account_role_arn = var.eks.addons.fsx_csi_driver.role_key != null ? module.iam_roles[var.eks.addons.fsx_csi_driver.role_key].iam_role_arn : var.eks.addons.fsx_csi_driver.role_arn
+  addon_version            = var.eks.eks_addons.fsx_csi_driver_version
+  service_account_role_arn = var.eks.eks_addons.fsx_csi_driver_role_key != null ? module.iam_roles[var.eks.eks_addons.fsx_csi_driver_role_key].iam_role_arn : var.eks.eks_addons.fsx_csi_driver_role_arn
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
@@ -617,10 +614,10 @@ resource "aws_eks_addon" "fsx_csi_driver" {
 }
 
 resource "aws_eks_addon" "privateca_issuer" {
-  count                       = var.eks.addons.privateca_issuer.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_privateca_issuer && var.eks.create_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "aws-privateca-issuer"
-  addon_version               = var.eks.addons.privateca_issuer.version
+  addon_version               = var.eks.eks_addons.privateca_issuer_version
   resolve_conflicts_on_update = "PRESERVE"
   configuration_values        = jsonencode({ nodeSelector = local.system_node_selector, tolerations = local.system_tolerations })
   tags = merge(var.common.tags, {
@@ -635,12 +632,12 @@ resource "aws_eks_addon" "privateca_issuer" {
 }
 
 resource "helm_release" "secrets_store_aws_provider" {
-  count      = var.eks.addons.secrets_manager_csi_driver.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? 1 : 0
   name       = "secrets-provider-aws"
   namespace  = "kube-system"
   repository = "https://aws.github.io/secrets-store-csi-driver-provider-aws"
   chart      = "secrets-store-csi-driver-provider-aws"
-  version    = var.eks.addons.secrets_manager_csi_driver.aws_provider_version
+  version    = var.eks.eks_addons.secrets_manager_csi_driver_aws_provider_version
 
   cleanup_on_fail = true
   replace         = true
@@ -652,8 +649,8 @@ resource "helm_release" "secrets_store_aws_provider" {
         syncSecret = {
           enabled = true
         }
-        enableSecretRotation = var.eks.addons.secrets_manager_csi_driver.enable_secret_rotation
-        rotationPollInterval = var.eks.addons.secrets_manager_csi_driver.rotation_poll_interval
+        enableSecretRotation = var.eks.eks_addons.enableSecretRotation
+        rotationPollInterval = var.eks.eks_addons.rotationPollInterval
       }
       }, { tolerations = local.all_workload_node_tolerations }
     ))
@@ -670,12 +667,12 @@ resource "helm_release" "secrets_store_aws_provider" {
 # AWS Load Balancer Controller (Helm) - Tier 3
 #--------------------------------------------------------------------
 resource "helm_release" "aws_load_balancer_controller" {
-  count      = var.eks.ingress.aws_load_balancer_controller.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_aws_load_balancer_controller && var.eks.create_node_group ? 1 : 0
   name       = "aws-load-balancer-controller"
   namespace  = "kube-system"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
-  version    = var.eks.ingress.aws_load_balancer_controller.version
+  version    = var.eks.eks_addons.aws_load_balancer_controller_version
 
   cleanup_on_fail = true
   replace         = true
@@ -689,7 +686,7 @@ resource "helm_release" "aws_load_balancer_controller" {
         create = true
         name   = "aws-load-balancer-controller"
         annotations = {
-          "eks.amazonaws.com/role-arn" = var.eks.ingress.aws_load_balancer_controller.role_key != null ? module.iam_roles[var.eks.ingress.aws_load_balancer_controller.role_key].iam_role_arn : var.eks.ingress.aws_load_balancer_controller.role_arn
+          "eks.amazonaws.com/role-arn" = var.eks.eks_addons.aws_load_balancer_controller_role_key != null ? module.iam_roles[var.eks.eks_addons.aws_load_balancer_controller_role_key].iam_role_arn : var.eks.eks_addons.aws_load_balancer_controller_role_arn
         }
       }
     }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }))
@@ -826,12 +823,12 @@ resource "helm_release" "gateway_api" {
 # Cluster Autoscaler (Helm) - Tier 3
 #--------------------------------------------------------------------
 resource "helm_release" "cluster_autoscaler" {
-  count      = var.eks.compute.cluster_autoscaler.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_cluster_autoscaler && var.eks.create_node_group ? 1 : 0
   name       = "cluster-autoscaler"
   namespace  = "kube-system"
   repository = "https://kubernetes.github.io/autoscaler"
   chart      = "cluster-autoscaler"
-  version    = var.eks.compute.cluster_autoscaler.version
+  version    = var.eks.eks_addons.cluster_autoscaler_version
 
   cleanup_on_fail = true
   replace         = true
@@ -848,7 +845,7 @@ resource "helm_release" "cluster_autoscaler" {
           create = true
           name   = "cluster-autoscaler"
           annotations = {
-            "eks.amazonaws.com/role-arn" = var.eks.compute.cluster_autoscaler.role_key != null ? module.iam_roles[var.eks.compute.cluster_autoscaler.role_key].iam_role_arn : var.eks.compute.cluster_autoscaler.role_arn
+            "eks.amazonaws.com/role-arn" = var.eks.eks_addons.cluster_autoscaler_role_key != null ? module.iam_roles[var.eks.eks_addons.cluster_autoscaler_role_key].iam_role_arn : var.eks.eks_addons.cluster_autoscaler_role_arn
           }
         }
       }
@@ -999,12 +996,12 @@ resource "kubectl_manifest" "karpenter_objects" {
 # External DNS (Helm) - Tier 3
 #--------------------------------------------------------------------
 resource "helm_release" "external_dns" {
-  count      = var.eks.ingress.external_dns.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_external_dns && var.eks.create_node_group ? 1 : 0
   name       = "external-dns"
-  namespace  = var.eks.ingress.external_dns.namespace != null ? var.eks.ingress.external_dns.namespace : "kube-system"
+  namespace  = var.eks.eks_addons.external_dns_namespace != null ? var.eks.eks_addons.external_dns_namespace : "kube-system"
   repository = "https://kubernetes-sigs.github.io/external-dns"
   chart      = "external-dns"
-  version    = var.eks.ingress.external_dns.version
+  version    = var.eks.eks_addons.external_dns_version
 
   cleanup_on_fail = true
   replace         = true
@@ -1017,14 +1014,14 @@ resource "helm_release" "external_dns" {
         create = true
         name   = "external-dns"
         annotations = {
-          "eks.amazonaws.com/role-arn" = var.eks.ingress.external_dns.role_key != null ? module.iam_roles[var.eks.ingress.external_dns.role_key].iam_role_arn : var.eks.ingress.external_dns.role_arn
+          "eks.amazonaws.com/role-arn" = var.eks.eks_addons.external_dns_role_key != null ? module.iam_roles[var.eks.eks_addons.external_dns_role_key].iam_role_arn : var.eks.eks_addons.external_dns_role_arn
         }
       }
-      policy        = var.eks.ingress.external_dns.policy != null ? var.eks.ingress.external_dns.policy : "upsert-only"
+      policy        = var.eks.eks_addons.external_dns_policy != null ? var.eks.eks_addons.external_dns_policy : "upsert-only"
       txtOwnerId    = aws_eks_cluster.eks_cluster.name
-      domainFilters = var.eks.ingress.external_dns.domain_filters != null ? var.eks.ingress.external_dns.domain_filters : []
-      sources       = var.eks.ingress.external_dns.sources != null ? var.eks.ingress.external_dns.sources : ["service", "ingress"]
-      logLevel      = var.eks.ingress.external_dns.log_level != null ? var.eks.ingress.external_dns.log_level : "info"
+      domainFilters = var.eks.eks_addons.external_dns_domain_filters != null ? var.eks.eks_addons.external_dns_domain_filters : []
+      sources       = var.eks.eks_addons.external_dns_sources != null ? var.eks.eks_addons.external_dns_sources : ["service", "ingress"]
+      logLevel      = var.eks.eks_addons.external_dns_log_level != null ? var.eks.eks_addons.external_dns_log_level : "info"
     }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }))
   ]
 
@@ -1040,10 +1037,10 @@ resource "helm_release" "external_dns" {
 # EKS Addons - Tier 4: Observability (Install Last)
 #--------------------------------------------------------------------
 resource "aws_eks_addon" "metrics_server" {
-  count                       = var.eks.addons.metrics_server.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count                       = var.eks.eks_addons != null && var.eks.eks_addons.enable_metrics_server && var.eks.create_node_group ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "metrics-server"
-  addon_version               = var.eks.addons.metrics_server.version
+  addon_version               = var.eks.eks_addons.metrics_server_version
   resolve_conflicts_on_update = "PRESERVE"
   configuration_values        = jsonencode({ nodeSelector = local.system_node_selector, tolerations = local.system_tolerations })
 
@@ -1060,13 +1057,13 @@ resource "aws_eks_addon" "metrics_server" {
 }
 
 resource "aws_eks_addon" "cloudwatch_observability" {
-  count = var.eks.addons.cloudwatch_observability.enabled && var.eks.compute.create_node_group && (var.eks.addons.cloudwatch_observability.role_arn != null ||
-  var.eks.addons.cloudwatch_observability.role_key != null) ? 1 : 0
+  count = var.eks.eks_addons != null && var.eks.eks_addons.enable_cloudwatch_observability && var.eks.create_node_group && (var.eks.eks_addons.cloudwatch_observability_role_arn != null ||
+  var.eks.eks_addons.cloudwatch_observability_role_key != null) ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "amazon-cloudwatch-observability"
-  addon_version               = var.eks.addons.cloudwatch_observability.version
+  addon_version               = var.eks.eks_addons.cloudwatch_observability_version
   resolve_conflicts_on_update = "PRESERVE"
-  service_account_role_arn    = var.eks.addons.cloudwatch_observability.role_key != null ? module.iam_roles[var.eks.addons.cloudwatch_observability.role_key].iam_role_arn : var.eks.addons.cloudwatch_observability.role_arn
+  service_account_role_arn    = var.eks.eks_addons.cloudwatch_observability_role_key != null ? module.iam_roles[var.eks.eks_addons.cloudwatch_observability_role_key].iam_role_arn : var.eks.eks_addons.cloudwatch_observability_role_arn
   configuration_values = jsonencode({
     tolerations = local.all_workload_node_tolerations
     manager = {
@@ -1092,12 +1089,12 @@ resource "aws_eks_addon" "cloudwatch_observability" {
 # Fluent Bit (Helm) - Tier 4: Observability
 #--------------------------------------------------------------------
 resource "helm_release" "fluent_bit" {
-  count      = var.eks.addons.fluent_bit.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count      = var.eks.eks_addons != null && var.eks.eks_addons.enable_fluent_bit && var.eks.create_node_group ? 1 : 0
   name       = "fluent-bit"
-  namespace  = var.eks.addons.fluent_bit.namespace != null ? var.eks.addons.fluent_bit.namespace : "amazon-cloudwatch"
+  namespace  = var.eks.eks_addons.fluent_bit_namespace != null ? var.eks.eks_addons.fluent_bit_namespace : "amazon-cloudwatch"
   repository = "https://fluent.github.io/helm-charts"
   chart      = "fluent-bit"
-  version    = var.eks.addons.fluent_bit.version
+  version    = var.eks.eks_addons.fluent_bit_version
 
   create_namespace = true
   cleanup_on_fail  = true
@@ -1110,16 +1107,16 @@ resource "helm_release" "fluent_bit" {
         create = true
         name   = "fluent-bit"
         annotations = {
-          "eks.amazonaws.com/role-arn" = var.eks.addons.fluent_bit.role_key != null ? module.iam_roles[var.eks.addons.fluent_bit.role_key].iam_role_arn : var.eks.addons.fluent_bit.role_arn
+          "eks.amazonaws.com/role-arn" = var.eks.eks_addons.fluent_bit_role_key != null ? module.iam_roles[var.eks.eks_addons.fluent_bit_role_key].iam_role_arn : var.eks.eks_addons.fluent_bit_role_arn
         }
       }
-      config = var.eks.addons.fluent_bit.firehose_delivery_stream != null ? {
+      config = var.eks.eks_addons.fluent_bit_firehose_delivery_stream != null ? {
         outputs = join("\n", [
           "[OUTPUT]",
           "    Name              kinesis_firehose",
           "    Match             *",
           "    region            ${data.aws_region.current.name}",
-          "    delivery_stream   ${var.eks.addons.fluent_bit.firehose_delivery_stream}",
+          "    delivery_stream   ${var.eks.eks_addons.fluent_bit_firehose_delivery_stream}",
         ])
       } : null
     }, { tolerations = local.all_workload_node_tolerations }))
@@ -1137,16 +1134,16 @@ resource "helm_release" "fluent_bit" {
 # Grafana + Prometheus (Helm) - Tier 4: Observability
 #--------------------------------------------------------------------
 resource "helm_release" "kube_prometheus_stack" {
-  count           = var.eks.addons.kube_prometheus_stack.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count           = var.eks.eks_addons != null && var.eks.eks_addons.enable_kube_prometheus_stack && var.eks.create_node_group ? 1 : 0
   name            = "kube-prometheus-stack"
-  namespace       = var.eks.addons.kube_prometheus_stack.grafana_namespace != null ? var.eks.addons.kube_prometheus_stack.grafana_namespace : "monitoring"
+  namespace       = var.eks.eks_addons.grafana_namespace != null ? var.eks.eks_addons.grafana_namespace : "monitoring"
   repository      = "https://prometheus-community.github.io/helm-charts"
   chart           = "kube-prometheus-stack"
-  version         = var.eks.addons.kube_prometheus_stack.version
-  timeout         = var.eks.addons.kube_prometheus_stack.timeout != null ? var.eks.addons.kube_prometheus_stack.timeout : 900
+  version         = var.eks.eks_addons.kube_prometheus_stack_version
+  timeout         = var.eks.eks_addons.kube_prometheus_stack_timeout != null ? var.eks.eks_addons.kube_prometheus_stack_timeout : 900
   wait            = true
   atomic          = true
-  upgrade_install = var.eks.addons.kube_prometheus_stack.upgrade_install
+  upgrade_install = var.eks.eks_addons.kube_prometheus_stack_upgrade_install
 
   max_history      = 5
   create_namespace = true
@@ -1159,14 +1156,14 @@ resource "helm_release" "kube_prometheus_stack" {
       grafana = merge({
         enabled = true
         service = {
-          type = var.eks.addons.kube_prometheus_stack.grafana_service_type != null ? var.eks.addons.kube_prometheus_stack.grafana_service_type : "ClusterIP"
+          type = var.eks.eks_addons.grafana_service_type != null ? var.eks.eks_addons.grafana_service_type : "ClusterIP"
         }
         ingress = {
-          enabled          = var.eks.addons.kube_prometheus_stack.grafana_ingress_enabled
-          ingressClassName = var.eks.addons.kube_prometheus_stack.grafana_ingress_class_name
-          annotations      = var.eks.addons.kube_prometheus_stack.grafana_ingress_annotations
+          enabled          = var.eks.eks_addons.grafana_ingress_enabled
+          ingressClassName = var.eks.eks_addons.grafana_ingress_class_name
+          annotations      = var.eks.eks_addons.grafana_ingress_annotations
           hosts = [
-            for host in var.eks.addons.kube_prometheus_stack.grafana_ingress_hosts : {
+            for host in var.eks.eks_addons.grafana_ingress_hosts : {
               host = host
               paths = [
                 {
@@ -1178,28 +1175,28 @@ resource "helm_release" "kube_prometheus_stack" {
           ]
         }
         persistence = {
-          enabled          = var.eks.addons.kube_prometheus_stack.grafana_persistence_enabled
-          size             = var.eks.addons.kube_prometheus_stack.grafana_persistence_size != null ? var.eks.addons.kube_prometheus_stack.grafana_persistence_size : "10Gi"
-          storageClassName = var.eks.addons.kube_prometheus_stack.grafana_persistence_storage_class
+          enabled          = var.eks.eks_addons.grafana_persistence_enabled
+          size             = var.eks.eks_addons.grafana_persistence_size != null ? var.eks.eks_addons.grafana_persistence_size : "10Gi"
+          storageClassName = var.eks.eks_addons.grafana_persistence_storage_class
         }
         }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
       )
       prometheus = {
         prometheusSpec = merge(
           {
-            retention = var.eks.addons.kube_prometheus_stack.prometheus_retention != null ? var.eks.addons.kube_prometheus_stack.prometheus_retention : "15d"
+            retention = var.eks.eks_addons.prometheus_retention != null ? var.eks.eks_addons.prometheus_retention : "15d"
           },
-          var.eks.addons.kube_prometheus_stack.prometheus_persistence_enabled ? {
+          var.eks.eks_addons.prometheus_persistence_enabled ? {
             storageSpec = {
               volumeClaimTemplate = {
                 spec = {
                   accessModes = ["ReadWriteOnce"]
                   resources = {
                     requests = {
-                      storage = var.eks.addons.kube_prometheus_stack.prometheus_persistence_size != null ? var.eks.addons.kube_prometheus_stack.prometheus_persistence_size : "20Gi"
+                      storage = var.eks.eks_addons.prometheus_persistence_size != null ? var.eks.eks_addons.prometheus_persistence_size : "20Gi"
                     }
                   }
-                  storageClassName = var.eks.addons.kube_prometheus_stack.prometheus_persistence_storage_class
+                  storageClassName = var.eks.eks_addons.prometheus_persistence_storage_class
                 }
               }
             }
@@ -1252,13 +1249,13 @@ resource "helm_release" "kube_prometheus_stack" {
 # Kubecost (Helm) - Tier 4: Observability
 #--------------------------------------------------------------------
 resource "helm_release" "kubecost" {
-  count            = var.eks.addons.kubecost.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count            = var.eks.eks_addons != null && var.eks.eks_addons.enable_kubecost && var.eks.create_node_group ? 1 : 0
   name             = "kubecost"
-  namespace        = var.eks.addons.kubecost.namespace
+  namespace        = var.eks.eks_addons.kubecost_namespace
   repository       = "https://kubecost.github.io/cost-analyzer/"
   chart            = "cost-analyzer"
-  version          = var.eks.addons.kubecost.version
-  timeout          = var.eks.addons.kubecost.timeout
+  version          = var.eks.eks_addons.kubecost_version
+  timeout          = var.eks.eks_addons.kubecost_timeout
   wait             = true
   atomic           = true
   max_history      = 5
@@ -1268,9 +1265,9 @@ resource "helm_release" "kubecost" {
   values = concat([
     yamlencode(merge(
       {},
-      coalesce(var.eks.addons.kubecost.storage_class, var.eks.addons.kube_prometheus_stack.prometheus_persistence_storage_class) != null ? {
+      coalesce(var.eks.eks_addons.kubecost_storage_class, var.eks.eks_addons.prometheus_persistence_storage_class) != null ? {
         persistentVolume = {
-          storageClass = coalesce(var.eks.addons.kubecost.storage_class, var.eks.addons.kube_prometheus_stack.prometheus_persistence_storage_class)
+          storageClass = coalesce(var.eks.eks_addons.kubecost_storage_class, var.eks.eks_addons.prometheus_persistence_storage_class)
         }
       } : {}
     )),
@@ -1280,18 +1277,18 @@ resource "helm_release" "kubecost" {
           create = true
           name   = "kubecost"
           annotations = {
-            "eks.amazonaws.com/role-arn" = var.eks.addons.kubecost.role_key != null ? module.iam_roles[var.eks.addons.kubecost.role_key].iam_role_arn : var.eks.addons.kubecost.role_arn
+            "eks.amazonaws.com/role-arn" = var.eks.eks_addons.kubecost_role_key != null ? module.iam_roles[var.eks.eks_addons.kubecost_role_key].iam_role_arn : var.eks.eks_addons.kubecost_role_arn
           }
         }
         global = {
           clusterId = aws_eks_cluster.eks_cluster.name
         }
         ingress = {
-          enabled     = var.eks.addons.kubecost.ingress_enabled
-          className   = var.eks.addons.kubecost.ingress_class_name
+          enabled     = var.eks.eks_addons.kubecost_ingress_enabled
+          className   = var.eks.eks_addons.kubecost_ingress_class_name
           pathType    = "Prefix"
-          annotations = var.eks.addons.kubecost.ingress_annotations
-          hosts       = var.eks.addons.kubecost.ingress_hosts
+          annotations = var.eks.eks_addons.kubecost_ingress_annotations
+          hosts       = var.eks.eks_addons.kubecost_ingress_hosts
         }
         kubecostFrontend = {
           nodeSelector = local.system_node_selector
@@ -1312,9 +1309,9 @@ resource "helm_release" "kubecost" {
                 }
               }
             },
-            var.eks.addons.kube_prometheus_stack.prometheus_persistence_storage_class != null ? {
+            var.eks.eks_addons.prometheus_persistence_storage_class != null ? {
               persistentVolume = {
-                storageClass = var.eks.addons.kube_prometheus_stack.prometheus_persistence_storage_class
+                storageClass = var.eks.eks_addons.prometheus_persistence_storage_class
               }
             } : {}
           )
@@ -1322,7 +1319,7 @@ resource "helm_release" "kubecost" {
       },
       {}
     ))
-  ], var.eks.addons.kubecost.values)
+  ], var.eks.eks_addons.kubecost_values)
 
   depends_on = [
     module.eks_node_group,
@@ -1338,18 +1335,18 @@ resource "helm_release" "kubecost" {
 #--------------------------------------------------------------------
 
 resource "tls_private_key" "key" {
-  count     = var.eks.compute.create_node_group ? 1 : 0
+  count     = var.eks.create_node_group ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "generated_key" {
-  count      = var.eks.compute.create_node_group ? 1 : 0
-  key_name   = var.eks.compute.key_pair.name
+  count      = var.eks.create_node_group ? 1 : 0
+  key_name   = var.eks.key_pair.name
   public_key = tls_private_key.key[0].public_key_openssh
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.compute.key_pair.name}"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key_pair.name}"
     }
   )
 }
@@ -1359,21 +1356,21 @@ resource "aws_key_pair" "generated_key" {
 #--------------------------------------------------------------------
 
 resource "aws_secretsmanager_secret" "private_key_secret" {
-  count                          = var.eks.compute.create_node_group ? 1 : 0
-  name_prefix                    = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.compute.key_pair.secret_name}"
-  description                    = var.eks.compute.key_pair.secret_description
+  count                          = var.eks.create_node_group ? 1 : 0
+  name_prefix                    = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key_pair.secret_name}"
+  description                    = var.eks.key_pair.secret_description
   recovery_window_in_days        = 7
   force_overwrite_replica_secret = true
-  policy                         = var.eks.compute.key_pair.policy
+  policy                         = var.eks.key_pair.policy
   tags = merge(var.common.tags,
     {
-      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.compute.key_pair.secret_name}"
+      Name = "${var.common.account_name}-${var.common.region_prefix}-${var.eks.key_pair.secret_name}"
     }
   )
 }
 
 resource "aws_secretsmanager_secret_version" "private_key_secret_version" {
-  count         = var.eks.compute.create_node_group ? 1 : 0
+  count         = var.eks.create_node_group ? 1 : 0
   secret_id     = aws_secretsmanager_secret.private_key_secret[0].id
   secret_string = tls_private_key.key[0].private_key_pem
 }
@@ -1423,7 +1420,7 @@ module "security_group_rules" {
 # Launch template for EKS Node Group
 #--------------------------------------------------------------------
 module "launch_template" {
-  for_each = var.eks.compute.create_node_group && var.eks.compute.launch_templates != null ? { for item in var.eks.compute.launch_templates : item.key => item } : {}
+  for_each = var.eks.create_node_group && var.eks.launch_templates != null ? { for item in var.eks.launch_templates : item.key => item } : {}
   source   = "../Launch_template"
   common   = var.common
   launch_template = merge(
@@ -1464,7 +1461,7 @@ module "launch_template" {
 # EKS Node Group
 #--------------------------------------------------------------------
 module "eks_node_group" {
-  for_each = var.eks.compute.create_node_group && var.eks.compute.eks_node_groups != null ? { for item in var.eks.compute.eks_node_groups : item.key => item } : {}
+  for_each = var.eks.create_node_group && var.eks.eks_node_groups != null ? { for item in var.eks.eks_node_groups : item.key => item } : {}
   source   = "../EKS-Node-group"
   common   = var.common
   eks_node_group = merge(
@@ -1739,12 +1736,12 @@ resource "kubernetes_resource_quota_v1" "resource_quota" {
 #--------------------------------------------------------------------
 resource "helm_release" "argocd" {
   count      = local.argocd_enabled ? 1 : 0
-  name       = var.eks.ingress.argocd.release_name
-  namespace  = var.eks.ingress.argocd.namespace
+  name       = var.eks.eks_addons.argocd_release_name
+  namespace  = var.eks.eks_addons.argocd_namespace
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
-  version    = var.eks.ingress.argocd.version
-  timeout    = var.eks.ingress.argocd.timeout
+  version    = var.eks.eks_addons.argocd_version
+  timeout    = var.eks.eks_addons.argocd_timeout
 
   wait             = true
   atomic           = true
@@ -1761,39 +1758,39 @@ resource "helm_release" "argocd" {
       configs = {
         # ArgoCD terminates TLS at the ALB, so UI/gRPC traffic arrives as plain HTTP.
         params = {
-          "server.insecure" = var.eks.ingress.argocd.server_insecure
+          "server.insecure" = var.eks.eks_addons.argocd_server_insecure
         }
-        secret = var.eks.ingress.argocd.admin_password_bcrypt != null ? {
-          argocdServerAdminPassword = var.eks.ingress.argocd.admin_password_bcrypt
+        secret = var.eks.eks_addons.argocd_admin_password_bcrypt != null ? {
+          argocdServerAdminPassword = var.eks.eks_addons.argocd_admin_password_bcrypt
         } : {}
       }
       "redis-ha" = {
-        enabled = var.eks.ingress.argocd.ha_enabled
+        enabled = var.eks.eks_addons.argocd_ha_enabled
       }
       controller = {
-        replicas = var.eks.ingress.argocd.ha_enabled ? 2 : 1
+        replicas = var.eks.eks_addons.argocd_ha_enabled ? 2 : 1
       }
       repoServer = {
-        replicas = var.eks.ingress.argocd.ha_enabled ? 2 : 1
+        replicas = var.eks.eks_addons.argocd_ha_enabled ? 2 : 1
       }
       applicationSet = {
-        replicas = var.eks.ingress.argocd.ha_enabled ? 2 : 1
+        replicas = var.eks.eks_addons.argocd_ha_enabled ? 2 : 1
       }
       server = {
-        replicas = var.eks.ingress.argocd.server_replicas
+        replicas = var.eks.eks_addons.argocd_server_replicas
         service = {
           type = "ClusterIP"
         }
         ingress = {
           enabled          = local.argocd_ingress_enabled
           controller       = "aws"
-          ingressClassName = var.eks.ingress.argocd.ingress_class_name
-          hostname         = var.eks.ingress.argocd.ingress_host
+          ingressClassName = var.eks.eks_addons.argocd_ingress_class_name
+          hostname         = var.eks.eks_addons.argocd_ingress_host
           path             = "/"
           pathType         = "Prefix"
           annotations      = local.argocd_ingress_annotations
           extraHosts = [
-            for host in var.eks.ingress.argocd.ingress_extra_hosts : {
+            for host in var.eks.eks_addons.argocd_ingress_extra_hosts : {
               name = host
               path = "/"
             }
@@ -1805,7 +1802,7 @@ resource "helm_release" "argocd" {
         }
       }
     })
-  ], var.eks.ingress.argocd.values)
+  ], var.eks.eks_addons.argocd_values)
 
   depends_on = [
     module.eks_node_group,
@@ -1820,15 +1817,16 @@ resource "helm_release" "argocd" {
 #--------------------------------------------------------------------
 resource "helm_release" "cert_manager" {
   count = (
-    var.eks.compute.create_node_group
-    && var.eks.addons.cert_manager.enabled
+    var.eks.create_node_group
+    && var.eks.eks_addons != null
+    && try(var.eks.eks_addons.enable_cert_manager, false)
   ) ? 1 : 0
 
   name       = "cert-manager"
-  namespace  = var.eks.addons.cert_manager.namespace
+  namespace  = try(var.eks.eks_addons.cert_manager.namespace, "cert-manager")
   repository = "https://charts.jetstack.io"
   chart      = "cert-manager"
-  version    = var.eks.addons.cert_manager.version
+  version    = try(var.eks.eks_addons.cert_manager_version, "v1.16.2")
   timeout    = 900
 
   wait             = true
@@ -1840,7 +1838,7 @@ resource "helm_release" "cert_manager" {
   values = [
     yamlencode({
       crds = {
-        enabled = var.eks.addons.cert_manager.install_crds
+        enabled = try(var.eks.eks_addons.cert_manager.install_crds, true)
       }
       nodeSelector = local.system_node_selector
       tolerations  = local.system_tolerations
@@ -1855,34 +1853,35 @@ resource "helm_release" "cert_manager" {
 
 resource "kubectl_manifest" "cert_manager_cluster_issuer" {
   count = (
-    var.eks.compute.create_node_group
-    && var.eks.addons.cert_manager.enabled
-    && var.eks.addons.cert_manager.create_cluster_issuer
+    var.eks.create_node_group
+    && var.eks.eks_addons != null
+    && try(var.eks.eks_addons.enable_cert_manager, false)
+    && try(var.eks.eks_addons.cert_manager.create_cluster_issuer, false)
   ) ? 1 : 0
 
   yaml_body = yamlencode({
     apiVersion = "cert-manager.io/v1"
     kind       = "ClusterIssuer"
     metadata = {
-      name = var.eks.addons.cert_manager.cluster_issuer_name
+      name = try(var.eks.eks_addons.cert_manager.cluster_issuer_name, "letsencrypt-prod-route53")
     }
     spec = {
       acme = merge(
         {
-          email  = var.eks.addons.cert_manager.cluster_issuer_email
-          server = var.eks.addons.cert_manager.cluster_issuer_server
+          email  = var.eks.eks_addons.cert_manager.cluster_issuer_email
+          server = try(var.eks.eks_addons.cert_manager.cluster_issuer_server, "https://acme-v02.api.letsencrypt.org/directory")
           privateKeySecretRef = {
-            name = "${var.eks.addons.cert_manager.cluster_issuer_name}-account-key"
+            name = "${try(var.eks.eks_addons.cert_manager.cluster_issuer_name, "letsencrypt-prod-route53")}-account-key"
           }
           solvers = [
             {
               dns01 = {
                 route53 = merge(
                   {
-                    region = coalesce(var.eks.addons.cert_manager.route53_region, data.aws_region.current.name)
+                    region = coalesce(try(var.eks.eks_addons.cert_manager.route53_region, null), data.aws_region.current.name)
                   },
-                  var.eks.addons.cert_manager.route53_hosted_zone_id != null ? {
-                    hostedZoneID = var.eks.addons.cert_manager.route53_hosted_zone_id
+                  try(var.eks.eks_addons.cert_manager.route53_hosted_zone_id, null) != null ? {
+                    hostedZoneID = var.eks.eks_addons.cert_manager.route53_hosted_zone_id
                   } : {},
                   local.cert_manager_route53_role_arn != null ? {
                     role = local.cert_manager_route53_role_arn
@@ -1898,82 +1897,4 @@ resource "kubectl_manifest" "cert_manager_cluster_issuer" {
   })
 
   depends_on = [helm_release.cert_manager, module.iam_roles]
-}
-
-#--------------------------------------------------------------------
-# AWX Operator (Helm) - Optional in-cluster Ansible AWX management
-#--------------------------------------------------------------------
-resource "helm_release" "awx_operator" {
-  count      = var.eks.addons.awx_operator.enabled && var.eks.compute.create_node_group ? 1 : 0
-  name       = var.eks.addons.awx_operator.release_name
-  namespace  = var.eks.addons.awx_operator.namespace
-  repository = "https://ansible-community.github.io/awx-operator-helm/"
-  chart      = "awx-operator"
-  version    = var.eks.addons.awx_operator.version
-
-  create_namespace = true
-  cleanup_on_fail  = true
-  replace          = true
-  force_update     = true
-
-  values = concat([
-    yamlencode(merge({
-      serviceAccount = {
-        name = var.eks.addons.awx_operator.service_account_name
-        annotations = {
-          "eks.amazonaws.com/role-arn" = var.eks.addons.awx_operator.role_key != null ? module.iam_roles[var.eks.addons.awx_operator.role_key].iam_role_arn : var.eks.addons.awx_operator.role_arn
-        }
-      }
-    }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }))
-  ], var.eks.addons.awx_operator.values)
-
-  depends_on = [
-    module.eks_node_group,
-    module.iam_roles,
-    aws_eks_addon.coredns,
-    aws_eks_addon.pod_identity_agent
-  ]
-}
-
-#--------------------------------------------------------------------
-# AWX Instance - the CR the operator reconciles into the actual AWX
-# app (web/task pods, Service, and optionally an Ingress for the UI).
-# Without this, the operator alone deploys nothing user-facing.
-#--------------------------------------------------------------------
-resource "kubectl_manifest" "awx_instance" {
-  count = (
-    var.eks.addons.awx_operator.enabled
-    && var.eks.addons.awx_operator.create_instance
-    && var.eks.compute.create_node_group
-  ) ? 1 : 0
-
-  yaml_body = yamlencode({
-    apiVersion = "awx.ansible.com/v1beta1"
-    kind       = "AWX"
-    metadata = {
-      name      = var.eks.addons.awx_operator.instance_name
-      namespace = var.eks.addons.awx_operator.namespace
-    }
-    spec = {
-      for k, v in merge(
-        {
-          service_type = var.eks.addons.awx_operator.service_type
-        },
-        var.eks.addons.awx_operator.ingress_enabled ? {
-          ingress_type        = "ingress"
-          ingress_class_name  = var.eks.addons.awx_operator.ingress_class_name
-          hostname            = var.eks.addons.awx_operator.ingress_hostname
-          ingress_annotations = var.eks.addons.awx_operator.ingress_annotations
-          } : {
-          ingress_type        = null
-          ingress_class_name  = null
-          hostname            = null
-          ingress_annotations = null
-        },
-        var.eks.addons.awx_operator.spec
-      ) : k => v if v != null
-    }
-  })
-
-  depends_on = [helm_release.awx_operator]
 }

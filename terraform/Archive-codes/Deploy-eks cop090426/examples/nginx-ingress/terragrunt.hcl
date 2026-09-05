@@ -58,70 +58,69 @@ inputs = {
     bootstrap_cluster_creator_admin_permissions = false
 
     # Required for Helm-based controllers
+    create_node_group       = true
     create_service_accounts = true
 
-    ingress = {
-      enabled = true
-      aws_load_balancer_controller = {
-        enabled  = true
-        version  = "1.8.1"
-        role_key = "aws-lb-controller"
-      }
+    eks_addons = {
+      enable_aws_load_balancer_controller   = true
+      aws_load_balancer_controller_version  = "1.8.1"
+      aws_load_balancer_controller_role_key = "aws-lb-controller"
+      enable_ingress                        = true
 
-      nginx = [
-        {
-          name               = "public"
-          version            = "4.11.2"
-          release_name       = "ingress-nginx-public"
-          namespace          = "ingress-public"
-          ingress_class_name = "public-nginx"
-          replica_count      = 2
+      ingress = {
+        nginx = [
+          {
+            name               = "public"
+            version            = "4.11.2"
+            release_name       = "ingress-nginx-public"
+            namespace          = "ingress-public"
+            ingress_class_name = "public-nginx"
+            replica_count      = 2
 
-          # These values are AWS IDs, not names.
-          nlb_name            = "example-nginx-public-nlb"
-          ssl_cert_arn        = "arn:aws:acm:us-east-1:123456789012:certificate/example-public-cert"
-          ssl_policy          = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-          ssl_ports           = ["443"]
-          subnet_ids          = dependency.vpc.outputs.private_subnet_ids
-          security_group_keys = ["ingress-public-nlb"]
+            # These values are AWS IDs, not names.
+            nlb_name            = "example-nginx-public-nlb"
+            ssl_cert_arn        = "arn:aws:acm:us-east-1:123456789012:certificate/example-public-cert"
+            ssl_policy          = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+            ssl_ports           = ["443"]
+            subnet_ids          = dependency.vpc.outputs.private_subnet_ids
+            security_group_keys = ["ingress-public-nlb"]
 
-          service_annotations = {
-            "service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled" = "true"
-          }
+            service_annotations = {
+              "service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled" = "true"
+            }
 
-          values = [
-            {
-              controller = {
-                config = {
-                  use-forwarded-headers = "true"
+            values = [
+              {
+                controller = {
+                  config = {
+                    use-forwarded-headers = "true"
+                  }
                 }
               }
+            ]
+          },
+          {
+            name                = "internal"
+            namespace           = "ingress-internal"
+            ingress_class_name  = "internal-nginx"
+            replica_count       = 2
+            nlb_name            = "example-nginx-internal-nlb"
+            ssl_cert_arn        = "arn:aws:acm:us-east-1:123456789012:certificate/example-internal-cert"
+            ssl_policy          = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+            ssl_ports           = ["443"]
+            subnet_ids          = dependency.vpc.outputs.private_subnet_ids
+            security_group_keys = ["ingress-internal-nlb"]
+            service_annotations = {
+              "service.beta.kubernetes.io/aws-load-balancer-scheme" = "internal"
             }
-          ]
-        },
-        {
-          name                = "internal"
-          namespace           = "ingress-internal"
-          ingress_class_name  = "internal-nginx"
-          replica_count       = 2
-          nlb_name            = "example-nginx-internal-nlb"
-          ssl_cert_arn        = "arn:aws:acm:us-east-1:123456789012:certificate/example-internal-cert"
-          ssl_policy          = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-          ssl_ports           = ["443"]
-          subnet_ids          = dependency.vpc.outputs.private_subnet_ids
-          security_group_keys = ["ingress-internal-nlb"]
-          service_annotations = {
-            "service.beta.kubernetes.io/aws-load-balancer-scheme" = "internal"
           }
-        }
-      ]
-    }
+        ]
+      }
 
-    addons = {
       # Enable these only if this stack is also responsible for them.
-      vpc_cni    = { enabled = false }
-      kube_proxy = { enabled = false }
-      coredns    = { enabled = false }
+      enable_vpc_cni    = false
+      enable_kube_proxy = false
+      enable_coredns    = false
     }
 
     iam_roles = {
@@ -147,6 +146,12 @@ inputs = {
     ]
 
     access_entries = {}
+
+    key_pair = {
+      name               = "${local.common.account_name}-${local.common.region_prefix}-nginx-ingress-keypair"
+      secret_name        = "nginx-ingress-keypair"
+      secret_description = "SSH key pair for the ingress example node group"
+    }
 
     security_groups = [
       {
@@ -215,36 +220,38 @@ inputs = {
       }
     ]
 
-    compute = {
-      create_node_group = true
+    launch_templates = [{
+      key           = "nginx"
+      name          = "nginx-ingress"
+      instance_type = "t3.small"
 
-      key_pair = {
-        name               = "${local.common.account_name}-${local.common.region_prefix}-nginx-ingress-keypair"
-        secret_name        = "nginx-ingress-keypair"
-        secret_description = "SSH key pair for the ingress example node group"
-      }
+      vpc_security_group_keys = ["eks_cluster_sg_id"]
 
-      launch_templates = [{
-        key           = "nginx"
-        name          = "nginx-ingress"
-        instance_type = "t3.small"
-
-        vpc_security_group_keys = ["eks_cluster_sg_id"]
-
-        ami_config       = {}
-        volume_size      = 30
-        root_device_name = "/dev/xvda"
+      block_device_mappings = [{
+        device_name = "/dev/xvda"
+        ebs = {
+          volume_size           = 30
+          volume_type           = "gp3"
+          delete_on_termination = true
+          encrypted             = true
+        }
       }]
+    }]
 
-      eks_node_groups = [{
-        key                 = "nginx"
-        node_group_name     = "nginx-ingress"
-        launch_template_key = "nginx"
+    eks_node_groups = [{
+      key                 = "nginx"
+      name                = "nginx-ingress"
+      launch_template_key = "nginx"
 
+      scaling_config = {
         desired_size = 2
         max_size     = 3
         min_size     = 1
-      }]
-    }
+      }
+
+      update_config = {
+        max_unavailable = 1
+      }
+    }]
   }
 }

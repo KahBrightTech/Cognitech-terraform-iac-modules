@@ -56,15 +56,14 @@ eks = {
   key  = "main"
   name = "my-eks-cluster"
   
-  # Enable node group creation and Cluster Autoscaler
-  compute = {
-    create_node_group = true
-
-    cluster_autoscaler = {
-      enabled  = true
-      version  = "9.43.2" # Helm chart version
-      role_key = "cluster_autoscaler_role" # Reference to IAM role
-    }
+  # Enable node group creation
+  create_node_group = true
+  
+  # Enable Cluster Autoscaler
+  eks_addons = {
+    enable_cluster_autoscaler    = true
+    cluster_autoscaler_version   = "9.43.2"  # Helm chart version
+    cluster_autoscaler_role_key  = "cluster_autoscaler_role"  # Reference to IAM role
   }
   
   # IAM role configuration

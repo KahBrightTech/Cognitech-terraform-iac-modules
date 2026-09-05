@@ -112,7 +112,7 @@ output "eks_access_policy_associations" {
 #--------------------------------------------------------------------
 output "eks_addon_vpc_cni" {
   description = "VPC CNI addon details"
-  value = var.eks.addons.vpc_cni.enabled ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_vpc_cni ? {
     addon_name    = try(aws_eks_addon.vpc_cni[0].addon_name, null)
     addon_version = try(aws_eks_addon.vpc_cni[0].addon_version, null)
     arn           = try(aws_eks_addon.vpc_cni[0].arn, null)
@@ -121,7 +121,7 @@ output "eks_addon_vpc_cni" {
 
 output "eks_addon_kube_proxy" {
   description = "Kube-proxy addon details"
-  value = var.eks.addons.kube_proxy.enabled ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_kube_proxy ? {
     addon_name    = try(aws_eks_addon.kube_proxy[0].addon_name, null)
     addon_version = try(aws_eks_addon.kube_proxy[0].addon_version, null)
     arn           = try(aws_eks_addon.kube_proxy[0].arn, null)
@@ -130,7 +130,7 @@ output "eks_addon_kube_proxy" {
 
 output "eks_addon_coredns" {
   description = "CoreDNS addon details"
-  value = var.eks.addons.coredns.enabled && var.eks.compute.create_node_group ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_coredns && var.eks.create_node_group ? {
     addon_name    = try(aws_eks_addon.coredns[0].addon_name, null)
     addon_version = try(aws_eks_addon.coredns[0].addon_version, null)
     arn           = try(aws_eks_addon.coredns[0].arn, null)
@@ -139,7 +139,7 @@ output "eks_addon_coredns" {
 
 output "eks_addon_metrics_server" {
   description = "Metrics Server addon details"
-  value = var.eks.addons.metrics_server.enabled && var.eks.compute.create_node_group ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_metrics_server && var.eks.create_node_group ? {
     addon_name    = try(aws_eks_addon.metrics_server[0].addon_name, null)
     addon_version = try(aws_eks_addon.metrics_server[0].addon_version, null)
     arn           = try(aws_eks_addon.metrics_server[0].arn, null)
@@ -148,7 +148,7 @@ output "eks_addon_metrics_server" {
 
 output "eks_addon_cloudwatch_observability" {
   description = "CloudWatch Observability addon details"
-  value = var.eks.addons.cloudwatch_observability.enabled && var.eks.compute.create_node_group && (var.eks.addons.cloudwatch_observability.role_arn != null || var.eks.addons.cloudwatch_observability.role_key != null) ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_cloudwatch_observability && var.eks.create_node_group && (var.eks.eks_addons.cloudwatch_observability_role_arn != null || var.eks.eks_addons.cloudwatch_observability_role_key != null) ? {
     addon_name    = try(aws_eks_addon.cloudwatch_observability[0].addon_name, null)
     addon_version = try(aws_eks_addon.cloudwatch_observability[0].addon_version, null)
     arn           = try(aws_eks_addon.cloudwatch_observability[0].arn, null)
@@ -157,7 +157,7 @@ output "eks_addon_cloudwatch_observability" {
 
 # output "eks_addon_secrets_manager_csi_driver" {
 #   description = "Secrets Manager CSI Driver addon details"
-#   value = var.eks.addons.secrets_manager_csi_driver.enabled && var.eks.compute.create_node_group ? {
+#   value = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? {
 #     addon_name    = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_name, null)
 #     addon_version = try(aws_eks_addon.secrets_manager_csi_driver[0].addon_version, null)
 #     arn           = try(aws_eks_addon.secrets_manager_csi_driver[0].arn, null)
@@ -166,7 +166,7 @@ output "eks_addon_cloudwatch_observability" {
 
 output "eks_addon_privateca_issuer" {
   description = "Private CA Issuer addon details"
-  value = var.eks.addons.privateca_issuer.enabled && var.eks.compute.create_node_group ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_privateca_issuer && var.eks.create_node_group ? {
     addon_name    = try(aws_eks_addon.privateca_issuer[0].addon_name, null)
     addon_version = try(aws_eks_addon.privateca_issuer[0].addon_version, null)
     arn           = try(aws_eks_addon.privateca_issuer[0].arn, null)
@@ -178,22 +178,22 @@ output "eks_addon_privateca_issuer" {
 #--------------------------------------------------------------------
 output "key_pair_id" {
   description = "The key pair ID"
-  value       = var.eks.compute.create_node_group ? try(aws_key_pair.generated_key[0].id, null) : null
+  value       = var.eks.create_node_group ? try(aws_key_pair.generated_key[0].id, null) : null
 }
 
 output "key_pair_name" {
   description = "The key pair name"
-  value       = var.eks.compute.create_node_group ? try(aws_key_pair.generated_key[0].key_name, null) : null
+  value       = var.eks.create_node_group ? try(aws_key_pair.generated_key[0].key_name, null) : null
 }
 
 output "key_pair_arn" {
   description = "The key pair ARN"
-  value       = var.eks.compute.create_node_group ? try(aws_key_pair.generated_key[0].arn, null) : null
+  value       = var.eks.create_node_group ? try(aws_key_pair.generated_key[0].arn, null) : null
 }
 
 output "key_pair_fingerprint" {
   description = "The MD5 public key fingerprint"
-  value       = var.eks.compute.create_node_group ? try(aws_key_pair.generated_key[0].fingerprint, null) : null
+  value       = var.eks.create_node_group ? try(aws_key_pair.generated_key[0].fingerprint, null) : null
 }
 
 #--------------------------------------------------------------------
@@ -201,22 +201,22 @@ output "key_pair_fingerprint" {
 #--------------------------------------------------------------------
 output "private_key_secret_id" {
   description = "The ID of the Secrets Manager secret storing the private key"
-  value       = var.eks.compute.create_node_group ? try(aws_secretsmanager_secret.private_key_secret[0].id, null) : null
+  value       = var.eks.create_node_group ? try(aws_secretsmanager_secret.private_key_secret[0].id, null) : null
 }
 
 output "private_key_secret_arn" {
   description = "The ARN of the Secrets Manager secret storing the private key"
-  value       = var.eks.compute.create_node_group ? try(aws_secretsmanager_secret.private_key_secret[0].arn, null) : null
+  value       = var.eks.create_node_group ? try(aws_secretsmanager_secret.private_key_secret[0].arn, null) : null
 }
 
 output "private_key_secret_name" {
   description = "The name of the Secrets Manager secret storing the private key"
-  value       = var.eks.compute.create_node_group ? try(aws_secretsmanager_secret.private_key_secret[0].name, null) : null
+  value       = var.eks.create_node_group ? try(aws_secretsmanager_secret.private_key_secret[0].name, null) : null
 }
 
 output "private_key_secret_version_id" {
   description = "The version ID of the secret version"
-  value       = var.eks.compute.create_node_group ? try(aws_secretsmanager_secret_version.private_key_secret_version[0].version_id, null) : null
+  value       = var.eks.create_node_group ? try(aws_secretsmanager_secret_version.private_key_secret_version[0].version_id, null) : null
   sensitive   = true
 }
 
@@ -238,7 +238,7 @@ output "security_groups" {
 #--------------------------------------------------------------------
 output "launch_templates" {
   description = "Map of launch templates created for EKS node groups"
-  value = var.eks.compute.create_node_group && var.eks.compute.launch_templates != null ? {
+  value = var.eks.create_node_group && var.eks.launch_templates != null ? {
     for k, v in module.launch_template : k => {
       launch_template_id   = v.id
       launch_template_arn  = v.arn
@@ -252,7 +252,7 @@ output "launch_templates" {
 #--------------------------------------------------------------------
 output "eks_node_groups" {
   description = "Map of EKS node groups created"
-  value = var.eks.compute.create_node_group && var.eks.compute.eks_node_groups != null ? {
+  value = var.eks.create_node_group && var.eks.eks_node_groups != null ? {
     for k, v in module.eks_node_group : k => {
       node_group_id  = v.node_group_id
       node_group_arn = v.node_group_arn
@@ -326,7 +326,7 @@ output "eks_service_accounts" {
 #--------------------------------------------------------------------
 output "helm_aws_load_balancer_controller" {
   description = "AWS Load Balancer Controller Helm release information"
-  value = var.eks.ingress.aws_load_balancer_controller.enabled && var.eks.compute.create_node_group ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_aws_load_balancer_controller && var.eks.create_node_group ? {
     name       = try(helm_release.aws_load_balancer_controller[0].name, null)
     namespace  = try(helm_release.aws_load_balancer_controller[0].namespace, null)
     chart      = try(helm_release.aws_load_balancer_controller[0].chart, null)
@@ -364,7 +364,7 @@ output "helm_gateway_api" {
 
 output "helm_secrets_store_aws_provider" {
   description = "Secrets Store AWS Provider Helm release information"
-  value = var.eks.addons.secrets_manager_csi_driver.enabled && var.eks.compute.create_node_group ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_secrets_manager_csi_driver && var.eks.create_node_group ? {
     name       = try(helm_release.secrets_store_aws_provider[0].name, null)
     namespace  = try(helm_release.secrets_store_aws_provider[0].namespace, null)
     chart      = try(helm_release.secrets_store_aws_provider[0].chart, null)
@@ -376,7 +376,7 @@ output "helm_secrets_store_aws_provider" {
 
 output "helm_external_dns" {
   description = "External DNS Helm release information"
-  value = var.eks.ingress.external_dns.enabled && var.eks.compute.create_node_group ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_external_dns && var.eks.create_node_group ? {
     name       = try(helm_release.external_dns[0].name, null)
     namespace  = try(helm_release.external_dns[0].namespace, null)
     chart      = try(helm_release.external_dns[0].chart, null)
@@ -388,7 +388,7 @@ output "helm_external_dns" {
 
 output "helm_fluent_bit" {
   description = "Fluent Bit Helm release information"
-  value = var.eks.addons.fluent_bit.enabled && var.eks.compute.create_node_group ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_fluent_bit && var.eks.create_node_group ? {
     name       = try(helm_release.fluent_bit[0].name, null)
     namespace  = try(helm_release.fluent_bit[0].namespace, null)
     chart      = try(helm_release.fluent_bit[0].chart, null)
@@ -412,37 +412,13 @@ output "helm_karpenter" {
 
 output "helm_kubecost" {
   description = "Kubecost Helm release information"
-  value = var.eks.addons.kubecost.enabled && var.eks.compute.create_node_group ? {
+  value = var.eks.eks_addons != null && var.eks.eks_addons.enable_kubecost && var.eks.create_node_group ? {
     name       = try(helm_release.kubecost[0].name, null)
     namespace  = try(helm_release.kubecost[0].namespace, null)
     chart      = try(helm_release.kubecost[0].chart, null)
     version    = try(helm_release.kubecost[0].version, null)
     status     = try(helm_release.kubecost[0].status, null)
     repository = try(helm_release.kubecost[0].repository, null)
-  } : null
-}
-
-output "helm_awx_operator" {
-  description = "AWX Operator Helm release information"
-  value = var.eks.addons.awx_operator.enabled && var.eks.compute.create_node_group ? {
-    name       = try(helm_release.awx_operator[0].name, null)
-    namespace  = try(helm_release.awx_operator[0].namespace, null)
-    chart      = try(helm_release.awx_operator[0].chart, null)
-    version    = try(helm_release.awx_operator[0].version, null)
-    status     = try(helm_release.awx_operator[0].status, null)
-    repository = try(helm_release.awx_operator[0].repository, null)
-  } : null
-}
-
-output "awx_instance" {
-  description = "AWX instance details, including the auto-generated admin password secret name"
-  value = var.eks.addons.awx_operator.enabled && var.eks.addons.awx_operator.create_instance && var.eks.compute.create_node_group ? {
-    name                  = var.eks.addons.awx_operator.instance_name
-    namespace             = var.eks.addons.awx_operator.namespace
-    service_type          = var.eks.addons.awx_operator.service_type
-    ingress_enabled       = var.eks.addons.awx_operator.ingress_enabled
-    ingress_hostname      = var.eks.addons.awx_operator.ingress_hostname
-    admin_password_secret = "${var.eks.addons.awx_operator.instance_name}-admin-password"
   } : null
 }
 

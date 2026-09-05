@@ -34,34 +34,25 @@ inputs = {
     version                 = "1.32"
     oidc_thumbprint         = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
 
-    create_node_group       = true # required - hosts the Karpenter controller pod
+    # create_node_group is required (hosts the Karpenter controller pod) - set in the compute block below
     create_service_accounts = true # required - Karpenter and its node role both need IRSA
 
-    eks_addons = {
-      enable_vpc_cni            = true
-      enable_kube_proxy         = true
-      enable_coredns            = true
-      enable_pod_identity_agent = true
-
-      # Karpenter - NOT enable_cluster_autoscaler; the module will fail plan
-      # if both are true, since they'd fight over scaling the same nodes.
-      enable_karpenter = true
-
-      # Every controller-type Deployment/DaemonSet the module manages
-      # (coredns, csi driver controllers, load balancer controller,
-      # karpenter itself, etc.) is pinned to a "system" node group via a
-      # fixed nodeSelector/toleration on workload-type=system - see main.tf.
-      # Application workloads get no toleration for this taint, so the
-      # scheduler can only place them on Karpenter-provisioned nodes.
-
-      karpenter = {
-        chart_version           = "1.13.0"
-        controller_role_key     = "karpenter_controller"
-        node_role_key           = "karpenter_node"
-        interruption_queue_name = local.cluster_name
-        nodepool_manifest_file  = "${get_terragrunt_dir()}/karpenter-nodepool.yaml"
-      }
+    addons = {
+      vpc_cni            = { enabled = true }
+      kube_proxy         = { enabled = true }
+      coredns            = { enabled = true }
+      pod_identity_agent = { enabled = true }
     }
+
+    # Karpenter - NOT compute.cluster_autoscaler; the module will fail plan
+    # if both are enabled, since they'd fight over scaling the same nodes.
+    #
+    # Every controller-type Deployment/DaemonSet the module manages
+    # (coredns, csi driver controllers, load balancer controller,
+    # karpenter itself, etc.) is pinned to a "system" node group via a
+    # fixed nodeSelector/toleration on workload-type=system - see main.tf.
+    # Application workloads get no toleration for this taint, so the
+    # scheduler can only place them on Karpenter-provisioned nodes.
 
     # IAM roles Karpenter needs: one for the controller pod (IRSA, trusts
     # the cluster's OIDC provider - the module's default), one for the
@@ -94,59 +85,72 @@ inputs = {
     ]
 
     # --- Minimal static node group: hosts the Karpenter controller only ---
-    key_pair = {
-      name        = "${local.cluster_name}-nodes-keypair"
-      secret_name = "${local.cluster_name}-nodes-private-key"
-    }
+    compute = {
+      create_node_group = true
 
-    launch_templates = [
-      {
-        key           = "system"
-        name          = "${local.cluster_name}-system"
-        instance_type = "t3.medium"
-
-        vpc_security_group_keys = ["eks_cluster_sg_id"]
-
-        ami_config       = {}
-        volume_size      = 30
-        root_device_name = "/dev/xvda"
+      key_pair = {
+        name        = "${local.cluster_name}-nodes-keypair"
+        secret_name = "${local.cluster_name}-nodes-private-key"
       }
-    ]
 
-    eks_node_groups = [
-      {
-        key                 = "system"
-        node_group_name     = "system"
-        launch_template_key = "system"
-        subnet_ids          = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
+      launch_templates = [
+        {
+          key           = "system"
+          name          = "${local.cluster_name}-system"
+          instance_type = "t3.medium"
 
-        desired_size = 1
-        min_size     = 1
-        max_size     = 2
+          vpc_security_group_keys = ["eks_cluster_sg_id"]
 
-        instance_types = ["t3.medium"]
-        capacity_type  = "ON_DEMAND"
-
-        # Must match the fixed workload-type=system label/toleration the
-        # module applies to controller pods in main.tf.
-        labels = {
-          "workload-type" = "system"
+          ami_config       = {}
+          volume_size      = 30
+          root_device_name = "/dev/xvda"
         }
+      ]
 
-        # Repels every pod without a matching toleration - i.e. all
-        # application workloads - onto Karpenter-provisioned nodes instead.
-        # Controller pods get the matching toleration automatically (see
-        # local.controller_toleration in main.tf). Note the taint effect
-        # here uses the AWS API's NO_SCHEDULE spelling, not Kubernetes' NoSchedule.
-        taints = [
-          {
-            key    = "workload-type"
-            value  = "system"
-            effect = "NO_SCHEDULE"
+      eks_node_groups = [
+        {
+          key                 = "system"
+          node_group_name     = "system"
+          launch_template_key = "system"
+          subnet_ids          = ["subnet-xxxxxxxxxxxxxxxxx", "subnet-yyyyyyyyyyyyyyyyy"]
+
+          desired_size = 1
+          min_size     = 1
+          max_size     = 2
+
+          instance_types = ["t3.medium"]
+          capacity_type  = "ON_DEMAND"
+
+          # Must match the fixed workload-type=system label/toleration the
+          # module applies to controller pods in main.tf.
+          labels = {
+            "workload-type" = "system"
           }
-        ]
+
+          # Repels every pod without a matching toleration - i.e. all
+          # application workloads - onto Karpenter-provisioned nodes instead.
+          # Controller pods get the matching toleration automatically (see
+          # local.controller_toleration in main.tf). Note the taint effect
+          # here uses the AWS API's NO_SCHEDULE spelling, not Kubernetes' NoSchedule.
+          taints = [
+            {
+              key    = "workload-type"
+              value  = "system"
+              effect = "NO_SCHEDULE"
+            }
+          ]
+        }
+      ]
+
+      karpenter = {
+        enabled                 = true
+        chart_version           = "1.13.0"
+        controller_role_key     = "karpenter_controller"
+        node_role_key           = "karpenter_node"
+        interruption_queue_name = local.cluster_name
+        nodepool_manifest_file  = "${get_terragrunt_dir()}/karpenter-nodepool.yaml"
       }
-    ]
+    }
 
     access_entries = {
       cluster_admin = {

@@ -88,8 +88,7 @@ configuration_values = jsonencode({
 
 Nothing here depends on Karpenter specifically - it depends on there being untainted
 worker capacity somewhere. That capacity can come from Karpenter (see
-`examples/karpenter/`) or from a second, untainted `compute.eks_node_groups` entry
-managed by Cluster Autoscaler (see `examples/cluster-autoscaler/`).
-`compute.karpenter.enabled` and `compute.cluster_autoscaler.enabled` are mutually
-exclusive (enforced by a validation rule in `variables.tf`), since both would
-otherwise try to manage the same EC2 capacity.
+`examples/karpenter/`) or from a second, untainted `eks_node_groups` entry managed by
+Cluster Autoscaler (see `examples/cluster-autoscaler/`). `enable_karpenter` and
+`enable_cluster_autoscaler` are mutually exclusive (enforced by a validation rule in
+`variables.tf`), since both would otherwise try to manage the same EC2 capacity.

@@ -1,0 +1,462 @@
+variable "common" {
+  description = "Common variables used by all resources"
+  type = object({
+    global           = bool
+    tags             = map(string)
+    account_name     = string
+    region_prefix    = string
+    account_name_abr = optional(string, "")
+    environment_abr  = optional(string, "")
+  })
+}
+
+variable "eks" {
+  description = "EKS cluster configuration object."
+  type = object({
+    key                                         = string
+    name                                        = string
+    role_arn                                    = optional(string)
+    role_key                                    = optional(string)
+    subnet_ids                                  = optional(list(string))
+    subnet_keys                                 = optional(list(string))
+    additional_security_group_ids               = optional(list(string), [])
+    additional_security_group_keys              = optional(list(string), [])
+    endpoint_private_access                     = optional(bool, false)
+    endpoint_public_access                      = optional(bool, true)
+    public_access_cidrs                         = optional(list(string), ["0.0.0.0/0"])
+    authentication_mode                         = optional(string, "API_AND_CONFIG_MAP")
+    bootstrap_cluster_creator_admin_permissions = optional(bool, true)
+    enabled_cluster_log_types                   = optional(list(string), [])
+    service_ipv4_cidr                           = optional(string, null)
+    access_entries = optional(map(object({
+      principal_arns    = optional(list(string))
+      policy_arn        = optional(string)
+      kubernetes_groups = optional(list(string), []) # Map IAM principals to these Kubernetes groups for RBAC
+    })), {})
+    auth = optional(object({
+      cluster_roles = optional(list(object({
+        key  = string
+        name = string
+        rules = list(object({
+          api_groups = list(string)
+          resources  = list(string)
+          verbs      = list(string)
+        }))
+        labels = optional(map(string), {})
+      })), [])
+      cluster_role_bindings = optional(list(object({
+        key               = string
+        name              = string
+        cluster_role_key  = optional(string)
+        cluster_role_name = optional(string)
+        subjects = list(object({
+          kind      = string # Options: "User", "Group", "ServiceAccount"
+          name      = string
+          namespace = optional(string)
+          api_group = optional(string, "rbac.authorization.k8s.io") # Use "rbac.authorization.k8s.io" for User/Group, "" for ServiceAccount
+        }))
+        labels = optional(map(string), {})
+      })), [])
+      roles = optional(list(object({
+        key       = string
+        name      = string
+        namespace = optional(string, "default")
+        rules = list(object({
+          api_groups = list(string)
+          resources  = list(string)
+          verbs      = list(string)
+        }))
+        labels = optional(map(string), {})
+      })), [])
+      role_bindings = optional(list(object({
+        key       = string
+        name      = string
+        namespace = optional(string, "default")
+        role_key  = optional(string)
+        role_name = optional(string)
+        subjects = list(object({
+          kind      = string # Options: "User", "Group", "ServiceAccount"
+          name      = string
+          namespace = optional(string)
+          api_group = optional(string, "rbac.authorization.k8s.io") # Use "rbac.authorization.k8s.io" for User/Group, "" for ServiceAccount
+        }))
+        labels = optional(map(string), {})
+      })), [])
+    }))
+    namespaces = optional(list(object({
+      name   = optional(string, "")
+      labels = optional(map(string), {})
+      resource_quota = optional(object({
+        name      = optional(string)
+        hard      = optional(map(string), {})
+        scopes    = optional(list(string))
+        yaml_file = optional(string) # Path to a ResourceQuota YAML file. When set, spec.hard/spec.scopes are read from the file's spec block.
+      }))
+    })))
+    version                 = optional(string, "1.32")
+    oidc_thumbprint         = optional(string)
+    is_this_ec2_node_group  = optional(bool, false)
+    use_private_subnets     = optional(bool, false)
+    vpc_name                = optional(string)
+    create_node_group       = optional(bool, false)
+    create_service_accounts = optional(bool, false)
+    enable_eks_pia          = optional(bool, false)
+    eks_addons = optional(object({
+      enable_vpc_cni                                  = optional(bool, false)
+      enable_prefix_delegation                        = optional(bool, false)
+      warm_prefix_target                              = optional(number, 1)
+      enable_kube_proxy                               = optional(bool, false)
+      enable_coredns                                  = optional(bool, false)
+      enable_metrics_server                           = optional(bool, false)
+      enable_cloudwatch_observability                 = optional(bool, false)
+      enable_secrets_manager_csi_driver               = optional(bool, false)
+      enable_privateca_issuer                         = optional(bool, false)
+      enable_pod_identity_agent                       = optional(bool, false)
+      enable_ebs_csi_driver                           = optional(bool, false)
+      enable_efs_csi_driver                           = optional(bool, false)
+      enable_fsx_csi_driver                           = optional(bool, false)
+      enable_aws_load_balancer_controller             = optional(bool, false)
+      enable_ingress                                  = optional(bool, false)
+      enable_cert_manager                             = optional(bool, false)
+      enable_cluster_autoscaler                       = optional(bool, false)
+      enable_karpenter                                = optional(bool, false)
+      enable_external_dns                             = optional(bool, false)
+      vpc_cni_version                                 = optional(string)
+      kube_proxy_version                              = optional(string)
+      coredns_version                                 = optional(string)
+      metrics_server_version                          = optional(string)
+      cloudwatch_observability_version                = optional(string)
+      secrets_manager_csi_driver_version              = optional(string)
+      pod_identity_agent_version                      = optional(string)
+      ebs_csi_driver_version                          = optional(string)
+      efs_csi_driver_version                          = optional(string)
+      fsx_csi_driver_version                          = optional(string)
+      secrets_manager_csi_driver_aws_provider_version = optional(string)
+      aws_load_balancer_controller_version            = optional(string)
+      cert_manager_version                            = optional(string)
+      cluster_autoscaler_version                      = optional(string)
+      cluster_autoscaler_role_arn                     = optional(string)
+      cluster_autoscaler_role_key                     = optional(string)
+      cert_manager = optional(object({
+        namespace              = optional(string, "cert-manager")
+        install_crds           = optional(bool, true)
+        create_cluster_issuer  = optional(bool, false)
+        cluster_issuer_name    = optional(string, "letsencrypt-prod-route53")
+        cluster_issuer_email   = optional(string)
+        cluster_issuer_server  = optional(string, "https://acme-v02.api.letsencrypt.org/directory")
+        route53_region         = optional(string)
+        route53_hosted_zone_id = optional(string)
+        route53_role_key       = optional(string)
+        route53_role_arn       = optional(string)
+      }), {})
+      ingress = optional(object({
+        nginx = optional(list(object({
+          name               = string
+          version            = optional(string, "4.11.2")
+          timeout            = optional(number, 900)
+          release_name       = optional(string)
+          namespace          = optional(string)
+          ingress_class_name = optional(string)
+          replica_count      = optional(number, 2)
+          scheme             = optional(string, "internet-facing")
+          target_type        = optional(string, "ip")
+          nlb_name           = optional(string)
+          tls_secret = optional(object({
+            name        = string
+            namespace   = optional(string)
+            certificate = string
+            private_key = string
+          }))
+          ssl_cert_arn             = optional(string)
+          ssl_policy               = optional(string)
+          ssl_ports                = optional(list(string), [])
+          subnet_ids               = optional(list(string), [])
+          security_group_keys      = optional(list(string), [])
+          security_group_ids       = optional(list(string), [])
+          service_annotations      = optional(map(string), {})
+          service_annotations_file = optional(string)
+          values                   = optional(list(any), [])
+        })), [])
+        gateway_api = optional(object({
+          version                  = optional(string, "2.6.7")
+          release_name             = optional(string, "ngf")
+          namespace                = optional(string, "nginx-gateway")
+          gateway_class_name       = optional(string, "nginx")
+          controller_name          = optional(string, "gateway.nginx.org/nginx-gateway-controller")
+          nginx_replicas           = optional(number, 2)
+          fabric_replicas          = optional(number, 1)
+          scheme                   = optional(string, "internet-facing")
+          target_type              = optional(string, "ip")
+          nlb_name                 = optional(string)
+          ssl_cert_arn             = optional(string)
+          ssl_policy               = optional(string)
+          ssl_ports                = optional(list(string), [])
+          subnet_ids               = optional(list(string), [])
+          security_group_keys      = optional(list(string), [])
+          security_group_ids       = optional(list(string), [])
+          service_annotations      = optional(map(string), {})
+          service_annotations_file = optional(string)
+          values                   = optional(list(any), [])
+        }))
+      }), {})
+      karpenter = optional(object({
+        chart_version           = optional(string, "1.13.0")
+        namespace               = optional(string, "kube-system")
+        controller_role_key     = optional(string)
+        controller_role_arn     = optional(string)
+        node_role_key           = optional(string)
+        node_role_arn           = optional(string)
+        node_role_name          = optional(string)
+        interruption_queue_name = optional(string)
+        nodepool_manifest_file  = optional(string)
+      }))
+      privateca_issuer_version              = optional(string)
+      external_dns_version                  = optional(string)
+      cloudwatch_observability_role_arn     = optional(string)
+      cloudwatch_observability_role_key     = optional(string)
+      ebs_csi_driver_role_arn               = optional(string)
+      ebs_csi_driver_role_key               = optional(string)
+      efs_csi_driver_role_arn               = optional(string)
+      efs_csi_driver_role_key               = optional(string)
+      fsx_csi_driver_role_arn               = optional(string)
+      fsx_csi_driver_role_key               = optional(string)
+      aws_load_balancer_controller_role_key = optional(string)
+      external_dns_role_arn                 = optional(string)
+      external_dns_role_key                 = optional(string)
+      external_dns_namespace                = optional(string)
+      external_dns_policy                   = optional(string) # options are upsert-only, sync or 
+      external_dns_domain_filters           = optional(list(string))
+      external_dns_sources                  = optional(list(string))
+      external_dns_log_level                = optional(string)
+      enableSecretRotation                  = optional(bool, false)
+      rotationPollInterval                  = optional(string)
+      enable_fluent_bit                     = optional(bool, false)
+      fluent_bit_version                    = optional(string)
+      fluent_bit_namespace                  = optional(string)
+      fluent_bit_role_arn                   = optional(string)
+      fluent_bit_role_key                   = optional(string)
+      fluent_bit_firehose_delivery_stream   = optional(string)
+      enable_kube_prometheus_stack          = optional(bool, false)
+      kube_prometheus_stack_upgrade_install = optional(bool, true)
+      kube_prometheus_stack_timeout         = optional(number, 1800)
+      kube_prometheus_stack_version         = optional(string)
+      grafana_namespace                     = optional(string)
+      grafana_service_type                  = optional(string)
+      grafana_ingress_enabled               = optional(bool, false)
+      grafana_ingress_class_name            = optional(string)
+      grafana_ingress_hosts                 = optional(list(string), [])
+      grafana_ingress_annotations           = optional(map(string), {})
+      grafana_persistence_enabled           = optional(bool, false)
+      grafana_persistence_size              = optional(string)
+      grafana_persistence_storage_class     = optional(string)
+      prometheus_retention                  = optional(string)
+      prometheus_persistence_enabled        = optional(bool, false)
+      prometheus_persistence_size           = optional(string)
+      prometheus_persistence_storage_class  = optional(string)
+      enable_kubecost                       = optional(bool, false)
+      kubecost_version                      = optional(string, "2.8.7")
+      kubecost_namespace                    = optional(string, "kubecost")
+      kubecost_timeout                      = optional(number, 900)
+      kubecost_storage_class                = optional(string)
+      kubecost_role_arn                     = optional(string)
+      kubecost_role_key                     = optional(string)
+      kubecost_ingress_enabled              = optional(bool, false)
+      kubecost_ingress_class_name           = optional(string)
+      kubecost_ingress_hosts                = optional(list(string), [])
+      kubecost_ingress_annotations          = optional(map(string), {})
+      kubecost_values                       = optional(list(any), [])
+      enable_argocd                         = optional(bool, false)
+      argocd_version                        = optional(string, "8.1.2")
+      argocd_release_name                   = optional(string, "argocd")
+      argocd_namespace                      = optional(string, "argocd")
+      argocd_timeout                        = optional(number, 900)
+      argocd_ha_enabled                     = optional(bool, false)
+      argocd_server_insecure                = optional(bool, true)
+      argocd_server_replicas                = optional(number, 2)
+      argocd_admin_password_bcrypt          = optional(string)
+      argocd_ingress_enabled                = optional(bool, true)
+      argocd_ingress_class_name             = optional(string, "alb")
+      argocd_ingress_host                   = optional(string)
+      argocd_ingress_extra_hosts            = optional(list(string), [])
+      argocd_ingress_scheme                 = optional(string, "internet-facing")
+      argocd_ingress_target_type            = optional(string, "ip")
+      argocd_ingress_group_name             = optional(string)
+      argocd_alb_name                       = optional(string)
+      argocd_certificate_arn                = optional(string)
+      argocd_ssl_policy                     = optional(string)
+      argocd_ingress_subnet_ids             = optional(list(string), [])
+      argocd_ingress_security_group_ids     = optional(list(string), [])
+      argocd_ingress_security_group_keys    = optional(list(string), [])
+      argocd_ingress_annotations_file       = optional(string)
+      argocd_ingress_annotations            = optional(map(string), {})
+      argocd_values                         = optional(list(any), [])
+    }))
+    key_pair = object({
+      name               = optional(string)
+      name_prefix        = optional(string)
+      secret_name        = optional(string)
+      secret_description = optional(string)
+      policy             = optional(string)
+    })
+    security_groups = optional(list(object({
+      key         = optional(string)
+      name        = optional(string)
+      name_prefix = optional(string)
+      vpc_id      = optional(string)
+      description = optional(string)
+      vpc_name    = string
+      security_group_egress_rules = optional(list(object({
+        description     = optional(string)
+        from_port       = optional(number)
+        to_port         = optional(number)
+        protocol        = optional(string)
+        security_groups = optional(list(string))
+        cidr_blocks     = list(string)
+        self            = optional(bool, false)
+      })))
+      security_group_ingress_rules = optional(list(object({
+        description     = optional(string)
+        from_port       = optional(number)
+        to_port         = optional(number)
+        protocol        = optional(string)
+        security_groups = optional(list(string))
+        cidr_blocks     = list(string)
+        self            = optional(bool, false)
+      })))
+    })))
+    security_group_rules = optional(list(object({
+      key               = optional(string)
+      security_group_id = optional(string)
+      sg_key            = optional(string)
+      egress_rules = optional(list(object({
+        key            = string
+        cidr_ipv4      = optional(string)
+        cidr_ipv6      = optional(string)
+        prefix_list_id = optional(string)
+        description    = optional(string)
+        from_port      = optional(number)
+        to_port        = optional(number)
+        ip_protocol    = string
+        target_sg_id   = optional(string)
+        target_sg_key  = optional(string)
+      })))
+      ingress_rules = optional(list(object({
+        key            = string
+        cidr_ipv4      = optional(string)
+        cidr_ipv6      = optional(string)
+        prefix_list_id = optional(string)
+        description    = optional(string)
+        from_port      = optional(number)
+        to_port        = optional(number)
+        ip_protocol    = string
+        source_sg_id   = optional(string)
+        source_sg_key  = optional(string)
+      })))
+    })))
+    launch_templates = optional(list(object({
+      key              = optional(string)
+      name             = optional(string)
+      instance_profile = optional(string)
+      custom_ami       = optional(string)
+      ami_config = object({
+        os_release_date  = optional(string)
+        os_base_packages = optional(string)
+      })
+      instance_type               = optional(string)
+      key_name                    = optional(string)
+      ec2_ssh_key                 = optional(string)
+      associate_public_ip_address = optional(bool)
+      vpc_security_group_ids      = optional(list(string))
+      vpc_security_group_keys     = optional(list(string))
+      tags                        = optional(map(string))
+      user_data                   = optional(string)
+      volume_size                 = optional(number)
+      root_device_name            = optional(string)
+    })))
+    eks_node_groups = optional(list(object({
+      key                        = optional(string)
+      cluster_key                = optional(string)
+      cluster_name               = optional(string)
+      node_group_name            = string
+      node_role_arn              = optional(string)
+      node_role_key              = optional(string)
+      subnet_ids                 = optional(list(string))
+      subnet_keys                = optional(list(string))
+      desired_size               = number
+      max_size                   = number
+      min_size                   = number
+      instance_types             = optional(list(string), [])
+      enable_remote_access       = optional(bool, false)
+      ec2_ssh_key                = optional(string, "")
+      source_security_group_ids  = optional(list(string), [])
+      source_security_group_keys = optional(list(string), [])
+      ami_type                   = optional(string)
+      disk_size                  = optional(number)
+      labels                     = optional(map(string), {})
+      taints = optional(list(object({
+        key    = string
+        value  = optional(string)
+        effect = string # NO_SCHEDULE, PREFER_NO_SCHEDULE, or NO_EXECUTE
+      })))
+      tags                 = optional(map(string), {})
+      version              = optional(string)
+      force_update_version = optional(bool, false)
+      capacity_type        = optional(string, "ON_DEMAND")
+      ec2_instance_name    = optional(string, "eks_node_group")
+      launch_template_key  = optional(string)
+      launch_template = optional(object({
+        id      = string
+        version = optional(string, "$Latest")
+      }))
+    })))
+    service_accounts = optional(list(object({
+      key       = optional(string)
+      name      = string
+      namespace = optional(string, "default")
+      role_arn  = optional(string)
+      role_key  = optional(string)
+    })))
+    eks_pia = optional(list(object({
+      key                       = optional(string)
+      service_account_keys      = optional(list(string), [])
+      service_account_name      = optional(string)
+      service_account_namespace = optional(string)
+      role_arn                  = optional(string)
+      role_key                  = optional(string)
+    })))
+    iam_roles = optional(list(object({
+      key                       = optional(string)
+      name                      = string
+      description               = optional(string)
+      path                      = optional(string, "/")
+      assume_role_policy        = optional(string)
+      custom_assume_role_policy = optional(bool, true)
+      force_detach_policies     = optional(bool, false)
+      managed_policy_arns       = optional(list(string))
+      max_session_duration      = optional(number, 3600)
+      permissions_boundary      = optional(string)
+      create_custom_policy      = optional(bool, true)
+      service_account_name      = optional(string)
+      service_account_namespace = optional(string)
+      policy = optional(object({
+        name          = optional(string)
+        description   = optional(string)
+        policy        = optional(string)
+        path          = optional(string, "/")
+        custom_policy = optional(bool, true)
+      }))
+    })))
+  })
+
+  validation {
+    condition = var.eks.eks_addons == null || !var.eks.eks_addons.enable_ingress || !(
+      length(try(var.eks.eks_addons.ingress.nginx, [])) > 0 &&
+      try(var.eks.eks_addons.ingress.gateway_api, null) != null
+    )
+    error_message = "Configure only one ingress controller block at a time: either eks.eks_addons.ingress.nginx or eks.eks_addons.ingress.gateway_api."
+  }
+
+  default = null
+}
+
+

@@ -103,11 +103,9 @@ kubectl logs -n kube-system deployment/aws-load-balancer-controller
 To use a different version:
 
 ```hcl
-ingress = {
-  aws_load_balancer_controller = {
-    enabled = true
-    version = "1.8.1" # Change this
-  }
+eks_addons = {
+  enable_aws_load_balancer_controller  = true
+  aws_load_balancer_controller_version = "1.8.1"  # Change this
 }
 ```
 

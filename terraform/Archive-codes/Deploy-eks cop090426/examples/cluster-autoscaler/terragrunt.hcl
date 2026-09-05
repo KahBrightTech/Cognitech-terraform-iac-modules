@@ -37,52 +37,18 @@ This directory contains an example configuration for deploying an EKS cluster wi
        endpoint_public_access   = true
        oidc_thumbprint          = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
        
-       # Node groups configuration
-       compute = {
-         create_node_group = true
-
-         cluster_autoscaler = {
-           enabled  = true
-           version  = "9.43.2"
-           role_key = "cluster_autoscaler_role"
-         }
-
-         eks_node_groups = [
-           {
-             key             = "main"
-             node_group_name = "main-node-group"
-             node_role_arn   = "arn:aws:iam::123456789012:role/eks-node-role"
-             subnet_ids      = ["subnet-xxx", "subnet-yyy"]
-
-             desired_size = 2
-             min_size     = 1
-             max_size     = 10
-
-             instance_types = ["t3.medium"]
-             capacity_type  = "ON_DEMAND"
-
-             tags = {
-               "k8s.io/cluster-autoscaler/my-cluster" = "owned"
-               "k8s.io/cluster-autoscaler/enabled"    = "true"
-             }
-           }
-         ]
-
-         # Key pair for SSH access
-         key_pair = {
-           name               = "eks-node-key"
-           secret_name        = "eks-node-private-key"
-           secret_description = "Private key for EKS nodes"
-         }
+       create_node_group        = true
+       
+       # Enable Cluster Autoscaler
+       eks_addons = {
+         enable_vpc_cni                = true
+         enable_kube_proxy             = true
+         enable_coredns                = true
+         enable_cluster_autoscaler     = true
+         cluster_autoscaler_version    = "9.43.2"
+         cluster_autoscaler_role_key   = "cluster_autoscaler_role"
        }
-
-       # Enable core addons
-       addons = {
-         vpc_cni    = { enabled = true }
-         kube_proxy = { enabled = true }
-         coredns    = { enabled = true }
-       }
-
+       
        # IAM role for Cluster Autoscaler
        create_service_accounts = true
        iam_roles = [
@@ -94,6 +60,41 @@ This directory contains an example configuration for deploying an EKS cluster wi
            policy_files              = ["${path.module}/cluster-autoscaler-policy.json"]
          }
        ]
+       
+       # Node groups configuration
+       eks_node_groups = [
+         {
+           key             = "main"
+           name            = "main-node-group"
+           node_role_arn   = "arn:aws:iam::123456789012:role/eks-node-role"
+           subnet_ids      = ["subnet-xxx", "subnet-yyy"]
+           
+           scaling_config = {
+             desired_size = 2
+             min_size     = 1
+             max_size     = 10
+           }
+           
+           update_config = {
+             max_unavailable_percentage = 33
+           }
+           
+           instance_types = ["t3.medium"]
+           capacity_type  = "ON_DEMAND"
+           
+           tags = {
+             "k8s.io/cluster-autoscaler/my-cluster" = "owned"
+             "k8s.io/cluster-autoscaler/enabled"    = "true"
+           }
+         }
+       ]
+       
+       # Key pair for SSH access
+       key_pair = {
+         name           = "eks-node-key"
+         secret_name    = "eks-node-private-key"
+         secret_description = "Private key for EKS nodes"
+       }
      }
    }
    ```

@@ -59,52 +59,51 @@ inputs = {
     bootstrap_cluster_creator_admin_permissions = false
 
     # Required for Helm-based controllers
+    create_node_group       = true
     create_service_accounts = true
 
-    ingress = {
-      enabled = true
-      aws_load_balancer_controller = {
-        enabled  = true
-        version  = "1.8.1"
-        role_key = "aws-lb-controller"
-      }
+    eks_addons = {
+      enable_aws_load_balancer_controller   = true
+      aws_load_balancer_controller_version  = "1.8.1"
+      aws_load_balancer_controller_role_key = "aws-lb-controller"
+      enable_ingress                        = true
 
-      gateway_api = {
-        version            = "2.6.7"
-        release_name       = "ngf"
-        namespace          = "nginx-gateway"
-        gateway_class_name = "nginx"
-        controller_name    = "gateway.nginx.org/nginx-gateway-controller"
-        fabric_replicas    = 1
-        nginx_replicas     = 2
+      ingress = {
+        gateway_api = {
+          version            = "2.6.7"
+          release_name       = "ngf"
+          namespace          = "nginx-gateway"
+          gateway_class_name = "nginx"
+          controller_name    = "gateway.nginx.org/nginx-gateway-controller"
+          fabric_replicas    = 1
+          nginx_replicas     = 2
 
-        # These values are AWS IDs, not names.
-        nlb_name            = "example-gateway-api-nlb"
-        ssl_cert_arn        = "arn:aws:acm:us-east-1:123456789012:certificate/example-gateway-cert"
-        ssl_policy          = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-        ssl_ports           = ["443"]
-        subnet_ids          = dependency.vpc.outputs.private_subnet_ids
-        security_group_keys = ["gateway-api-nlb"]
+          # These values are AWS IDs, not names.
+          nlb_name            = "example-gateway-api-nlb"
+          ssl_cert_arn        = "arn:aws:acm:us-east-1:123456789012:certificate/example-gateway-cert"
+          ssl_policy          = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+          ssl_ports           = ["443"]
+          subnet_ids          = dependency.vpc.outputs.private_subnet_ids
+          security_group_keys = ["gateway-api-nlb"]
 
-        service_annotations = {
-          "service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled" = "true"
-        }
-
-        values = [
-          {
-            nginxGateway = {
-              watchNamespaces = ["default", "apps"]
-            }
+          service_annotations = {
+            "service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled" = "true"
           }
-        ]
-      }
-    }
 
-    addons = {
+          values = [
+            {
+              nginxGateway = {
+                watchNamespaces = ["default", "apps"]
+              }
+            }
+          ]
+        }
+      }
+
       # Enable these only if this stack is also responsible for them.
-      vpc_cni    = { enabled = false }
-      kube_proxy = { enabled = false }
-      coredns    = { enabled = false }
+      enable_vpc_cni    = false
+      enable_kube_proxy = false
+      enable_coredns    = false
     }
 
     iam_roles = {
@@ -130,6 +129,12 @@ inputs = {
     ]
 
     access_entries = {}
+
+    key_pair = {
+      name               = "${local.common.account_name}-${local.common.region_prefix}-gateway-api-keypair"
+      secret_name        = "gateway-api-keypair"
+      secret_description = "SSH key pair for the Gateway API example node group"
+    }
 
     security_groups = [
       {
@@ -166,36 +171,38 @@ inputs = {
       }
     ]
 
-    compute = {
-      create_node_group = true
+    launch_templates = [{
+      key           = "gateway"
+      name          = "gateway-api"
+      instance_type = "t3.small"
 
-      key_pair = {
-        name               = "${local.common.account_name}-${local.common.region_prefix}-gateway-api-keypair"
-        secret_name        = "gateway-api-keypair"
-        secret_description = "SSH key pair for the Gateway API example node group"
-      }
+      vpc_security_group_keys = ["eks_cluster_sg_id"]
 
-      launch_templates = [{
-        key           = "gateway"
-        name          = "gateway-api"
-        instance_type = "t3.small"
-
-        vpc_security_group_keys = ["eks_cluster_sg_id"]
-
-        ami_config       = {}
-        volume_size      = 30
-        root_device_name = "/dev/xvda"
+      block_device_mappings = [{
+        device_name = "/dev/xvda"
+        ebs = {
+          volume_size           = 30
+          volume_type           = "gp3"
+          delete_on_termination = true
+          encrypted             = true
+        }
       }]
+    }]
 
-      eks_node_groups = [{
-        key                 = "gateway"
-        node_group_name     = "gateway-api"
-        launch_template_key = "gateway"
+    eks_node_groups = [{
+      key                 = "gateway"
+      name                = "gateway-api"
+      launch_template_key = "gateway"
 
+      scaling_config = {
         desired_size = 2
         max_size     = 3
         min_size     = 1
-      }]
-    }
+      }
+
+      update_config = {
+        max_unavailable = 1
+      }
+    }]
   }
 }

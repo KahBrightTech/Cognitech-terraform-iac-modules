@@ -60,69 +60,64 @@ inputs = {
     bootstrap_cluster_creator_admin_permissions = false
 
     # Required for Helm-based controllers
+    create_node_group       = true
     create_service_accounts = true
 
-    ingress = {
+    eks_addons = {
       # ArgoCD's ingress is rendered as an ALB Ingress, so the controller must be installed.
-      aws_load_balancer_controller = {
-        enabled  = true
-        version  = "1.8.1"
-        role_key = "aws-lb-controller"
+      enable_aws_load_balancer_controller   = true
+      aws_load_balancer_controller_version  = "1.8.1"
+      aws_load_balancer_controller_role_key = "aws-lb-controller"
+
+      enable_argocd       = true
+      argocd_version      = "8.1.2"
+      argocd_release_name = "argocd"
+      argocd_namespace    = "argocd"
+      argocd_timeout      = 900
+      argocd_ha_enabled   = false
+
+      # ALB terminates TLS, so the ArgoCD server runs in insecure (plain HTTP) mode.
+      argocd_server_insecure = true
+      argocd_server_replicas = 2
+
+      # bcrypt hash of the initial admin password (omit to use the auto-generated secret)
+      # argocd_admin_password_bcrypt = "$2a$10$replace-with-your-own-bcrypt-hash"
+
+      argocd_ingress_enabled     = true
+      argocd_ingress_class_name  = "alb"
+      argocd_ingress_host        = "argocd.example.com"
+      argocd_ingress_extra_hosts = []
+      argocd_ingress_scheme      = "internet-facing"
+      argocd_ingress_target_type = "ip"
+      argocd_alb_name            = "example-argocd-alb"
+      argocd_ingress_group_name  = "example-platform"
+
+      # These values are AWS IDs, not names.
+      argocd_certificate_arn             = "arn:aws:acm:us-east-1:123456789012:certificate/example-argocd-cert"
+      argocd_ssl_policy                  = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+      argocd_ingress_subnet_ids          = dependency.vpc.outputs.public_subnet_ids
+      argocd_ingress_security_group_keys = ["argocd-alb"]
+
+      argocd_ingress_annotations = {
+        "alb.ingress.kubernetes.io/load-balancer-attributes" = "idle_timeout.timeout_seconds=600"
       }
 
-      argocd = {
-        enabled      = true
-        version      = "8.1.2"
-        release_name = "argocd"
-        namespace    = "argocd"
-        timeout      = 900
-        ha_enabled   = false
-
-        # ALB terminates TLS, so the ArgoCD server runs in insecure (plain HTTP) mode.
-        server_insecure = true
-        server_replicas = 2
-
-        # bcrypt hash of the initial admin password (omit to use the auto-generated secret)
-        # admin_password_bcrypt = "$2a$10$replace-with-your-own-bcrypt-hash"
-
-        ingress_enabled     = true
-        ingress_class_name  = "alb"
-        ingress_host        = "argocd.example.com"
-        ingress_extra_hosts = []
-        ingress_scheme      = "internet-facing"
-        ingress_target_type = "ip"
-        alb_name            = "example-argocd-alb"
-        ingress_group_name  = "example-platform"
-
-        # These values are AWS IDs, not names.
-        certificate_arn             = "arn:aws:acm:us-east-1:123456789012:certificate/example-argocd-cert"
-        ssl_policy                  = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-        ingress_subnet_ids          = dependency.vpc.outputs.public_subnet_ids
-        ingress_security_group_keys = ["argocd-alb"]
-
-        ingress_annotations = {
-          "alb.ingress.kubernetes.io/load-balancer-attributes" = "idle_timeout.timeout_seconds=600"
-        }
-
-        # Extra Helm values merged on top of the module defaults.
-        values = [
-          {
-            configs = {
-              cm = {
-                "timeout.reconciliation" = "180s"
-                url                      = "https://argocd.example.com"
-              }
+      # Extra Helm values merged on top of the module defaults.
+      argocd_values = [
+        {
+          configs = {
+            cm = {
+              "timeout.reconciliation" = "180s"
+              url                      = "https://argocd.example.com"
             }
           }
-        ]
-      }
-    }
+        }
+      ]
 
-    addons = {
       # Enable these only if this stack is also responsible for them.
-      vpc_cni    = { enabled = false }
-      kube_proxy = { enabled = false }
-      coredns    = { enabled = false }
+      enable_vpc_cni    = false
+      enable_kube_proxy = false
+      enable_coredns    = false
     }
 
     iam_roles = {
@@ -148,6 +143,12 @@ inputs = {
     ]
 
     access_entries = {}
+
+    key_pair = {
+      name               = "${local.common.account_name}-${local.common.region_prefix}-argocd-keypair"
+      secret_name        = "argocd-keypair"
+      secret_description = "SSH key pair for the ArgoCD example node group"
+    }
 
     security_groups = [
       {
@@ -184,50 +185,40 @@ inputs = {
       }
     ]
 
-    compute = {
-      create_node_group = true
+    launch_templates = [{
+      key           = "argocd"
+      name          = "argocd"
+      instance_type = "t3.medium"
+      volume_size   = 50
 
-      key_pair = {
-        name               = "${local.common.account_name}-${local.common.region_prefix}-argocd-keypair"
-        secret_name        = "argocd-keypair"
-        secret_description = "SSH key pair for the ArgoCD example node group"
+      ami_config = {
+        os_release_date  = "latest"
+        os_base_packages = "standard"
       }
 
-      launch_templates = [{
-        key           = "argocd"
-        name          = "argocd"
-        instance_type = "t3.medium"
-        volume_size   = 50
+      vpc_security_group_keys = ["eks_cluster_sg_id"]
+    }]
 
-        ami_config = {
-          os_release_date  = "latest"
-          os_base_packages = "standard"
-        }
+    eks_node_groups = [{
+      key                 = "argocd"
+      node_group_name     = "argocd"
+      launch_template_key = "argocd"
+      subnet_ids          = dependency.vpc.outputs.private_subnet_ids
 
-        vpc_security_group_keys = ["eks_cluster_sg_id"]
+      desired_size = 2
+      max_size     = 4
+      min_size     = 2
+
+      # ArgoCD components are pinned to the system nodes by the module.
+      labels = {
+        "workload-type" = "system"
+      }
+
+      taints = [{
+        key    = "workload-type"
+        value  = "system"
+        effect = "NO_SCHEDULE"
       }]
-
-      eks_node_groups = [{
-        key                 = "argocd"
-        node_group_name     = "argocd"
-        launch_template_key = "argocd"
-        subnet_ids          = dependency.vpc.outputs.private_subnet_ids
-
-        desired_size = 2
-        max_size     = 4
-        min_size     = 2
-
-        # ArgoCD components are pinned to the system nodes by the module.
-        labels = {
-          "workload-type" = "system"
-        }
-
-        taints = [{
-          key    = "workload-type"
-          value  = "system"
-          effect = "NO_SCHEDULE"
-        }]
-      }]
-    }
+    }]
   }
 }
