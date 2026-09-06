@@ -2123,8 +2123,7 @@ resource "kubectl_manifest" "awx_instance" {
         {
           service_type         = var.eks.addons.awx_operator.service_type
           service_account_name = var.eks.addons.awx_operator.instance_service_account_name
-          # The AWX CRD types this field as a YAML string, not a structured list.
-          tolerations = yamlencode(local.system_tolerations)
+          tolerations          = yamlencode(local.system_tolerations)
         },
         var.eks.addons.awx_operator.ingress_enabled ? {
           ingress_type        = "ingress"
