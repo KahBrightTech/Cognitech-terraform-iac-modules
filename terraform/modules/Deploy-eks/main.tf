@@ -365,6 +365,19 @@ locals {
     ? module.iam_roles[var.eks.addons.cert_manager.route53_role_key].iam_role_arn
     : var.eks.addons.cert_manager.route53_role_arn
   )
+
+  awx_enabled = var.eks.addons.awx_operator.enabled && var.eks.compute.create_node_group
+  awx_build_postgres_secret = (
+    local.awx_enabled
+    && var.eks.addons.awx_operator.create_instance
+    && var.eks.addons.awx_operator.postgres_credentials_secret_arn != null
+  )
+  # Secret name AWX is pointed at: the one this module renders, or a pre-existing one.
+  awx_postgres_secret_name = (
+    local.awx_build_postgres_secret
+    ? "${var.eks.addons.awx_operator.instance_name}-postgres-configuration"
+    : var.eks.addons.awx_operator.postgres_configuration_secret
+  )
 }
 #--------------------------------------------------------------------
 # EKS Cluster
@@ -2100,6 +2113,39 @@ resource "helm_release" "awx_operator" {
 }
 
 #--------------------------------------------------------------------
+# AWX Postgres credentials - rendered from Secrets Manager into the
+# Kubernetes Secret shape the AWX operator expects for an external DB.
+#--------------------------------------------------------------------
+data "aws_secretsmanager_secret_version" "awx_postgres" {
+  count     = local.awx_build_postgres_secret ? 1 : 0
+  secret_id = var.eks.addons.awx_operator.postgres_credentials_secret_arn
+}
+
+resource "kubernetes_secret_v1" "awx_postgres" {
+  count = local.awx_build_postgres_secret ? 1 : 0
+
+  metadata {
+    name      = local.awx_postgres_secret_name
+    namespace = var.eks.addons.awx_operator.namespace
+  }
+
+  data = {
+    host     = jsondecode(data.aws_secretsmanager_secret_version.awx_postgres[0].secret_string).host
+    port     = tostring(jsondecode(data.aws_secretsmanager_secret_version.awx_postgres[0].secret_string).port)
+    database = coalesce(var.eks.addons.awx_operator.postgres_database, jsondecode(data.aws_secretsmanager_secret_version.awx_postgres[0].secret_string).dbname)
+    username = jsondecode(data.aws_secretsmanager_secret_version.awx_postgres[0].secret_string).username
+    password = jsondecode(data.aws_secretsmanager_secret_version.awx_postgres[0].secret_string).password
+    sslmode  = var.eks.addons.awx_operator.postgres_sslmode
+    # "unmanaged" tells the operator to use this database instead of creating its own.
+    type = "unmanaged"
+  }
+
+  type = "Opaque"
+
+  depends_on = [helm_release.awx_operator]
+}
+
+#--------------------------------------------------------------------
 # AWX Instance - the CR the operator reconciles into the actual AWX
 # app (web/task pods, Service, and optionally an Ingress for the UI).
 # Without this, the operator alone deploys nothing user-facing.
@@ -2125,6 +2171,15 @@ resource "kubectl_manifest" "awx_instance" {
           service_account_name = var.eks.addons.awx_operator.instance_service_account_name
           tolerations          = yamlencode(local.system_tolerations)
         },
+        {
+          postgres_configuration_secret = local.awx_postgres_secret_name
+          # An external database has no PVC, so the storage class only applies to the managed one.
+          postgres_storage_class = (
+            local.awx_postgres_secret_name == null
+            ? var.eks.addons.awx_operator.postgres_storage_class
+            : null
+          )
+        },
         var.eks.addons.awx_operator.ingress_enabled ? {
           ingress_type        = "ingress"
           ingress_class_name  = var.eks.addons.awx_operator.ingress_class_name
@@ -2141,5 +2196,5 @@ resource "kubectl_manifest" "awx_instance" {
     }
   })
 
-  depends_on = [helm_release.awx_operator]
+  depends_on = [helm_release.awx_operator, kubernetes_secret_v1.awx_postgres]
 }
