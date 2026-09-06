@@ -2130,7 +2130,7 @@ resource "kubectl_manifest" "awx_instance" {
           ingress_type        = "ingress"
           ingress_class_name  = var.eks.addons.awx_operator.ingress_class_name
           hostname            = var.eks.addons.awx_operator.ingress_hostname
-          ingress_annotations = var.eks.addons.awx_operator.ingress_annotations
+          ingress_annotations = length(var.eks.addons.awx_operator.ingress_annotations) > 0 ? yamlencode(var.eks.addons.awx_operator.ingress_annotations) : null
           } : {
           ingress_type        = null
           ingress_class_name  = null
