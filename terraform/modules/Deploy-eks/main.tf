@@ -791,6 +791,13 @@ resource "helm_release" "nginx_ingress" {
         }
         nodeSelector = local.system_node_selector
         tolerations  = local.system_tolerations
+        # The admission certgen Jobs are Helm hooks and do not inherit controller.* values.
+        admissionWebhooks = {
+          patch = {
+            nodeSelector = local.system_node_selector
+            tolerations  = local.system_tolerations
+          }
+        }
         topologySpreadConstraints = [
           merge(local.system_topology_spread_base, {
             labelSelector = {
@@ -1965,6 +1972,20 @@ resource "helm_release" "cert_manager" {
       }
       nodeSelector = local.system_node_selector
       tolerations  = local.system_tolerations
+      # webhook, cainjector and the startupapicheck hook Job each need their own
+      # scheduling values; the top-level keys only apply to the controller.
+      webhook = {
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
+      }
+      cainjector = {
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
+      }
+      startupapicheck = {
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
+      }
     })
   ]
 
