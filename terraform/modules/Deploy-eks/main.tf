@@ -2173,7 +2173,6 @@ resource "kubectl_manifest" "awx_instance" {
         },
         {
           postgres_configuration_secret = local.awx_postgres_secret_name
-          # An external database has no PVC, so the storage class only applies to the managed one.
           postgres_storage_class = (
             local.awx_postgres_secret_name == null
             ? var.eks.addons.awx_operator.postgres_storage_class
