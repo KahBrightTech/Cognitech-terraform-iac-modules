@@ -50,6 +50,15 @@ locals {
     operator = "Exists"
   }]
 
+  # Spreads replicated system controllers across the AZs the system node group spans.
+  # ScheduleAnyway rather than DoNotSchedule so a single-AZ capacity shortage degrades
+  # spreading instead of leaving cluster-critical pods Pending.
+  system_topology_spread_base = {
+    maxSkew           = 1
+    topologyKey       = "topology.kubernetes.io/zone"
+    whenUnsatisfiable = "ScheduleAnyway"
+  }
+
   karpenter_enabled = var.eks.compute.karpenter.enabled && var.eks.compute.create_node_group
   karpenter         = local.karpenter_enabled ? var.eks.compute.karpenter : null
 
@@ -526,8 +535,20 @@ resource "aws_eks_addon" "ebs_csi_driver" {
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
   configuration_values = jsonencode({
-    controller = { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
-    node       = { tolerations = local.all_workload_node_tolerations }
+    controller = {
+      nodeSelector = local.system_node_selector
+      tolerations  = local.system_tolerations
+      topologySpreadConstraints = [
+        merge(local.system_topology_spread_base, {
+          labelSelector = {
+            matchLabels = {
+              app = "ebs-csi-controller"
+            }
+          }
+        })
+      ]
+    }
+    node = { tolerations = local.all_workload_node_tolerations }
   })
 
   depends_on = [
@@ -571,8 +592,20 @@ resource "aws_eks_addon" "efs_csi_driver" {
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
   configuration_values = jsonencode({
-    controller = { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
-    node       = { tolerations = local.all_workload_node_tolerations }
+    controller = {
+      nodeSelector = local.system_node_selector
+      tolerations  = local.system_tolerations
+      topologySpreadConstraints = [
+        merge(local.system_topology_spread_base, {
+          labelSelector = {
+            matchLabels = {
+              app = "efs-csi-controller"
+            }
+          }
+        })
+      ]
+    }
+    node = { tolerations = local.all_workload_node_tolerations }
   })
 
   tags = merge(var.common.tags, {
@@ -600,8 +633,20 @@ resource "aws_eks_addon" "fsx_csi_driver" {
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "PRESERVE"
   configuration_values = jsonencode({
-    controller = { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }
-    node       = { tolerations = local.all_workload_node_tolerations }
+    controller = {
+      nodeSelector = local.system_node_selector
+      tolerations  = local.system_tolerations
+      topologySpreadConstraints = [
+        merge(local.system_topology_spread_base, {
+          labelSelector = {
+            matchLabels = {
+              app = "fsx-csi-controller"
+            }
+          }
+        })
+      ]
+    }
+    node = { tolerations = local.all_workload_node_tolerations }
   })
 
   tags = merge(var.common.tags, {
@@ -692,6 +737,16 @@ resource "helm_release" "aws_load_balancer_controller" {
           "eks.amazonaws.com/role-arn" = var.eks.ingress.aws_load_balancer_controller.role_key != null ? module.iam_roles[var.eks.ingress.aws_load_balancer_controller.role_key].iam_role_arn : var.eks.ingress.aws_load_balancer_controller.role_arn
         }
       }
+      topologySpreadConstraints = [
+        merge(local.system_topology_spread_base, {
+          labelSelector = {
+            matchLabels = {
+              "app.kubernetes.io/name"     = "aws-load-balancer-controller"
+              "app.kubernetes.io/instance" = "aws-load-balancer-controller"
+            }
+          }
+        })
+      ]
     }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }))
   ]
 
@@ -736,6 +791,17 @@ resource "helm_release" "nginx_ingress" {
         }
         nodeSelector = local.system_node_selector
         tolerations  = local.system_tolerations
+        topologySpreadConstraints = [
+          merge(local.system_topology_spread_base, {
+            labelSelector = {
+              matchLabels = {
+                "app.kubernetes.io/name"      = "ingress-nginx"
+                "app.kubernetes.io/instance"  = each.value.release_name
+                "app.kubernetes.io/component" = "controller"
+              }
+            }
+          })
+        ]
         service = {
           type                  = "LoadBalancer"
           externalTrafficPolicy = "Local"
@@ -798,12 +864,31 @@ resource "helm_release" "gateway_api" {
         replicas              = local.gateway_api_config.fabric_replicas
         nodeSelector          = local.system_node_selector
         tolerations           = local.system_tolerations
+        topologySpreadConstraints = [
+          merge(local.system_topology_spread_base, {
+            labelSelector = {
+              matchLabels = {
+                "app.kubernetes.io/name"     = "nginx-gateway-fabric"
+                "app.kubernetes.io/instance" = local.gateway_api_config.release_name
+              }
+            }
+          })
+        ]
       }
       nginx = {
         replicas = local.gateway_api_config.nginx_replicas
         pod = {
           nodeSelector = local.system_node_selector
           tolerations  = local.system_tolerations
+          topologySpreadConstraints = [
+            merge(local.system_topology_spread_base, {
+              labelSelector = {
+                matchLabels = {
+                  "app.kubernetes.io/managed-by" = "nginx-gateway-fabric"
+                }
+              }
+            })
+          ]
         }
         service = {
           type                  = "LoadBalancer"
@@ -1772,15 +1857,51 @@ resource "helm_release" "argocd" {
       }
       controller = {
         replicas = var.eks.ingress.argocd.ha_enabled ? 2 : 1
+        topologySpreadConstraints = [
+          merge(local.system_topology_spread_base, {
+            labelSelector = {
+              matchLabels = {
+                "app.kubernetes.io/name" = "argocd-application-controller"
+              }
+            }
+          })
+        ]
       }
       repoServer = {
         replicas = var.eks.ingress.argocd.ha_enabled ? 2 : 1
+        topologySpreadConstraints = [
+          merge(local.system_topology_spread_base, {
+            labelSelector = {
+              matchLabels = {
+                "app.kubernetes.io/name" = "argocd-repo-server"
+              }
+            }
+          })
+        ]
       }
       applicationSet = {
         replicas = var.eks.ingress.argocd.ha_enabled ? 2 : 1
+        topologySpreadConstraints = [
+          merge(local.system_topology_spread_base, {
+            labelSelector = {
+              matchLabels = {
+                "app.kubernetes.io/name" = "argocd-applicationset-controller"
+              }
+            }
+          })
+        ]
       }
       server = {
         replicas = var.eks.ingress.argocd.server_replicas
+        topologySpreadConstraints = [
+          merge(local.system_topology_spread_base, {
+            labelSelector = {
+              matchLabels = {
+                "app.kubernetes.io/name" = "argocd-server"
+              }
+            }
+          })
+        ]
         service = {
           type = "ClusterIP"
         }
