@@ -125,7 +125,8 @@ locals {
               replace(
                 replace(
                   replace(
-                    file(local.karpenter.nodepool_manifest_file),
+                    # CRLF checkouts would otherwise defeat the "\n---\n" split below.
+                    replace(file(local.karpenter.nodepool_manifest_file), "\r\n", "\n"),
                     "[[account_number]]", data.aws_caller_identity.current.account_id
                   ),
                   "[[account_name]]", var.common.account_name
@@ -2170,12 +2171,18 @@ resource "kubectl_manifest" "awx_instance" {
           service_type         = var.eks.addons.awx_operator.service_type
           service_account_name = var.eks.addons.awx_operator.instance_service_account_name
           tolerations          = yamlencode(local.system_tolerations)
+          postgres_tolerations = yamlencode(local.system_tolerations)
         },
         {
           postgres_configuration_secret = local.awx_postgres_secret_name
           postgres_storage_class = (
             local.awx_postgres_secret_name == null
             ? var.eks.addons.awx_operator.postgres_storage_class
+            : null
+          )
+          postgres_security_context_settings = (
+            local.awx_postgres_secret_name == null
+            ? { fsGroup = 26 }
             : null
           )
         },
