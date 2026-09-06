@@ -1375,6 +1375,18 @@ resource "helm_release" "kubecost" {
             "eks.amazonaws.com/role-arn" = var.eks.addons.kubecost.role_key != null ? module.iam_roles[var.eks.addons.kubecost.role_key].iam_role_arn : var.eks.addons.kubecost.role_arn
           }
         }
+        # Pod-level scheduling for the cost-analyzer Deployment. The kubecostFrontend
+        # and kubecostModel keys below are container-scoped and do not affect it.
+        nodeSelector = local.system_node_selector
+        tolerations  = local.system_tolerations
+        forecasting = {
+          nodeSelector = local.system_node_selector
+          tolerations  = local.system_tolerations
+        }
+        grafana = {
+          nodeSelector = local.system_node_selector
+          tolerations  = local.system_tolerations
+        }
         global = {
           clusterId = aws_eks_cluster.eks_cluster.name
         }
@@ -2059,14 +2071,24 @@ resource "helm_release" "awx_operator" {
   force_update     = true
 
   values = concat([
-    yamlencode(merge({
+    yamlencode({
       serviceAccount = {
         name = var.eks.addons.awx_operator.service_account_name
         annotations = {
           "eks.amazonaws.com/role-arn" = var.eks.addons.awx_operator.role_key != null ? module.iam_roles[var.eks.addons.awx_operator.role_key].iam_role_arn : var.eks.addons.awx_operator.role_arn
         }
       }
-    }, { nodeSelector = local.system_node_selector, tolerations = local.system_tolerations }))
+      "operator-controller" = {
+        spec = {
+          template = {
+            spec = {
+              nodeSelector = local.system_node_selector
+              tolerations  = local.system_tolerations
+            }
+          }
+        }
+      }
+    })
   ], var.eks.addons.awx_operator.values)
 
   depends_on = [
@@ -2101,6 +2123,8 @@ resource "kubectl_manifest" "awx_instance" {
         {
           service_type         = var.eks.addons.awx_operator.service_type
           service_account_name = var.eks.addons.awx_operator.instance_service_account_name
+          # The AWX CRD types this field as a YAML string, not a structured list.
+          tolerations = yamlencode(local.system_tolerations)
         },
         var.eks.addons.awx_operator.ingress_enabled ? {
           ingress_type        = "ingress"
