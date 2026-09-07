@@ -125,7 +125,6 @@ locals {
               replace(
                 replace(
                   replace(
-                    # CRLF checkouts would otherwise defeat the "\n---\n" split below.
                     replace(file(local.karpenter.nodepool_manifest_file), "\r\n", "\n"),
                     "[[account_number]]", data.aws_caller_identity.current.account_id
                   ),
@@ -2172,6 +2171,18 @@ resource "kubectl_manifest" "awx_instance" {
           service_account_name = var.eks.addons.awx_operator.instance_service_account_name
           tolerations          = yamlencode(local.system_tolerations)
           postgres_tolerations = yamlencode(local.system_tolerations)
+          # Tolerations alone only permit scheduling; without a selector AWX lands
+          # on whichever node happens to have room.
+          node_selector = (
+            length(var.eks.addons.awx_operator.node_selector) > 0
+            ? yamlencode(var.eks.addons.awx_operator.node_selector)
+            : null
+          )
+          postgres_selector = (
+            length(var.eks.addons.awx_operator.node_selector) > 0
+            ? yamlencode(var.eks.addons.awx_operator.node_selector)
+            : null
+          )
         },
         {
           postgres_configuration_secret = local.awx_postgres_secret_name
@@ -2180,9 +2191,9 @@ resource "kubectl_manifest" "awx_instance" {
             ? var.eks.addons.awx_operator.postgres_storage_class
             : null
           )
-          postgres_security_context_settings = (
+          postgres_data_volume_init = (
             local.awx_postgres_secret_name == null
-            ? { fsGroup = 26 }
+            ? true
             : null
           )
         },

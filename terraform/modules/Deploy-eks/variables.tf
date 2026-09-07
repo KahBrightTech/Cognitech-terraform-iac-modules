@@ -406,6 +406,7 @@ variable "eks" {
         namespace                       = optional(string, "awx")
         service_account_name            = optional(string, "awx-operator-controller-manager")
         instance_service_account_name   = optional(string, "awx")
+        node_selector                   = optional(map(string), {})
         role_arn                        = optional(string)
         role_key                        = optional(string)
         values                          = optional(list(any), [])
