@@ -858,9 +858,10 @@ resource "helm_release" "nginx_ingress" {
   version    = each.value.version
   timeout    = each.value.timeout
 
+  # No replace/force_update: recreating the release regenerates the admission
+  # webhook cert, and any Ingress created during that window is rejected with
+  # "x509: certificate signed by unknown authority".
   cleanup_on_fail  = true
-  replace          = true
-  force_update     = true
   create_namespace = true
 
   values = concat([
@@ -2033,7 +2034,10 @@ resource "helm_release" "argocd" {
     module.eks_node_group,
     aws_eks_addon.coredns,
     aws_eks_addon.pod_identity_agent,
-    helm_release.aws_load_balancer_controller
+    helm_release.aws_load_balancer_controller,
+    # ingress-nginx's admission webhook validates every Ingress, so it must be
+    # settled before this Ingress is submitted.
+    helm_release.nginx_ingress
   ]
 }
 
