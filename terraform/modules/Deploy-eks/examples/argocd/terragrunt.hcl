@@ -87,7 +87,7 @@ inputs = {
 
         ingress_enabled     = true
         ingress_class_name  = "alb"
-        ingress_host        = "argocd.example.com"
+        ingress_host        = "argocd.prod.novutechnologies.net"
         ingress_extra_hosts = []
         ingress_scheme      = "internet-facing"
         ingress_target_type = "ip"
@@ -95,7 +95,8 @@ inputs = {
         ingress_group_name  = "example-platform"
 
         # These values are AWS IDs, not names.
-        certificate_arn             = "arn:aws:acm:us-east-1:123456789012:certificate/example-argocd-cert"
+        # Wildcard cert *.prod.novutechnologies.net
+        certificate_arn             = "arn:aws:acm:us-east-1:271457809232:certificate/31b4636f-d7d5-4109-80f2-6892489df997"
         ssl_policy                  = "ELBSecurityPolicy-TLS13-1-2-2021-06"
         ingress_subnet_ids          = dependency.vpc.outputs.public_subnet_ids
         ingress_security_group_keys = ["argocd-alb"]
@@ -104,16 +105,47 @@ inputs = {
           "alb.ingress.kubernetes.io/load-balancer-attributes" = "idle_timeout.timeout_seconds=600"
         }
 
+        # AWS IAM Identity Center SAML federation (via the bundled Dex server).
+        #
+        # On the Identity Center application set:
+        #   Application ACS URL       = https://argocd.prod.novutechnologies.net/api/dex/callback
+        #   Application SAML audience = https://argocd.prod.novutechnologies.net/api/dex/callback
+        #
+        # Identity Center does NOT emit group memberships in the assertion, so the
+        # "groups" attribute mapping must be a constant. Two applications are needed:
+        #   app 1: groups = "Admins", assigned to the "Admins" IdC group
+        #   app 2: groups = "Users",  assigned to the "Users" IdC group
+        sso = {
+          enabled = true
+          url     = "https://argocd.prod.novutechnologies.net"
+
+          sso_url    = "https://portal.sso.us-east-1.amazonaws.com/saml/assertion/NDg1MTQ3NjY3NDAwX2lucy03MjIzN2YxZWM0ODk1NGY2"
+          sso_issuer = "https://portal.sso.us-east-1.amazonaws.com/saml/assertion/NDg1MTQ3NjY3NDAwX2lucy03MjIzN2YxZWM0ODk1NGY2"
+
+          ca_pem = file("${get_terragrunt_dir()}/identity-center-signing-cert.pem")
+
+          # Must match the attribute mapping names on the Identity Center application.
+          username_attr = "email"
+          email_attr    = "email"
+          groups_attr   = "groups"
+
+          # Deny anyone who does not match a rule below.
+          rbac_default_policy = ""
+          rbac_policies = [
+            "g, Admins, role:admin",
+            "g, Users, role:readonly",
+          ]
+        }
+
         # Extra Helm values merged on top of the module defaults.
         values = [
-          {
+          yamlencode({
             configs = {
               cm = {
                 "timeout.reconciliation" = "180s"
-                url                      = "https://argocd.example.com"
               }
             }
-          }
+          })
         ]
       }
     }

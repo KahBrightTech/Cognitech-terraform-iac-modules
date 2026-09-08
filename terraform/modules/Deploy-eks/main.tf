@@ -360,6 +360,81 @@ locals {
     var.eks.ingress.argocd.ingress_annotations
   ) : {}
 
+  argocd_sso         = var.eks.ingress.argocd.sso
+  argocd_sso_enabled = local.argocd_enabled && local.argocd_sso.enabled
+
+  argocd_url = try(coalesce(
+    local.argocd_sso.url,
+    var.eks.ingress.argocd.ingress_host != null ? "https://${var.eks.ingress.argocd.ingress_host}" : null
+  ), null)
+
+  # Dex serves the SP metadata and consumes the assertion at this path, so it must
+  # match the ACS URL configured on the Identity Center application.
+  argocd_dex_redirect_uri = local.argocd_url != null ? "${local.argocd_url}/api/dex/callback" : null
+
+  argocd_saml_ca_data = try(coalesce(
+    local.argocd_sso.ca_data,
+    local.argocd_sso.ca_pem != null ? base64encode(trimspace(local.argocd_sso.ca_pem)) : null
+  ), null)
+
+  # Blank and commented lines are stripped so the policy file can be documented.
+  argocd_rbac_policy_lines = concat(
+    local.argocd_sso.rbac_policies_file != null ? [
+      for line in split("\n", replace(file(local.argocd_sso.rbac_policies_file), "\r\n", "\n")) : trimspace(line)
+      if trimspace(line) != "" && !startswith(trimspace(line), "#")
+    ] : [],
+    local.argocd_sso.rbac_policies
+  )
+
+  argocd_dex_config = local.argocd_sso_enabled ? yamlencode({
+    connectors = [
+      {
+        type = "saml"
+        id   = local.argocd_sso.connector_id
+        name = local.argocd_sso.connector_name
+        config = merge(
+          {
+            ssoURL       = local.argocd_sso.sso_url
+            caData       = local.argocd_saml_ca_data
+            redirectURI  = local.argocd_dex_redirect_uri
+            entityIssuer = coalesce(local.argocd_sso.entity_issuer, local.argocd_dex_redirect_uri)
+            usernameAttr = local.argocd_sso.username_attr
+            emailAttr    = local.argocd_sso.email_attr
+          },
+          local.argocd_sso.sso_issuer != null ? { ssoIssuer = local.argocd_sso.sso_issuer } : {},
+          local.argocd_sso.groups_attr != null ? { groupsAttr = local.argocd_sso.groups_attr } : {},
+          local.argocd_sso.name_id_policy_format != null ? { nameIDPolicyFormat = local.argocd_sso.name_id_policy_format } : {},
+        )
+      }
+    ]
+  }) : null
+
+  argocd_configs = merge(
+    {
+      # ArgoCD terminates TLS at the ALB, so UI/gRPC traffic arrives as plain HTTP.
+      params = {
+        "server.insecure" = var.eks.ingress.argocd.server_insecure
+      }
+      secret = var.eks.ingress.argocd.admin_password_bcrypt != null ? {
+        argocdServerAdminPassword = var.eks.ingress.argocd.admin_password_bcrypt
+      } : {}
+    },
+    local.argocd_url != null ? {
+      cm = merge(
+        { url = local.argocd_url },
+        local.argocd_sso_enabled ? { "dex.config" = local.argocd_dex_config } : {}
+      )
+    } : {},
+    local.argocd_sso_enabled ? {
+      rbac = {
+        create           = true
+        "policy.default" = local.argocd_sso.rbac_default_policy
+        "policy.csv"     = join("\n", local.argocd_rbac_policy_lines)
+        scopes           = "[${join(", ", local.argocd_sso.rbac_scopes)}]"
+      }
+    } : {}
+  )
+
   cert_manager_route53_role_arn = (
     var.eks.addons.cert_manager.route53_role_key != null
     ? module.iam_roles[var.eks.addons.cert_manager.route53_role_key].iam_role_arn
@@ -1875,15 +1950,7 @@ resource "helm_release" "argocd" {
         nodeSelector = local.system_node_selector
         tolerations  = local.system_tolerations
       }
-      configs = {
-        # ArgoCD terminates TLS at the ALB, so UI/gRPC traffic arrives as plain HTTP.
-        params = {
-          "server.insecure" = var.eks.ingress.argocd.server_insecure
-        }
-        secret = var.eks.ingress.argocd.admin_password_bcrypt != null ? {
-          argocdServerAdminPassword = var.eks.ingress.argocd.admin_password_bcrypt
-        } : {}
-      }
+      configs = local.argocd_configs
       "redis-ha" = {
         enabled = var.eks.ingress.argocd.ha_enabled
       }
@@ -1958,7 +2025,9 @@ resource "helm_release" "argocd" {
         }
       }
     })
-  ], var.eks.ingress.argocd.values)
+    ],
+    local.argocd_sso_enabled ? [yamlencode({ dex = { enabled = true } })] : [],
+  var.eks.ingress.argocd.values)
 
   depends_on = [
     module.eks_node_group,

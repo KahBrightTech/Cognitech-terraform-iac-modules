@@ -282,6 +282,32 @@ variable "eks" {
         ingress_annotations_file    = optional(string)
         ingress_annotations         = optional(map(string), {})
         values                      = optional(list(any), [])
+
+        # SAML SSO through the bundled Dex server. Built for AWS IAM Identity
+        # Center, but any SAML 2.0 IdP works.
+        sso = optional(object({
+          enabled        = optional(bool, false)
+          url            = optional(string) # defaults to https://<ingress_host>
+          connector_id   = optional(string, "aws")
+          connector_name = optional(string, "AWS IAM Identity Center")
+
+          sso_url       = optional(string) # IdP SingleSignOnService (HTTP-POST) location
+          sso_issuer    = optional(string) # IdP EntityDescriptor entityID
+          entity_issuer = optional(string) # SP audience; defaults to the Dex callback URL
+
+          ca_pem  = optional(string) # IdP signing certificate, PEM
+          ca_data = optional(string) # IdP signing certificate, base64-encoded PEM
+
+          username_attr         = optional(string, "email")
+          email_attr            = optional(string, "email")
+          groups_attr           = optional(string, "groups")
+          name_id_policy_format = optional(string, "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent")
+
+          rbac_default_policy = optional(string, "role:readonly")
+          rbac_scopes         = optional(list(string), ["groups", "email"])
+          rbac_policies       = optional(list(string), []) # raw policy.csv lines
+          rbac_policies_file  = optional(string)           # path to a file of policy.csv lines
+        }), {})
       }), {})
     }), {})
 
