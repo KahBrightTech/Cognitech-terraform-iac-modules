@@ -33,9 +33,70 @@ locals {
     if v.policy_arn != null && v.policy_arn != ""
   }
 
-  admin_role_arn               = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
-  network_role_arn             = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
-  created_service_account_keys = var.eks.create_service_accounts && var.eks.service_accounts != null ? toset([for sa in var.eks.service_accounts : sa.key]) : toset([])
+  admin_role_arn   = length(data.aws_iam_roles.admin_role.arns) > 0 ? sort(data.aws_iam_roles.admin_role.arns)[0] : ""
+  network_role_arn = length(data.aws_iam_roles.network_role.arns) > 0 ? sort(data.aws_iam_roles.network_role.arns)[0] : ""
+  service_accounts = var.eks.create_service_accounts ? {
+    for sa in coalesce(var.eks.service_accounts, []) : coalesce(sa.key, "${sa.namespace}-${sa.name}") => sa
+  } : {}
+  created_service_account_keys = toset(keys(local.service_accounts))
+  legacy_pod_identity_associations = var.eks.enable_eks_pia ? {
+    for association in coalesce(var.eks.eks_pia, []) : association.key => association
+  } : {}
+  service_account_identities = {
+    for key, sa in local.service_accounts : key => (
+      sa.identity == "pia" || (
+        sa.policy == null && length(sa.managed_policy_arns) == 0 &&
+        contains(keys(local.legacy_pod_identity_associations), key)
+      ) ? "pod_identity" : sa.identity
+    )
+  }
+  automatic_service_account_roles = {
+    for key, sa in local.service_accounts : coalesce(sa.role_key, "${sa.namespace}-${sa.name}") => {
+      key                       = coalesce(sa.role_key, "${sa.namespace}-${sa.name}")
+      name                      = "${var.eks.name}-${sa.namespace}-${sa.name}"
+      description               = "IAM role for ${sa.namespace}/${sa.name} service account"
+      service_account_namespace = sa.namespace
+      service_account_name      = sa.name
+      identity                  = local.service_account_identities[key]
+      assume_role_policy        = null
+      create_custom_policy      = sa.policy != null
+      managed_policy_arns       = sa.managed_policy_arns
+      policy = sa.policy != null ? {
+        name          = "${var.eks.name}-${sa.namespace}-${sa.name}"
+        description   = "IAM policy for ${sa.namespace}/${sa.name} service account"
+        policy        = sa.policy
+        custom_policy = true
+      } : null
+    }
+    if sa.policy != null || length(sa.managed_policy_arns) > 0 || (
+      sa.role_key == null && sa.role_arn == null && !contains(keys(local.legacy_pod_identity_associations), key)
+    )
+  }
+  service_account_role_arns = {
+    for key, sa in local.service_accounts : key => (
+      sa.policy == null && length(sa.managed_policy_arns) == 0 && contains(keys(local.legacy_pod_identity_associations), key) ? (
+        local.legacy_pod_identity_associations[key].role_key != null ?
+        module.iam_roles[local.legacy_pod_identity_associations[key].role_key].iam_role_arn :
+        local.legacy_pod_identity_associations[key].role_arn
+        ) : (
+        sa.role_key != null ? module.iam_roles[sa.role_key].iam_role_arn :
+        sa.role_arn != null ? sa.role_arn :
+        module.iam_roles["${sa.namespace}-${sa.name}"].iam_role_arn
+      )
+    )
+  }
+  pod_identity_associations = merge(
+    local.legacy_pod_identity_associations,
+    {
+      for key, sa in local.service_accounts : key => {
+        service_account_namespace = sa.namespace
+        service_account_name      = sa.name
+        service_account_keys      = [key]
+        role_key                  = null
+        role_arn                  = local.service_account_role_arns[key]
+      } if local.service_account_identities[key] == "pod_identity"
+    }
+  )
   system_node_selector = {
     "workload-type" = "system"
   }
@@ -595,7 +656,7 @@ resource "aws_eks_addon" "coredns" {
 }
 
 resource "aws_eks_addon" "pod_identity_agent" {
-  count                       = var.eks.addons.pod_identity_agent.enabled && var.eks.compute.create_node_group ? 1 : 0
+  count                       = (var.eks.addons.pod_identity_agent.enabled && var.eks.compute.create_node_group) || length(local.pod_identity_associations) > 0 ? 1 : 0
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "eks-pod-identity-agent"
   addon_version               = var.eks.addons.pod_identity_agent.version
@@ -1680,13 +1741,13 @@ module "eks_node_group" {
 # EKS Service account
 #--------------------------------------------------------------------
 module "service_account" {
-  for_each = var.eks.create_service_accounts && var.eks.service_accounts != null ? { for item in var.eks.service_accounts : item.key => item } : {}
+  for_each = local.service_accounts
   source   = "../EKS-Service-account"
   common   = var.common
   eks_service_account = merge(
     each.value,
     {
-      role_arn = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
+      role_arn = local.service_account_identities[each.key] == "irsa" ? local.service_account_role_arns[each.key] : null
     }
   )
   depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace]
@@ -1696,9 +1757,12 @@ module "service_account" {
 # EKS Cluster IAM Roles for Service Accounts
 #--------------------------------------------------------------------
 module "iam_roles" {
-  for_each = var.eks.create_service_accounts && var.eks.iam_roles != null ? { for item in var.eks.iam_roles : item.key => item } : {}
-  source   = "./IAM-Roles"
-  common   = var.common
+  for_each = merge(
+    var.eks.create_service_accounts ? { for item in coalesce(var.eks.iam_roles, []) : item.key => item } : {},
+    local.automatic_service_account_roles
+  )
+  source = "./IAM-Roles"
+  common = var.common
   iam_role = merge(
     each.value,
     {
@@ -1708,7 +1772,22 @@ module "iam_roles" {
           cluster_name = aws_eks_cluster.eks_cluster.name
         }
       ) : null
-      assume_role_policy = each.value.assume_role_policy != null ? jsonencode(jsondecode(file(each.value.assume_role_policy))) : jsonencode({
+      assume_role_policy = each.value.assume_role_policy != null ? jsonencode(jsondecode(file(each.value.assume_role_policy))) : try(each.value.identity, "irsa") == "pod_identity" ? jsonencode({
+        Version = "2012-10-17"
+        Statement = [{
+          Sid       = "AllowEksAuthToAssumeRoleForPodIdentity"
+          Effect    = "Allow"
+          Principal = { Service = "pods.eks.amazonaws.com" }
+          Action    = ["sts:AssumeRole", "sts:TagSession"]
+          Condition = {
+            StringEquals = {
+              "aws:RequestTag/eks-cluster-arn"            = aws_eks_cluster.eks_cluster.arn
+              "aws:RequestTag/kubernetes-namespace"       = each.value.service_account_namespace
+              "aws:RequestTag/kubernetes-service-account" = each.value.service_account_name
+            }
+          }
+        }]
+        }) : jsonencode({
         Version = "2012-10-17"
         Statement = [
           {
@@ -1720,8 +1799,8 @@ module "iam_roles" {
             Action = "sts:AssumeRoleWithWebIdentity"
             Condition = {
               StringEquals = {
-                "${aws_iam_openid_connect_provider.eks_oidc.url}:sub" = "system:serviceaccount:${each.value.service_account_namespace}:${each.value.service_account_name}"
-                "${aws_iam_openid_connect_provider.eks_oidc.url}:aud" = "sts.amazonaws.com"
+                "${trimprefix(aws_iam_openid_connect_provider.eks_oidc.url, "https://")}:sub" = "system:serviceaccount:${each.value.service_account_namespace}:${each.value.service_account_name}"
+                "${trimprefix(aws_iam_openid_connect_provider.eks_oidc.url, "https://")}:aud" = "sts.amazonaws.com"
               }
             }
           }
@@ -1733,13 +1812,13 @@ module "iam_roles" {
 }
 
 resource "aws_eks_pod_identity_association" "pia" {
-  for_each     = var.eks.enable_eks_pia && var.eks.eks_pia != null ? { for item in var.eks.eks_pia : item.key => item } : {}
+  for_each     = local.pod_identity_associations
   cluster_name = aws_eks_cluster.eks_cluster.name
   namespace    = each.value.service_account_namespace
   service_account = (each.value.service_account_keys != null && length(each.value.service_account_keys) > 0 && contains(local.created_service_account_keys, each.key) ? module.service_account[each.key].service_account_name : each.value.service_account_name
   )
   role_arn   = each.value.role_key != null ? module.iam_roles[each.value.role_key].iam_role_arn : each.value.role_arn
-  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace, module.service_account]
+  depends_on = [aws_eks_cluster.eks_cluster, kubernetes_namespace_v1.namespace, module.service_account, aws_eks_addon.pod_identity_agent]
 }
 
 #--------------------------------------------------------------------
@@ -2160,9 +2239,9 @@ resource "helm_release" "awx_operator" {
     yamlencode({
       serviceAccount = {
         name = var.eks.addons.awx_operator.service_account_name
-        annotations = {
+        annotations = var.eks.addons.awx_operator.role_key != null || var.eks.addons.awx_operator.role_arn != null ? {
           "eks.amazonaws.com/role-arn" = var.eks.addons.awx_operator.role_key != null ? module.iam_roles[var.eks.addons.awx_operator.role_key].iam_role_arn : var.eks.addons.awx_operator.role_arn
-        }
+        } : {}
       }
       "operator-controller" = {
         spec = {

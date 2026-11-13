@@ -563,11 +563,14 @@ variable "eks" {
       }))
     })))
     service_accounts = optional(list(object({
-      key       = optional(string)
-      name      = string
-      namespace = optional(string, "default")
-      role_arn  = optional(string)
-      role_key  = optional(string)
+      key                 = optional(string)
+      name                = string
+      namespace           = optional(string, "default")
+      role_arn            = optional(string)
+      role_key            = optional(string)
+      identity            = optional(string, "irsa")
+      policy              = optional(string)
+      managed_policy_arns = optional(list(string), [])
     })))
     eks_pia = optional(list(object({
       key                       = optional(string)
@@ -600,6 +603,33 @@ variable "eks" {
       }))
     })))
   })
+
+  validation {
+    condition = alltrue([
+      for sa in coalesce(var.eks.service_accounts, []) :
+      contains(["irsa", "pod_identity", "pia"], sa.identity)
+    ])
+    error_message = "Service account identity must be irsa, pod_identity, or pia."
+  }
+
+  validation {
+    condition = alltrue([
+      for sa in coalesce(var.eks.service_accounts, []) :
+      sa.role_arn == null || (sa.role_key == null && sa.policy == null && length(sa.managed_policy_arns) == 0)
+    ])
+    error_message = "A service account role_arn cannot be combined with role_key, policy, or managed_policy_arns."
+  }
+
+  validation {
+    condition = alltrue([
+      for sa in coalesce(var.eks.service_accounts, []) :
+      !(sa.policy != null || length(sa.managed_policy_arns) > 0) || !contains(
+        [for role in coalesce(var.eks.iam_roles, []) : role.key],
+        coalesce(sa.role_key, "${sa.namespace}-${sa.name}")
+      )
+    ])
+    error_message = "An automatically created service account role must not also be declared in iam_roles."
+  }
 
   validation {
     condition = !var.eks.ingress.enabled || !(

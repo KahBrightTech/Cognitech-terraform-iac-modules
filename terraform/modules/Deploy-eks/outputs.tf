@@ -317,6 +317,8 @@ output "eks_service_accounts" {
     for k, v in module.service_account : k => {
       name      = v.service_account_name
       namespace = v.service_account_namespace
+      identity  = local.service_account_identities[k]
+      role_arn  = local.service_account_role_arns[k]
     }
   } : {}
 }

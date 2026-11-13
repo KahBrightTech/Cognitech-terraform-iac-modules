@@ -28,7 +28,7 @@ resource "aws_iam_policy" "policy" {
   name        = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.policy.name}-policy"
   description = var.iam_role.policy.description
   path        = var.iam_role.policy.path
-  policy = var.iam_role.policy.custom_policy ? jsonencode(jsondecode(replace(
+  policy = var.iam_role.policy.custom_policy ? jsonencode(yamldecode(replace(
     replace(
       replace(
         replace(
@@ -49,7 +49,7 @@ resource "aws_iam_policy" "policy" {
       "[[admin_role]]", local.admin_role_arn
     ),
     "[[network_role]]", local.network_role_arn
-  ))) : jsonencode(jsondecode(file(var.iam_role.policy.policy)))
+  ))) : jsonencode(yamldecode(file(var.iam_role.policy.policy)))
 
   tags = merge(var.common.tags, {
     "Name" = "${var.common.account_name}-${var.common.region_prefix}-${var.iam_role.policy.name}-policy"
